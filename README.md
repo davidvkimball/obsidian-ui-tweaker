@@ -140,4 +140,8 @@ MIT
 
 ## Credits
 
-Inspired by [obsidian-hider](https://github.com/kepano/obsidian-hider) and features from the Obsidian Settings plugin ecosystem.
+- [Hider](https://github.com/kepano/obsidian-hider) - most "hide" features in this plugin are based on this plugin.
+- [Baseline](https://github.com/aaaaalexis/obsidian-baseline) theme for the animation effects and some feature ideas.
+- [Meridian](https://github.com/mvahaste/meridian) theme for the auto-hide animations for the file explorer icons and nav bar auto-hide reveal.
+- [Adrenaline](https://github.com/Spekulucius/obsidian-adrenaline) theme for the auto-collapsing sidebar treatment.
+- [Lumines](https://github.com/danielkhmara/obsidian-lumines) theme for the additional hiding elements logic.
