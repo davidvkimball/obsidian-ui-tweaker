@@ -1,94 +1,143 @@
-# Obsidian Sample Plugin
+# UI Tweaker
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A comprehensive Obsidian plugin for customizing the user interface by hiding, showing, and revealing UI elements.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Features
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+UI Tweaker provides extensive control over Obsidian's interface with three visibility states:
 
-## First time developing plugins?
+- **Show**: Element is always visible (default)
+- **Hide**: Element is always hidden
+- **Reveal**: Element is hidden by default but appears on hover/interaction
 
-Quick starting guide for new plugin devs:
+### Auto-hide Elements (Show/Hide/Reveal)
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+- Title bar
+- File explorer navigation header
+- Other navigation headers (tags, backlinks, outline, etc.)
+- Left tab headers
+- Right tab headers
+- Ribbon (uses base Obsidian toggle command)
+- Vault switcher
+- Settings button
+- Tab bar when single tab
 
-## Releasing new releases
+### Visibility Toggles (Show/Hide)
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+- Help button
+- Vault name
+- Tab bar
+- File explorer buttons (all or individually)
+- New note button
+- New folder button
+- Sort order button
+- Auto reveal button
+- Collapse all button
+- Reading mode button
+- Search settings button
+- Tab list icon
+- New tab icon
+- Tab close button
+- Status bar
+- Scroll bars
+- Left/Right sidebar toggle buttons
+- Tooltips
+- Search suggestions
+- Search term counts
+- Properties in Reading view
+- Properties heading
+- Add property button
+- Instructions
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### Mobile Features
 
-## Adding your plugin to the community plugin list
+- Hide mobile chevrons icon
+- Hide navigation buttons (back, forward, quick switcher, new tab, open tabs, ribbon menu)
+- Swap mobile new tab icon with home button
+- Customize mobile navigation menu button positions
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+### Advanced Features
 
-## How to use
+- Vault switcher background transparency control
+- Replace help button with custom command
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+## Commands
 
-## Manually installing the plugin
+Each feature has a corresponding toggle command that can be bound to hotkeys:
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- `UI Tweaker: Toggle title bar`
+- `UI Tweaker: Toggle file explorer navigation header`
+- `UI Tweaker: Toggle status bar`
+- `UI Tweaker: Toggle tab bar`
+- ... and many more
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
+Toggle commands cycle between Show and Hide states. If a setting is set to "Reveal", the toggle command will reset it to "Show" first, then toggle to "Hide".
 
-## Funding URL
+## Installation
 
-You can include funding URLs where people who use your plugin can financially support it.
+### Manual Installation
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+1. Download the latest release
+2. Extract the files to your vault's `.obsidian/plugins/obsidian-ui-tweaker/` folder
+3. Reload Obsidian
+4. Enable the plugin in Settings → Community plugins
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+### Development
+
+1. Clone this repository
+2. Run `npm install`
+3. Run `npm run dev` to start compilation in watch mode
+4. The plugin will be compiled to `main.js`
+
+## Usage
+
+1. Open Settings → UI Tweaker
+2. Configure each setting according to your preferences
+3. Use the dropdown menus for elements that support Show/Hide/Reveal
+4. Use toggle switches for simple Show/Hide options
+5. Bind toggle commands to hotkeys in Settings → Hotkeys for quick access
+
+## Settings Organization
+
+Settings are organized in a flat list with headers:
+
+- **Auto-hide elements**: Elements that support Show/Hide/Reveal states
+- **Visibility toggles**: Simple Show/Hide toggles
+- **File explorer buttons**: Individual button controls
+- **Tab controls**: Tab-related settings
+- **Sidebar controls**: Sidebar toggle buttons
+- **Search and tooltips**: Search and tooltip settings
+- **Properties**: Property-related settings
+- **Other**: Miscellaneous settings
+- **Mobile devices**: Mobile-specific settings
+- **Mobile navigation menu**: Mobile button positioning
+- **Advanced**: Advanced customization options
+
+## Compatibility
+
+- Works on both desktop and mobile
+- Compatible with Obsidian 0.15.0 and later
+
+## Development
+
+This project uses TypeScript and follows Obsidian plugin best practices.
+
+### Building
+
+```bash
+npm run build
 ```
 
-If you have multiple URLs, you can also do:
+### Development Mode
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+```bash
+npm run dev
 ```
 
-## API Documentation
+## License
 
-See https://github.com/obsidianmd/obsidian-api
+MIT
+
+## Credits
+
+Inspired by [obsidian-hider](https://github.com/kepano/obsidian-hider) and features from the Obsidian Settings plugin ecosystem.

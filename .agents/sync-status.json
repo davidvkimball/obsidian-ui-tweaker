@@ -1,0 +1,45 @@
+{
+  "lastFullSync": "2025-12-12",
+  "lastSyncSource": "Initial creation from AGENTS.md",
+  "filesSynced": [
+    "project-overview.md",
+    "environment.md",
+    "file-conventions.md",
+    "coding-conventions.md",
+    "manifest.md",
+    "testing.md",
+    "commands-settings.md",
+    "versioning-releases.md",
+    "security-privacy.md",
+    "ux-copy.md",
+    "performance.md",
+    "mobile.md",
+    "agent-dos-donts.md",
+    "common-tasks.md",
+    "troubleshooting.md",
+    "references.md"
+  ],
+  "sourceRepos": {
+    "obsidian-sample-plugin": {
+      "lastChecked": "2025-12-12",
+      "lastSynced": "2025-12-12"
+    },
+    "obsidian-api": {
+      "lastChecked": "2025-12-12",
+      "lastSynced": "2025-12-12"
+    },
+    "obsidian-developer-docs": {
+      "lastChecked": "2025-12-12",
+      "lastSynced": "2025-12-12"
+    },
+    "obsidian-plugin-docs": {
+      "lastChecked": "2025-12-12",
+      "lastSynced": "2025-12-12"
+    },
+    "obsidian-sample-theme": {
+      "lastChecked": "2025-12-12",
+      "lastSynced": "2025-12-12"
+    }
+  }
+}
+
