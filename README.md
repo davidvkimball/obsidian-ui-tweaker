@@ -14,39 +14,38 @@ UI Tweaker provides extensive control over Obsidian's interface with three visib
 
 - Title bar
 - File explorer navigation header
-- Other navigation headers (tags, backlinks, outline, etc.)
+- Other navigation headers (tags, backlinks, outline, bookmarks)
 - Left tab headers
 - Right tab headers
-- Ribbon (uses base Obsidian toggle command)
+- Ribbon (collapse on hover)
 - Vault switcher
-- Settings button
-- Tab bar when single tab
-
-### Visibility Toggles (Show/Hide)
-
 - Help button
-- Vault name
+- Settings button
+
+### Navigation Controls
+
 - Tab bar
-- File explorer buttons (all or individually)
 - New note button
 - New folder button
 - Sort order button
-- Auto reveal button
+- Auto-reveal button
 - Collapse all button
 - Reading mode button
 - Search settings button
+
+### Tab Icons (Show/Hide/Reveal)
+
 - Tab list icon
 - New tab icon
 - Tab close button
+
+### Status & UI Elements
+
 - Status bar
 - Scroll bars
-- Left/Right sidebar toggle buttons
+- Left sidebar toggle button (Show/Hide/Reveal)
+- Right sidebar toggle button (Show/Hide/Reveal)
 - Tooltips
-- Search suggestions
-- Search term counts
-- Properties in Reading view
-- Properties heading
-- Add property button
 - Instructions
 
 ### Mobile Features
@@ -56,10 +55,21 @@ UI Tweaker provides extensive control over Obsidian's interface with three visib
 - Swap mobile new tab icon with home button
 - Customize mobile navigation menu button positions
 
+### Search
+
+- Search suggestions
+- Search term counts
+
+### Properties
+
+- Properties in Reading view
+- Properties heading
+- Add property button
+
 ### Advanced Features
 
 - Vault switcher background transparency control
-- Replace help button with custom command
+- Replace help button with custom command and icon
 
 ## Commands
 
@@ -97,22 +107,6 @@ Toggle commands cycle between Show and Hide states. If a setting is set to "Reve
 4. Use toggle switches for simple Show/Hide options
 5. Bind toggle commands to hotkeys in Settings → Hotkeys for quick access
 
-## Settings Organization
-
-Settings are organized in a flat list with headers:
-
-- **Auto-hide elements**: Elements that support Show/Hide/Reveal states
-- **Visibility toggles**: Simple Show/Hide toggles
-- **File explorer buttons**: Individual button controls
-- **Tab controls**: Tab-related settings
-- **Sidebar controls**: Sidebar toggle buttons
-- **Search and tooltips**: Search and tooltip settings
-- **Properties**: Property-related settings
-- **Other**: Miscellaneous settings
-- **Mobile devices**: Mobile-specific settings
-- **Mobile navigation menu**: Mobile button positioning
-- **Advanced**: Advanced customization options
-
 ## Compatibility
 
 - Works on both desktop and mobile
@@ -133,10 +127,6 @@ npm run build
 ```bash
 npm run dev
 ```
-
-## License
-
-MIT
 
 ## Credits
 
