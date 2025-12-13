@@ -13,6 +13,8 @@ Applicability: Plugin / Theme
 - **common-tasks.md**: Quick snippets and basic patterns for common operations
 - **code-patterns.md**: Complete, production-ready examples with full context and error handling
 
+> **Note**: If user asks "what does the Obsidian API say about X?" or similar, check `.ref/obsidian-api/obsidian.d.ts` first. See [ref-instructions.md](ref-instructions.md) for when to check `.ref` setup.
+
 ## Organize code across multiple files
 
 **main.ts** (minimal, lifecycle only):

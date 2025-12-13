@@ -1,6 +1,6 @@
 # UI Tweaker
 
-A comprehensive Obsidian plugin for customizing the user interface by hiding, showing, and revealing UI elements.
+Hide or hover-to-reveal various interface elements.
 
 ## Features
 

@@ -2,12 +2,13 @@
  * Settings Tab - UI implementation
  */
 
-import { App, PluginSettingTab, Setting, SettingGroup } from 'obsidian';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import { UISettings } from './settings';
 import { UIVisibilityState } from './types';
 import { CommandPickerModal } from './modals/CommandPickerModal';
 import { IconPickerModal } from './modals/IconPickerModal';
 import UITweakerPlugin from './main';
+import { createSettingsGroup, SettingsContainer } from './utils/settings-compat';
 
 export class UITweakerSettingTab extends PluginSettingTab {
 	plugin: UITweakerPlugin;
@@ -24,7 +25,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Auto-hide elements
 		// ========================================
-		const generalGroup = new SettingGroup(containerEl);
+		const generalGroup = createSettingsGroup(containerEl);
 
 		this.addVisibilitySetting(
 			generalGroup,
@@ -78,7 +79,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Navigation
 		// ========================================
-		const navigationGroup = new SettingGroup(containerEl).setHeading('Navigation');
+		const navigationGroup = createSettingsGroup(containerEl, 'Navigation');
 
 		this.addToggleSetting(navigationGroup, 'Hide tab bar', 'Hides the tab container at the top of the window.', 'tabBar');
 
@@ -99,7 +100,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Vault profile area
 		// ========================================
-		const vaultProfileGroup = new SettingGroup(containerEl).setHeading('Vault profile area');
+		const vaultProfileGroup = createSettingsGroup(containerEl, 'Vault profile area');
 
 		this.addVisibilitySetting(
 			vaultProfileGroup,
@@ -284,7 +285,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Tab icons
 		// ========================================
-		const tabIconsGroup = new SettingGroup(containerEl).setHeading('Tab icons');
+		const tabIconsGroup = createSettingsGroup(containerEl, 'Tab icons');
 
 		this.addVisibilitySetting(
 			tabIconsGroup,
@@ -310,7 +311,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Status & UI elements
 		// ========================================
-		const statusUIGroup = new SettingGroup(containerEl).setHeading('Status & UI elements');
+		const statusUIGroup = createSettingsGroup(containerEl, 'Status & UI elements');
 
 		this.addToggleSetting(statusUIGroup, 'Hide status bar', 'Hides word count, character count and backlink count.', 'statusBar');
 
@@ -337,7 +338,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Search
 		// ========================================
-		const searchGroup = new SettingGroup(containerEl).setHeading('Search');
+		const searchGroup = createSettingsGroup(containerEl, 'Search');
 
 		this.addToggleSetting(searchGroup, 'Hide search suggestions', 'Hides suggestions in search pane.', 'searchSuggestions');
 
@@ -346,7 +347,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Properties
 		// ========================================
-		const propertiesGroup = new SettingGroup(containerEl).setHeading('Properties');
+		const propertiesGroup = createSettingsGroup(containerEl, 'Properties');
 
 		this.addToggleSetting(propertiesGroup, 'Hide properties in Reading view', 'Hides the properties section in Reading view.', 'propertiesInReadingView');
 
@@ -357,7 +358,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Mobile
 		// ========================================
-		const mobileGroup = new SettingGroup(containerEl).setHeading('Mobile');
+		const mobileGroup = createSettingsGroup(containerEl, 'Mobile');
 
 		this.addToggleSetting(mobileGroup, 'Hide "Mobile chevrons" icon', 'Hide "Mobile chevrons" icon in mobile navbar.', 'mobileChevronsIcon');
 
@@ -379,7 +380,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Mobile navigation menu
 		// ========================================
-		const mobileNavGroup = new SettingGroup(containerEl).setHeading('Mobile navigation menu');
+		const mobileNavGroup = createSettingsGroup(containerEl, 'Mobile navigation menu');
 
 		this.addPositionSetting(mobileNavGroup, '"Navigate back" button position', 'Select the position for the "Navigate back" button (default 1).', 'navigateButtonPosition');
 
@@ -394,7 +395,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		this.addPositionSetting(mobileNavGroup, '"Ribbon menu" button position', 'Select the position for the "Ribbon menu" button (default 6).', 'ribbonMenuPosition');
 	}
 
-	private addVisibilitySetting(group: SettingGroup, name: string, desc: string, key: keyof UISettings) {
+	private addVisibilitySetting(group: SettingsContainer, name: string, desc: string, key: keyof UISettings) {
 		group.addSetting((setting) =>
 			setting
 				.setName(name)
@@ -414,7 +415,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		);
 	}
 
-	private addToggleSetting(group: SettingGroup, name: string, desc: string, key: keyof UISettings) {
+	private addToggleSetting(group: SettingsContainer, name: string, desc: string, key: keyof UISettings) {
 		group.addSetting((setting) =>
 			setting
 				.setName(name)
@@ -429,7 +430,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		);
 	}
 
-	private addPositionSetting(group: SettingGroup, name: string, desc: string, key: keyof UISettings) {
+	private addPositionSetting(group: SettingsContainer, name: string, desc: string, key: keyof UISettings) {
 		group.addSetting((setting) =>
 			setting
 				.setName(name)

@@ -58,6 +58,14 @@ export default class UITweakerPlugin extends Plugin {
 				commandId: '',
 				iconId: 'settings-2',
 			};
+		} else {
+			// Ensure iconId and commandId are defined even if helpButtonReplacement exists
+			if (!this.settings.helpButtonReplacement.iconId) {
+				this.settings.helpButtonReplacement.iconId = 'wrench';
+			}
+			if (!this.settings.helpButtonReplacement.commandId) {
+				this.settings.helpButtonReplacement.commandId = 'ui-tweaker:open-settings';
+			}
 		}
 	}
 
@@ -205,10 +213,20 @@ export default class UITweakerPlugin extends Plugin {
 			
 			// Replace the icon using Obsidian's setIcon function
 			const iconContainer = customButton.querySelector('svg')?.parentElement || customButton;
-			try {
-				setIcon(iconContainer as HTMLElement, this.settings.helpButtonReplacement.iconId);
-			} catch (error) {
-				console.warn('[UI Tweaker] Error setting icon:', error);
+			const iconId = this.settings.helpButtonReplacement?.iconId;
+			if (iconId) {
+				try {
+					setIcon(iconContainer as HTMLElement, iconId);
+				} catch (error) {
+					console.warn('[UI Tweaker] Error setting icon:', error);
+				}
+			} else {
+				console.warn('[UI Tweaker] Icon ID is undefined, using default "wrench"');
+				try {
+					setIcon(iconContainer as HTMLElement, 'wrench');
+				} catch (error) {
+					console.warn('[UI Tweaker] Error setting default icon:', error);
+				}
 			}
 
 			// Add our custom click handler

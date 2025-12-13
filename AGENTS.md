@@ -25,6 +25,28 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 **Note**: For complex projects, see `.agents/.context/` directory (optional advanced feature).
 
+## When to Check .ref Folder Setup
+
+**AI Agents: Only check `.ref` folder setup when user explicitly asks about:**
+- "What does the Obsidian API say about X?"
+- "Check the latest Obsidian documentation"
+- "What's the latest API?"
+- "Look up [feature] in the Obsidian docs"
+- "What does the Obsidian documentation say?"
+- "Check obsidian-api for..."
+- Similar explicit requests about API or documentation
+
+**Do NOT check `.ref` automatically for regular coding tasks.** Most users may never need it, and it shouldn't be a barrier to getting work done.
+
+**When triggered:**
+1. Check if `.ref/obsidian-api` exists
+2. If missing, run setup script: `.\scripts\setup-ref-links.ps1` (Windows) or `./scripts/setup-ref-links.sh` (Unix)
+3. Then proceed with the API/documentation lookup
+
+**Quick check commands:**
+- Windows: `Test-Path .ref/obsidian-api`
+- Unix: `test -d .ref/obsidian-api`
+
 ## Help: Interactive Guidance
 
 **When the user asks for "help"** or **"what's the latest"**, present these options and guide them based on their choice:
@@ -33,12 +55,12 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 ### Option 0: Check for Updates / "What's the Latest"
 
-**Present this option when**: User asks "what's the latest", "check for updates", or wants to see what's new in reference repos.
+**Present this option when**: User explicitly asks "what's the latest", "check for updates", "what does the Obsidian documentation say", or wants to see what's new in reference repos.
 
 **Important**: Updates are **optional**. The reference materials work fine with whatever version was cloned initially. Most users never need to update. This is only for users who want the latest documentation.
 
 **Instructions for AI agent**:
-1. **First, ensure `.ref` folder is set up**: Check if `.ref/obsidian-api` exists. If not, run the setup script first (see Quick Start).
+1. **First, ensure `.ref` folder is set up**: Check if `.ref/obsidian-api` exists. If not, run the setup script first (see "When to Check .ref Folder Setup" above).
 2. **Check for updates** (read-only, safe):
    - **For core Obsidian projects**: Check `.ref/` root (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme)
    - **For project-specific repos**: Check `.ref/plugins/` or `.ref/themes/` (only if documented in `project-context.md`)
@@ -212,7 +234,7 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 The `.ref` folder contains **symlinks** to reference materials (not actual files). It's gitignored and acts as a "portal" to other locations on the computer.
 
 **For AI Agents**:
-- **When first working on a project**: Check if `.ref/obsidian-api` exists. If not, run the setup script to create it
+- **Only when user explicitly asks about API/docs**: Check if `.ref/obsidian-api` exists. If not, run the setup script to create it (see "When to Check .ref Folder Setup" above)
 - **When asked to reference something**: Actively search for it using `list_dir`, `glob_file_search`, or `read_file`
 - **When adding references**: 
   - External repos → Clone to `../.ref/` (global), then symlink in project's `.ref/`
