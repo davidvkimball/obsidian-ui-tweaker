@@ -34,14 +34,15 @@ The `.ref` folder structure (via symlinks) should be organized as follows:
 
 ### Core Obsidian References (Always Relevant)
 
-These 5 projects are **always relevant** for any Obsidian plugin or theme project. They should be symlinked in **every** project's `.ref` folder:
+These 6 projects are **always relevant** for any Obsidian plugin or theme project. They should be symlinked in **every** project's `.ref` folder:
 
-- **Root level**: Base Obsidian repositories (API, official docs, sample projects)
+- **Root level**: Base Obsidian repositories (API, official docs, sample projects, linting)
   - `obsidian-api/` → symlink to central location
   - `obsidian-sample-plugin/` → symlink to central location
   - `obsidian-developer-docs/` → symlink to central location
   - `obsidian-plugin-docs/` → symlink to central location
   - `obsidian-sample-theme/` → symlink to central location
+  - `eslint-plugin/` → symlink to central location (ESLint rules for Obsidian plugins)
 
 ### Project-Specific References (Optional, Project-Dependent)
 
@@ -55,7 +56,7 @@ These are **only relevant** to specific projects. They should be documented in `
   - Example: `.ref/themes/some-community-theme/` → symlink to central location or working copy
   - **Note**: Only add themes that are specifically relevant to this project's development
 
-**Important**: The general `.agents` documentation focuses on the 5 core Obsidian projects. Project-specific plugins and themes should be documented in `project-context.md` for each project.
+**Important**: The general `.agents` documentation focuses on the 6 core Obsidian projects. Project-specific plugins and themes should be documented in `project-context.md` for each project.
 
 ## For AI Agents
 
@@ -118,7 +119,7 @@ The goal is to have **one central `.ref` directory** on your computer that conta
 - Windows: `C:\Users\YourName\Development\.ref` or `C:\Development\.ref`
 - macOS/Linux: `~/Development/.ref` or `/opt/ref`
 
-**Clone the 5 core Obsidian projects once** to this central location:
+**Clone the 6 core Obsidian projects once** to this central location:
 
 ```bash
 # Navigate to your chosen central location
@@ -126,12 +127,13 @@ cd ~/Development  # or C:\Users\YourName\Development on Windows
 mkdir .ref
 cd .ref
 
-# Clone all 5 core projects (one-time setup)
+# Clone all 6 core projects (one-time setup)
 git clone https://github.com/obsidianmd/obsidian-api.git obsidian-api
 git clone https://github.com/obsidianmd/obsidian-sample-plugin.git obsidian-sample-plugin
 git clone https://github.com/obsidianmd/obsidian-developer-docs.git obsidian-developer-docs
 git clone https://github.com/obsidianmd/obsidian-plugin-docs.git obsidian-plugin-docs
 git clone https://github.com/obsidianmd/obsidian-sample-theme.git obsidian-sample-theme
+git clone https://github.com/obsidianmd/eslint-plugin.git eslint-plugin
 ```
 
 **Note**: You only do this once per computer. All your projects will symlink to this central location.
@@ -157,6 +159,7 @@ cmd /c mklink /J .ref\obsidian-sample-plugin ..\.ref\obsidian-sample-plugin
 cmd /c mklink /J .ref\obsidian-developer-docs ..\.ref\obsidian-developer-docs
 cmd /c mklink /J .ref\obsidian-plugin-docs ..\.ref\obsidian-plugin-docs
 cmd /c mklink /J .ref\obsidian-sample-theme ..\.ref\obsidian-sample-theme
+cmd /c mklink /J .ref\eslint-plugin ..\.ref\eslint-plugin
 
 # macOS/Linux (adjust path to your central .ref):
 # If your central .ref is at ~/Development/.ref
@@ -166,6 +169,7 @@ ln -s ../.ref/obsidian-sample-plugin .ref/obsidian-sample-plugin
 ln -s ../.ref/obsidian-developer-docs .ref/obsidian-developer-docs
 ln -s ../.ref/obsidian-plugin-docs .ref/obsidian-plugin-docs
 ln -s ../.ref/obsidian-sample-theme .ref/obsidian-sample-theme
+ln -s ../.ref/eslint-plugin .ref/eslint-plugin
 ```
 
 **Important**: Adjust the relative path (`../.ref`) based on where your project is relative to your central `.ref` location. If they're in different directory structures, use absolute paths.
@@ -192,6 +196,7 @@ cd obsidian-sample-plugin && git pull && cd ..
 cd obsidian-developer-docs && git pull && cd ..
 cd obsidian-plugin-docs && git pull && cd ..
 cd obsidian-sample-theme && git pull && cd ..
+cd eslint-plugin && git pull && cd ..
 ```
 
 All plugin projects using symlinks will immediately see the updated content.
@@ -207,12 +212,13 @@ All plugin projects using symlinks will immediately see the updated content.
 ### Common Reference Repositories
 
 **Core Obsidian Repositories (Always Relevant - Root Level)**:
-These 5 projects should be symlinked in **every** Obsidian plugin/theme project:
+These 6 projects should be symlinked in **every** Obsidian plugin/theme project:
 - `obsidian-api`: Official Obsidian API documentation and type definitions
 - `obsidian-sample-plugin`: Template plugin with best practices (contains `AGENTS.md` to sync from)
 - `obsidian-developer-docs`: Source vault for docs.obsidian.md (official documentation)
 - `obsidian-plugin-docs`: Plugin-specific documentation and guides
 - `obsidian-sample-theme`: Theme template (useful for organizational patterns)
+- `eslint-plugin`: ESLint rules for Obsidian plugins (catches common issues and enforces best practices)
 
 **Project-Specific References (Optional - Organized in Subfolders)**:
 These are only relevant to specific projects and should be documented in `project-context.md`:
@@ -362,7 +368,7 @@ ln -s ../project-name .ref/project-name
 
 ### Quick Decision Guide
 
-- **5 Core Obsidian projects** (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme) → **Always** clone to global `.ref` and symlink in **every** project
+- **6 Core Obsidian projects** (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme, eslint-plugin) → **Always** clone to global `.ref` and symlink in **every** project
 - **External repository** (GitHub, GitLab, etc.) that's project-specific → Use **Option A** - Clone to your **global/central `.ref` location**, then symlink **only in projects that need it**. Document in `project-context.md`.
 - **Local project you're actively developing** → Use **Option B** - Symlink directly to your working copy (e.g., `../project-name`). **Do NOT** add to global `.ref` - this is project-specific. Document in `project-context.md`.
 
@@ -384,7 +390,7 @@ ln -s ../project-name .ref/project-name
 ## Summary: Key Concepts
 
 1. **`.ref` folder is gitignored** - Symlinks are not committed to the repository
-2. **5 Core Obsidian projects** (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme) are **always relevant** for any Obsidian project → Clone to central location (e.g., `C:\Users\david\Development\.ref`), then symlink in **every** project
+2. **6 Core Obsidian projects** (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme, eslint-plugin) are **always relevant** for any Obsidian project → Clone to central location (e.g., `C:\Users\david\Development\.ref`), then symlink in **every** project
 3. **Project-specific plugins/themes** are **only relevant** to specific projects → Document in `project-context.md`, symlink only in projects that need them
 4. **Local projects** you're developing → Symlink directly to working copy (don't add to global `.ref`)
 5. **External repos** → Clone to global `.ref` location first, then symlink in projects
@@ -400,6 +406,7 @@ C:\Users\david\Development\
 │   ├── obsidian-developer-docs\   # Core (always relevant)
 │   ├── obsidian-plugin-docs\      # Core (always relevant)
 │   ├── obsidian-sample-theme\     # Core (always relevant)
+│   ├── eslint-plugin\             # Core (always relevant)
 │   ├── plugins\                    # Project-specific (only if needed)
 │   │   └── some-community-plugin\
 │   └── themes\                     # Project-specific (only if needed)
@@ -412,6 +419,7 @@ C:\Users\david\Development\
         ├── obsidian-developer-docs → ..\.ref\obsidian-developer-docs # Core (always)
         ├── obsidian-plugin-docs → ..\.ref\obsidian-plugin-docs     # Core (always)
         ├── obsidian-sample-theme → ..\.ref\obsidian-sample-theme   # Core (always)
+        ├── eslint-plugin → ..\.ref\eslint-plugin                    # Core (always)
         ├── plugins\                                                # Project-specific
         │   └── some-community-plugin → ..\.ref\plugins\some-community-plugin
         └── my-other-plugin → ..\my-other-plugin  # Local project symlink

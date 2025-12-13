@@ -15,7 +15,7 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 0. **Set up reference materials**: Check if `.ref` folder exists and has symlinks. If not, run the setup script:
    - **Windows**: `scripts\setup-ref-links.bat` or `.\scripts\setup-ref-links.ps1`
    - **macOS/Linux**: `./scripts/setup-ref-links.sh`
-   - The script will automatically create `../.ref/` (if needed), clone the 5 core Obsidian projects, and create symlinks
+   - The script will automatically create `../.ref/` (if needed), clone the 6 core Obsidian projects, and create symlinks
 1. Read [project-context.md](.agents/project-context.md) for project-specific information and overrides
 2. Read [project-overview.md](.agents/project-overview.md) to understand the structure
 3. Check [environment.md](.agents/environment.md) for setup requirements
@@ -93,9 +93,9 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
    - Ask: "Would you like to check for updates to the core reference documentation (Sample Plugin, API, Developer Docs, etc.)?"
    - If yes, guide them through:
      - Pulling latest changes: See [quick-sync-guide.md](.agents/quick-sync-guide.md)
-     - Reviewing what changed: Check git logs in `.ref/` repos (the 5 core projects)
+     - Reviewing what changed: Check git logs in `.ref/` repos (the 6 core projects)
      - Updating `.agents/` files if needed: See [sync-procedure.md](.agents/sync-procedure.md)
-   - **Note**: The 5 core Obsidian projects (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme) are always relevant. Project-specific plugins/themes are documented in `project-context.md`.
+   - **Note**: The 6 core Obsidian projects (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme, eslint-plugin) are always relevant. Project-specific plugins/themes are documented in `project-context.md`.
 
 **Key files**: [ref-instructions.md](.agents/ref-instructions.md), [quick-sync-guide.md](.agents/quick-sync-guide.md), [sync-procedure.md](.agents/sync-procedure.md)
 
@@ -243,7 +243,7 @@ The `.ref` folder contains **symlinks** to reference materials (not actual files
 
 **Setup**: The setup scripts (`scripts/setup-ref-links.*`) automatically:
 1. Create `../.ref/` if it doesn't exist
-2. Clone the 5 core Obsidian projects if they don't exist
+2. Clone the 6 core Obsidian projects if they don't exist
 3. Create `../.ref/plugins/` and `../.ref/themes/` folders
 4. Create symlinks in the project's `.ref/` folder
 

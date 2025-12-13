@@ -38,10 +38,15 @@ npm run build
 
 ### Linting
 
-- To use eslint install eslint from terminal: `npm install -g eslint`
-- To use eslint to analyze this project use this command: `eslint src/main.ts` (note: `main.ts` is in `src/`, not root)
-- eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder: `eslint ./src/`
+**Recommended**: Use `eslint-plugin-obsidianmd` (npm package name) for Obsidian-specific linting rules. The repository is at `.ref/eslint-plugin/` - see its README for setup and complete rule documentation.
+
+**Basic ESLint setup**:
+- Install: `npm install -D eslint eslint-plugin-obsidianmd`
+- Configure ESLint to use the `obsidianmd` plugin (see `.ref/eslint-plugin/README.md` for configuration examples)
+- Run: `eslint src/` (or `eslint src/main.ts` for a single file)
+- ESLint will report suggestions for code improvement by file and line number
+
+**Common issues caught by `eslint-plugin-obsidianmd`**: See [common-pitfalls.md](common-pitfalls.md#common-linting-issues) for details on style manipulation, settings headings, UI text case, file deletion, and more.
 
 ## Themes
 

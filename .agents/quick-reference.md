@@ -71,6 +71,18 @@ class MySettingTab extends PluginSettingTab {
 this.addSettingTab(new MySettingTab(this.app, this));
 ```
 
+### Settings Groups (Conditional for 1.11.0+)
+```ts
+// Use compatibility utility for backward compatibility
+import { createSettingsGroup } from "./utils/settings-compat";
+
+const group = createSettingsGroup(containerEl, "Group Name");
+group.addSetting((setting) => {
+  setting.setName("Setting").addToggle(/* ... */);
+});
+```
+See [code-patterns.md](code-patterns.md) for full implementation.
+
 ### Modal
 ```ts
 class MyModal extends Modal {

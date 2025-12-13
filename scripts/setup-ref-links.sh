@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup script to create symlinks to the 5 core Obsidian projects
+# Setup script to create symlinks to the 6 core Obsidian projects
 # Run this from anywhere: ./scripts/setup-ref-links.sh
 
 # Change to project root (parent of scripts folder)
@@ -22,7 +22,7 @@ fi
 mkdir -p "$CENTRAL_REF/plugins"
 mkdir -p "$CENTRAL_REF/themes"
 
-# Clone the 5 core repos if they don't exist
+# Clone the 6 core repos if they don't exist
 if [ ! -d "$CENTRAL_REF/obsidian-api" ]; then
     echo "Cloning obsidian-api..."
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/obsidian-api.git obsidian-api)
@@ -48,16 +48,22 @@ if [ ! -d "$CENTRAL_REF/obsidian-sample-theme" ]; then
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/obsidian-sample-theme.git obsidian-sample-theme)
 fi
 
+if [ ! -d "$CENTRAL_REF/eslint-plugin" ]; then
+    echo "Cloning eslint-plugin..."
+    (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/eslint-plugin.git eslint-plugin)
+fi
+
 # Ensure project .ref directory exists
 mkdir -p .ref
 
-# Define the 5 core projects
+# Define the 6 core projects
 CORE_PROJECTS=(
     "obsidian-api"
     "obsidian-sample-plugin"
     "obsidian-developer-docs"
     "obsidian-plugin-docs"
     "obsidian-sample-theme"
+    "eslint-plugin"
 )
 
 # Create symlinks for each core project

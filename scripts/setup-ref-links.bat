@@ -1,5 +1,5 @@
 @echo off
-REM Setup script to create symlinks to the 5 core Obsidian projects
+REM Setup script to create symlinks to the 6 core Obsidian projects
 REM Run this from anywhere: scripts\setup-ref-links.bat
 
 REM Change to project root (parent of scripts folder)
@@ -17,7 +17,7 @@ REM Ensure plugins and themes folders exist
 if not exist "%CENTRAL_REF%\plugins" mkdir "%CENTRAL_REF%\plugins"
 if not exist "%CENTRAL_REF%\themes" mkdir "%CENTRAL_REF%\themes"
 
-REM Clone the 5 core repos if they don't exist
+REM Clone the 6 core repos if they don't exist
 if not exist "%CENTRAL_REF%\obsidian-api" (
     echo Cloning obsidian-api...
     cd "%CENTRAL_REF%"
@@ -53,6 +53,13 @@ if not exist "%CENTRAL_REF%\obsidian-sample-theme" (
     cd "%~dp0\.."
 )
 
+if not exist "%CENTRAL_REF%\eslint-plugin" (
+    echo Cloning eslint-plugin...
+    cd "%CENTRAL_REF%"
+    git clone https://github.com/obsidianmd/eslint-plugin.git eslint-plugin
+    cd "%~dp0\.."
+)
+
 REM Ensure project .ref directory exists
 if not exist ".ref" mkdir .ref
 
@@ -76,6 +83,10 @@ mklink /J ".ref\obsidian-plugin-docs" "%CENTRAL_REF%\obsidian-plugin-docs"
 echo Creating symlink: obsidian-sample-theme
 if exist ".ref\obsidian-sample-theme" rmdir ".ref\obsidian-sample-theme"
 mklink /J ".ref\obsidian-sample-theme" "%CENTRAL_REF%\obsidian-sample-theme"
+
+echo Creating symlink: eslint-plugin
+if exist ".ref\eslint-plugin" rmdir ".ref\eslint-plugin"
+mklink /J ".ref\eslint-plugin" "%CENTRAL_REF%\eslint-plugin"
 
 echo.
 echo Setup complete!

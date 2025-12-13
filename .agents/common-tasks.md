@@ -132,6 +132,8 @@ this.addSettingTab(new MySettingTab(this.app, this));
 
 **Note**: For settings groups (available since API 1.11.0), use `SettingGroup` from the API. Plugin docs may not yet document this feature - always check `.ref/obsidian-api/obsidian.d.ts` for the latest API.
 
+**Backward Compatibility**: To support users on both Obsidian 1.11.0+ and older versions, use a compatibility utility. See [code-patterns.md](code-patterns.md) for the complete implementation with `createSettingsGroup()` utility. Alternatively, you can force `minAppVersion: "1.11.0"` in `manifest.json` if you don't need to support older versions.
+
 ## Modal Patterns
 
 **Source**: Based on `.ref/obsidian-sample-plugin/main.ts` and `.ref/obsidian-plugin-docs/docs/guides/modals.md`

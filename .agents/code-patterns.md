@@ -131,6 +131,206 @@ class MySettingTab extends PluginSettingTab {
 this.addSettingTab(new MySettingTab(this.app, this));
 ```
 
+## Settings with Groups (Conditional / Backward Compatible)
+
+**Source**: Based on `.ref/obsidian-api/obsidian.d.ts` (API is authoritative) - `SettingGroup` requires API 1.11.0+
+
+**Use this when**: You want to use `SettingGroup` for users on Obsidian 1.11.0+ while still supporting older versions. This provides conditional settings groups that automatically use the modern API when available, with a fallback for older versions.
+
+**Note**: Use the backward compatibility approach below to support both users on Obsidian 1.11.0+ and users on older versions. Alternatively, you can choose to:
+- Continue using the compatibility utility (supports all versions)
+- Force `minAppVersion: "1.11.0"` in `manifest.json` and use `SettingGroup` directly (simpler, but excludes older versions)
+
+### Step 1: Create the Compatibility Utility
+
+Create `src/utils/settings-compat.ts` (or wherever you keep utilities):
+
+```ts
+/**
+ * Compatibility utilities for settings
+ * Provides backward compatibility for SettingGroup (requires API 1.11.0+)
+ */
+import { Setting, SettingGroup, requireApiVersion } from 'obsidian';
+
+/**
+ * Interface that works with both SettingGroup and fallback container
+ */
+export interface SettingsContainer {
+  addSetting(cb: (setting: Setting) => void): void;
+}
+
+/**
+ * Creates a settings container that uses SettingGroup if available (API 1.11.0+),
+ * otherwise falls back to creating a heading and using the container directly.
+ * 
+ * Uses requireApiVersion('1.11.0') to check if SettingGroup is available.
+ * This is the official Obsidian API method for version checking.
+ * 
+ * @param containerEl - The container element for settings
+ * @param heading - The heading text for the settings group
+ * @returns A container that can be used to add settings
+ */
+export function createSettingsGroup(
+  containerEl: HTMLElement,
+  heading: string
+): SettingsContainer {
+  // Check if SettingGroup is available (API 1.11.0+)
+  // requireApiVersion is the official Obsidian API method for version checking
+  if (requireApiVersion('1.11.0')) {
+    // Use SettingGroup - it's guaranteed to exist if requireApiVersion returns true
+    const group = new SettingGroup(containerEl).setHeading(heading);
+    return {
+      addSetting(cb: (setting: Setting) => void) {
+        group.addSetting(cb);
+      }
+    };
+  } else {
+    // Fallback: Create a heading manually and use container directly
+    const headingEl = containerEl.createDiv('setting-group-heading');
+    headingEl.createEl('h3', { text: heading });
+        
+    return {
+      addSetting(cb: (setting: Setting) => void) {
+        const setting = new Setting(containerEl);
+        cb(setting);
+      }
+    };
+  }
+}
+```
+
+### Step 2: Use in Settings Tab
+
+Update your settings tab to use the compatibility utility:
+
+```ts
+import { App, PluginSettingTab, Setting } from "obsidian";
+import { createSettingsGroup } from "./utils/settings-compat";
+
+interface MyPluginSettings {
+  generalEnabled: boolean;
+  generalTimeout: number;
+  advancedDebug: boolean;
+  advancedLogLevel: string;
+}
+
+const DEFAULT_SETTINGS: MyPluginSettings = {
+  generalEnabled: true,
+  generalTimeout: 5000,
+  advancedDebug: false,
+  advancedLogLevel: "info",
+};
+
+class MySettingTab extends PluginSettingTab {
+  plugin: MyPlugin;
+
+  constructor(app: App, plugin: MyPlugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+
+    // General Settings Group
+    const generalGroup = createSettingsGroup(containerEl, "General Settings");
+    
+    generalGroup.addSetting((setting) =>
+      setting
+        .setName("Enable feature")
+        .setDesc("Enable or disable the main feature")
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.generalEnabled)
+            .onChange(async (value) => {
+              this.plugin.settings.generalEnabled = value;
+              await this.plugin.saveSettings();
+            })
+        )
+    );
+
+    generalGroup.addSetting((setting) =>
+      setting
+        .setName("Timeout")
+        .setDesc("Timeout in milliseconds")
+        .addSlider((slider) =>
+          slider
+            .setLimits(1000, 10000, 500)
+            .setValue(this.plugin.settings.generalTimeout)
+            .setDynamicTooltip()
+            .onChange(async (value) => {
+              this.plugin.settings.generalTimeout = value;
+              await this.plugin.saveSettings();
+            })
+        )
+    );
+
+    // Advanced Settings Group
+    const advancedGroup = createSettingsGroup(containerEl, "Advanced Settings");
+    
+    advancedGroup.addSetting((setting) =>
+      setting
+        .setName("Debug mode")
+        .setDesc("Enable debug logging")
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.advancedDebug)
+            .onChange(async (value) => {
+              this.plugin.settings.advancedDebug = value;
+              await this.plugin.saveSettings();
+            })
+        )
+    );
+
+    advancedGroup.addSetting((setting) =>
+      setting
+        .setName("Log level")
+        .setDesc("Set the logging level")
+        .addDropdown((dropdown) =>
+          dropdown
+            .addOption("info", "Info")
+            .addOption("warn", "Warning")
+            .addOption("error", "Error")
+            .setValue(this.plugin.settings.advancedLogLevel)
+            .onChange(async (value) => {
+              this.plugin.settings.advancedLogLevel = value;
+              await this.plugin.saveSettings();
+            })
+        )
+    );
+  }
+}
+
+// In main plugin class:
+this.addSettingTab(new MySettingTab(this.app, this));
+```
+
+### How It Works
+
+- **On Obsidian 1.11.0+**: Uses `SettingGroup` with proper styling and grouping
+- **On older versions**: Creates a manual heading (`<h3>`) and uses regular `Setting` objects
+- **Same API**: Your code using `addSetting()` works identically in both cases
+
+### Alternative: Force Minimum Version
+
+If you don't need to support versions before 1.11.0, you can skip the compatibility utility:
+
+1. Set `minAppVersion: "1.11.0"` in your `manifest.json`
+2. Use `SettingGroup` directly:
+
+```ts
+import { Setting, SettingGroup } from "obsidian";
+
+// In settings tab:
+const group = new SettingGroup(containerEl).setHeading("My Settings");
+group.addSetting((setting) => {
+  // ... configure setting
+});
+```
+
+This is simpler but excludes users on older Obsidian versions.
+
 ## Modal with Form Input
 
 **Source**: Based on `.ref/obsidian-plugin-docs/docs/guides/modals.md`
@@ -364,9 +564,9 @@ async createFile(path: string, content: string): Promise<TFile> {
   return await this.app.vault.create(path, content);
 }
 
-// Delete a file
+// Delete a file (respects user's trash preference)
 async deleteFile(file: TFile): Promise<void> {
-  await this.app.vault.delete(file);
+  await this.app.fileManager.trashFile(file);
 }
 
 // Check if file exists

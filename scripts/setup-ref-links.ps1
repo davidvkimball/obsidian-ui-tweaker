@@ -1,4 +1,4 @@
-# Setup script to create symlinks to the 5 core Obsidian projects
+# Setup script to create symlinks to the 6 core Obsidian projects
 # Run this from anywhere: .\scripts\setup-ref-links.ps1
 
 # Change to project root (parent of scripts folder)
@@ -28,13 +28,14 @@ if (-not (Test-Path $themesDir)) {
     New-Item -ItemType Directory -Path $themesDir | Out-Null
 }
 
-# Define the 5 core projects and their URLs
+# Define the 6 core projects and their URLs
 $coreProjects = @{
     "obsidian-api" = "https://github.com/obsidianmd/obsidian-api.git"
     "obsidian-sample-plugin" = "https://github.com/obsidianmd/obsidian-sample-plugin.git"
     "obsidian-developer-docs" = "https://github.com/obsidianmd/obsidian-developer-docs.git"
     "obsidian-plugin-docs" = "https://github.com/obsidianmd/obsidian-plugin-docs.git"
     "obsidian-sample-theme" = "https://github.com/obsidianmd/obsidian-sample-theme.git"
+    "eslint-plugin" = "https://github.com/obsidianmd/eslint-plugin.git"
 }
 
 # Clone repos if they don't exist
