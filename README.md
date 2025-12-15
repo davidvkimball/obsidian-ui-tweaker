@@ -1,6 +1,6 @@
 # UI Tweaker
 
-Hide or hover-to-reveal various interface elements.
+Hide or hover-to-reveal various interface elements in Obsidian.
 
 ## Features
 
