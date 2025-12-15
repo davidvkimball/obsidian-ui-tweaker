@@ -40,7 +40,9 @@ export function createSettingsGroup(
 			}
 		};
 	} else {
-		// Fallback: Create a heading manually and use container directly
+		// Fallback: Create a heading manually for older API versions
+		// Note: While best practice prefers Setting.setHeading(), the fallback path
+		// is for versions that may not support it, so manual heading is appropriate here
 		if (heading) {
 			const headingEl = containerEl.createDiv('setting-group-heading');
 			headingEl.createEl('h3', { text: heading });

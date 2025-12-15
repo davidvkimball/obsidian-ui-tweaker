@@ -14,7 +14,7 @@ export default class UITweakerPlugin extends Plugin {
 	private helpButtonStyleEl?: HTMLStyleElement;
 	private customHelpButton?: HTMLElement;
 	private helpButtonObserver?: MutationObserver;
-	private settingTab?: any;
+	private settingTab?: UITweakerSettingTab;
 
 	async onload() {
 		await this.loadSettings();
@@ -50,22 +50,28 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		// Ensure helpButtonReplacement structure exists
-		if (!this.settings.helpButtonReplacement) {
-			this.settings.helpButtonReplacement = {
-				enabled: false,
-				commandId: '',
-				iconId: 'settings-2',
-			};
-		} else {
-			// Ensure iconId and commandId are defined even if helpButtonReplacement exists
-			if (!this.settings.helpButtonReplacement.iconId) {
-				this.settings.helpButtonReplacement.iconId = 'wrench';
+		try {
+			this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+			// Ensure helpButtonReplacement structure exists
+			if (!this.settings.helpButtonReplacement) {
+				this.settings.helpButtonReplacement = {
+					enabled: false,
+					commandId: '',
+					iconId: 'settings-2',
+				};
+			} else {
+				// Ensure iconId and commandId are defined even if helpButtonReplacement exists
+				if (!this.settings.helpButtonReplacement.iconId) {
+					this.settings.helpButtonReplacement.iconId = 'wrench';
+				}
+				if (!this.settings.helpButtonReplacement.commandId) {
+					this.settings.helpButtonReplacement.commandId = 'ui-tweaker:open-settings';
+				}
 			}
-			if (!this.settings.helpButtonReplacement.commandId) {
-				this.settings.helpButtonReplacement.commandId = 'ui-tweaker:open-settings';
-			}
+		} catch (error) {
+			console.error('[UI Tweaker] Failed to load settings:', error);
+			// Fall back to defaults if loading fails
+			this.settings = { ...DEFAULT_SETTINGS };
 		}
 	}
 
@@ -237,7 +243,14 @@ export default class UITweakerPlugin extends Plugin {
 				const commandId = this.settings.helpButtonReplacement?.commandId;
 				if (commandId) {
 					try {
-						await (this.app as any).commands.executeCommandById(commandId);
+						// Use type assertion for executeCommandById as it's not in the public API types
+						// but is available in the runtime API
+						const commands = (this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
+						if (commands?.executeCommandById) {
+							await commands.executeCommandById(commandId);
+						} else {
+							throw new Error('Command execution not available');
+						}
 					} catch (error) {
 						console.warn('[UI Tweaker] Error executing command:', error);
 						new Notice(`Failed to execute command: ${commandId}`);
@@ -271,6 +284,8 @@ export default class UITweakerPlugin extends Plugin {
 			return;
 		}
 
+		// Note: MutationObserver is manually managed because Obsidian's registerDomEvent
+		// doesn't support MutationObserver directly. Cleanup is handled in onunload().
 		// Watch for changes to the vault profile area only (more targeted)
 		let updateTimeout: number | null = null;
 		this.helpButtonObserver = new MutationObserver(() => {

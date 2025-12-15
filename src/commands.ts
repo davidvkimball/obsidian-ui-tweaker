@@ -72,12 +72,19 @@ export function registerCommands(context: CommandContext) {
 		id: 'ui-tweaker:open-settings',
 		name: 'Open UI Tweaker',
 		callback: () => {
-			const app = (plugin as any).app;
-			app.setting.open();
-			// Open the plugin's settings tab
-			const pluginInstance = plugin as any;
-			if (pluginInstance.settingTab) {
-				app.setting.openTabById(pluginInstance.settingTab.id);
+			// Access app through plugin instance (Plugin class has app property)
+			const app = plugin.app;
+			// Use type assertion for setting API as it's not in the public type definitions
+			// but is available in the runtime API
+			const settingApi = (app as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
+			if (settingApi) {
+				settingApi.open?.();
+				// Open the plugin's settings tab
+				// Use type assertion for settingTab as it's a private property
+				const pluginInstance = plugin as { settingTab?: { id?: string } };
+				if (pluginInstance.settingTab?.id && settingApi.openTabById) {
+					settingApi.openTabById(pluginInstance.settingTab.id);
+				}
 			}
 		},
 	});

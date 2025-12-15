@@ -90,6 +90,8 @@ export class UIManager {
 		body.classList.add(`order-navbar-button-nth-child-6-${this.settings.ribbonMenuPosition}`);
 
 		// Vault switcher background transparency
+		// Note: CSS custom properties (variables) require direct style manipulation
+		// as they are dynamic values that cannot be set via CSS classes
 		body.style.setProperty('--auto-hide-vault-switcher-bg-transparency', String(this.settings.vaultSwitcherBackgroundTransparency));
 		
 		// Set mask based on transparency
