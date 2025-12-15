@@ -9,6 +9,30 @@ Applicability: Both
 
 One-page cheat sheet for common Obsidian plugin and theme development tasks.
 
+## Quick Commands
+
+**One-word or short commands that trigger automatic actions:**
+
+| Command | Action |
+|---------|--------|
+| `build` | Run `npm run build` to compile TypeScript |
+| `sync` or `quick sync` | Pull latest changes from all 6 core `.ref` repos |
+| `what's the latest` or `check updates` | Check what's new in reference repos (read-only, then ask to pull) |
+| `release ready?` or `is my plugin ready for release?` | Run comprehensive release readiness checklist |
+| `summarize` | Generate git commit message from all changed files |
+| `summarize for release` | Generate markdown release notes for GitHub |
+| `add ref [name]` | Add a reference project (external URL or local path) |
+| `check API [feature]` | Look up a feature in `.ref/obsidian-api/obsidian.d.ts` |
+
+**Usage examples:**
+- `build` → Runs build command automatically
+- `sync` → Pulls latest from all core repos automatically
+- `add ref my-plugin https://github.com/user/my-plugin.git` → Clones external repo
+- `add ref ../my-local-plugin` → Creates symlink to local project
+- `check API SettingGroup` → Searches obsidian.d.ts for SettingGroup
+
+**Note**: These commands are interpreted by AI agents and execute the corresponding workflows automatically. See detailed documentation in [AGENTS.md](../AGENTS.md) for full workflows.
+
 ## Build Commands
 
 **Plugins**:

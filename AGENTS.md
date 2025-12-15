@@ -11,6 +11,12 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 **All agent instructions are located in the [`.agents`](.agents/) directory.**
 
+**Quick Commands**: See [quick-reference.md](.agents/quick-reference.md#quick-commands) for one-word commands like `build`, `sync`, `release ready?`, `summarize`, etc. **AI Agents: Execute these commands automatically when users type them** (detailed execution instructions are in the Help sections below).
+
+**New to this project?** Start here:
+
+**All agent instructions are located in the [`.agents`](.agents/) directory.**
+
 **New to this project?** Start here:
 0. **Set up reference materials**: Check if `.ref` folder exists and has symlinks. If not, run the setup script:
    - **Windows**: `scripts\setup-ref-links.bat` or `.\scripts\setup-ref-links.ps1`
@@ -83,15 +89,16 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 ### Option 1: Sync Reference Documentation
 
-**Present this option when**: User wants to pull latest changes and update `.agents/` files from official Obsidian repositories.
+**Present this option when**: User says "sync" or "quick sync" - they want to pull latest changes from all 6 core `.ref` repos.
 
-**Instructions for AI agent**:
+**Instructions for AI agent** (execute automatically, don't just show commands):
 1. **Determine setup**: Check if `.ref` contains symlinks (see [sync-procedure.md](.agents/sync-procedure.md#step-1-determine-your-ref-setup)). This determines where to run git commands.
-2. **Pull latest changes**: Guide user through pulling all 6 core repos:
-   - See [quick-sync-guide.md](.agents/quick-sync-guide.md) for quick commands
-   - See [sync-procedure.md](.agents/sync-procedure.md) for detailed workflow
-3. **Review changes**: Check git logs to see what changed in each repo
-4. **Update `.agents/` files**: Compare changes and update relevant files
+2. **Execute git pull commands**: Actually run `git pull` for all 6 core repos:
+   - Navigate to the actual target location (usually `../.ref/obsidian-dev` if using symlinks)
+   - Run `git pull` in each of the 6 repos: obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme, eslint-plugin
+   - See [quick-sync-guide.md](.agents/quick-sync-guide.md) for exact commands
+3. **Review changes**: Check git logs to see what changed in each repo (optional, but helpful)
+4. **Update `.agents/` files**: If user wants, compare changes and update relevant files (optional)
 5. **Update sync status**: Update `.agents/sync-status.json` with current date
 
 **The 6 core Obsidian projects** (always relevant):
@@ -108,29 +115,33 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 ### Option 2: Add a Project to Your References
 
-**Present this option when**: User wants to reference another project (concurrent development or external reference).
+**Present this option when**: User says "add ref [name]" or "add ref [name] [URL/path]" - they want to reference another project.
 
-**Instructions for AI agent**:
-1. Ask: "Is this an external repository (GitHub, GitLab, etc.) or a local project you're actively developing?"
+**Instructions for AI agent** (execute automatically, don't just show commands):
+1. **Parse the command**: Extract the name and optional URL/path from user input
+   - If URL provided (starts with `http://`, `https://`, `git@`, etc.) → External repository
+   - If path provided (starts with `../`, `./`, `/`, `C:\`, etc.) → Local project
+   - If only name provided → Ask user: "Is this an external repository (GitHub, GitLab, etc.) or a local project path?"
    
-2. **If external repository**:
-   - **Determine type**: Is it a plugin, theme, or other project?
+2. **If external repository** (execute these steps):
+   - **Determine type**: Is it a plugin, theme, or other project? (infer from URL or ask)
    - **Check if already exists**: Check `../.ref/obsidian-dev/plugins/<name>/` (for plugins), `../.ref/obsidian-dev/themes/<name>/` (for themes), or `../.ref/obsidian-dev/<name>/` (for other projects)
-   - **Clone to global location** (NOT into a `.ref` subfolder!):
-     - For plugins: `cd ../.ref/obsidian-dev/plugins && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/plugins/<name>/` (the actual repo)
-     - For themes: `cd ../.ref/obsidian-dev/themes && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/themes/<name>/` (the actual repo)
-     - For other projects: `cd ../.ref/obsidian-dev && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/<name>/` (the actual repo)
-   - **Create symlink in project**: Create symlink at `.ref/plugins/<name>/` (or `.ref/themes/<name>/` or `.ref/<name>/`) pointing to the global location
+   - **Execute clone command** (NOT into a `.ref` subfolder!):
+     - For plugins: Run `cd ../.ref/obsidian-dev/plugins && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/plugins/<name>/` (the actual repo)
+     - For themes: Run `cd ../.ref/obsidian-dev/themes && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/themes/<name>/` (the actual repo)
+     - For other projects: Run `cd ../.ref/obsidian-dev && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/<name>/` (the actual repo)
+   - **Execute symlink creation**: Create symlink at `.ref/plugins/<name>/` (or `.ref/themes/<name>/` or `.ref/<name>/`) pointing to the global location
    - **Document if project-specific**: Document in `project-context.md` if it's project-specific
    
    **IMPORTANT**: Clone the repo directly into the target folder (e.g., `../.ref/obsidian-dev/plugins/plugin-name/`), NOT into a `.ref` subfolder. The repo folder name should match the project name.
    
-3. **If local project**:
-   - Create symlink directly in project's `.ref/` folder pointing to the local project (e.g., `../my-other-plugin`)
+3. **If local project** (execute these steps):
+   - **Verify path exists**: Check that the local path exists
+   - **Execute symlink creation**: Create symlink directly in project's `.ref/` folder pointing to the local project (e.g., `../my-other-plugin`)
    - **Do NOT** clone to global `.ref/obsidian-dev/` - this is project-specific
    - Document in `project-context.md` if relevant
 
-4. **Verify**: Check that the symlink was created and works
+4. **Verify**: Check that the symlink was created and works (test by listing directory or reading a file)
 
 **Key file**: [ref-instructions.md](.agents/ref-instructions.md) - See "Adding Additional References" section
 
