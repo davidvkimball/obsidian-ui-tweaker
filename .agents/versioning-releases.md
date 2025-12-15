@@ -7,6 +7,8 @@ Applicability: Both
 
 # Versioning & releases
 
+**Before releasing**: Use the comprehensive [release-readiness.md](release-readiness.md) checklist to verify your plugin is ready for release.
+
 ## Plugins
 
 - Bump `version` in `manifest.json` (SemVer) and update `versions.json` to map plugin version → minimum app version.

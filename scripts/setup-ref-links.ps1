@@ -10,12 +10,19 @@ Write-Host "Setting up symlinks to core Obsidian projects..." -ForegroundColor C
 
 # Central .ref location (one level up from project)
 $parentDir = Split-Path -Parent $projectRoot
-$centralRef = Join-Path $parentDir ".ref"
+$centralRefRoot = Join-Path $parentDir ".ref"
+$centralRef = Join-Path $centralRefRoot "obsidian-dev"
 
-# Create central .ref if it doesn't exist
+# Create central .ref root if it doesn't exist
+if (-not (Test-Path $centralRefRoot)) {
+    New-Item -ItemType Directory -Path $centralRefRoot | Out-Null
+    Write-Host "Created central .ref directory" -ForegroundColor Green
+}
+
+# Create obsidian-dev subfolder if it doesn't exist
 if (-not (Test-Path $centralRef)) {
     New-Item -ItemType Directory -Path $centralRef | Out-Null
-    Write-Host "Created central .ref directory" -ForegroundColor Green
+    Write-Host "Created obsidian-dev subfolder" -ForegroundColor Green
 }
 
 # Ensure plugins and themes folders exist
@@ -38,13 +45,19 @@ $coreProjects = @{
     "eslint-plugin" = "https://github.com/obsidianmd/eslint-plugin.git"
 }
 
-# Clone repos if they don't exist
+# Clone repos if they don't exist, or pull latest if they do
 foreach ($project in $coreProjects.Keys) {
     $projectPath = Join-Path $centralRef $project
     if (-not (Test-Path $projectPath)) {
         Write-Host "Cloning $project..." -ForegroundColor Yellow
         Push-Location $centralRef
         git clone $coreProjects[$project] $project
+        Pop-Location
+    } else {
+        # Repo exists, pull latest changes
+        Write-Host "Updating $project..." -ForegroundColor Yellow
+        Push-Location $projectPath
+        git pull
         Pop-Location
     }
 }

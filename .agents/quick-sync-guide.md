@@ -9,6 +9,28 @@ Applicability: Both
 
 This is a quick reference for pulling the latest changes from reference repositories. For detailed sync procedures, see [sync-procedure.md](sync-procedure.md).
 
+## Determine Your Setup First
+
+**IMPORTANT**: Before syncing, check if `.ref` contains symlinks or actual repos. Git operations must be performed on the **actual target location**, not on symlinks.
+
+**Windows (PowerShell)**:
+```powershell
+Get-Item .ref/obsidian-api | Select-Object LinkType, Target
+# If LinkType shows "Junction" or "SymbolicLink", you're using symlinks
+# The Target property shows where the symlink points (usually ..\.ref\obsidian-dev)
+```
+
+**macOS/Linux**:
+```bash
+ls -la .ref/obsidian-api
+# If it shows "->" with a path, it's a symlink
+# Use readlink to see the target: readlink -f .ref/obsidian-api
+```
+
+**If using symlinks**: Navigate to the central location (usually `..\.ref\obsidian-dev` or `~/Development/.ref/obsidian-dev`) before running git commands.
+
+**If using local clones**: Run commands from project root, navigating to each `.ref/` subdirectory.
+
 ## What Does `git pull` Do?
 
 When you run `git pull` in a reference repository:
@@ -24,7 +46,7 @@ When you run `git pull` in a reference repository:
 
 ```bash
 # Navigate to your central refs directory (adjust path as needed)
-cd ../.ref  # or cd ~/Development/.ref
+cd ../.ref/obsidian-dev  # or cd ~/Development/.ref/obsidian-dev
 
 # Pull all repos at once
 cd obsidian-api && git pull && cd ..
@@ -32,12 +54,13 @@ cd obsidian-sample-plugin && git pull && cd ..
 cd obsidian-developer-docs && git pull && cd ..
 cd obsidian-plugin-docs && git pull && cd ..
 cd obsidian-sample-theme && git pull && cd ..
+cd eslint-plugin && git pull && cd ..
 ```
 
 Or use a simple loop (bash/zsh):
 ```bash
-cd ../.ref  # or cd ~/Development/.ref
-for repo in obsidian-api obsidian-sample-plugin obsidian-developer-docs obsidian-plugin-docs obsidian-sample-theme; do
+cd ../.ref/obsidian-dev  # or cd ~/Development/.ref/obsidian-dev
+for repo in obsidian-api obsidian-sample-plugin obsidian-developer-docs obsidian-plugin-docs obsidian-sample-theme eslint-plugin; do
     echo "Pulling $repo..."
     cd "$repo" && git pull && cd ..
 done
@@ -45,8 +68,8 @@ done
 
 Or PowerShell (Windows):
 ```powershell
-cd ..\.ref  # Adjust path as needed
-foreach ($repo in @('obsidian-api', 'obsidian-sample-plugin', 'obsidian-developer-docs', 'obsidian-plugin-docs', 'obsidian-sample-theme')) {
+cd ..\.ref\obsidian-dev  # Adjust path as needed
+foreach ($repo in @('obsidian-api', 'obsidian-sample-plugin', 'obsidian-developer-docs', 'obsidian-plugin-docs', 'obsidian-sample-theme', 'eslint-plugin')) {
     Write-Host "Pulling $repo..."
     cd $repo
     git pull
@@ -60,12 +83,13 @@ foreach ($repo in @('obsidian-api', 'obsidian-sample-plugin', 'obsidian-develope
 # From your project root
 cd .ref
 
-# Pull each repo
-cd obsidian-api && git pull && cd ..
-cd obsidian-sample-plugin && git pull && cd ..
-cd obsidian-developer-docs && git pull && cd ..
-cd obsidian-plugin-docs && git pull && cd ..
-cd obsidian-sample-theme && git pull && cd ..
+# Pull each repo (always start from project root for each command)
+cd obsidian-api && git pull && cd ../..
+cd obsidian-sample-plugin && git pull && cd ../..
+cd obsidian-developer-docs && git pull && cd ../..
+cd obsidian-plugin-docs && git pull && cd ../..
+cd obsidian-sample-theme && git pull && cd ../..
+cd eslint-plugin && git pull && cd ../..
 ```
 
 ## Check What Changed
@@ -112,8 +136,8 @@ See [sync-procedure.md](sync-procedure.md) for the complete workflow.
 
 ```bash
 # 1. Pull all repos (using symlinks - adjust path as needed)
-cd ../.ref  # or cd ~/Development/.ref
-for repo in obsidian-api obsidian-sample-plugin obsidian-developer-docs obsidian-plugin-docs; do
+cd ../.ref/obsidian-dev  # or cd ~/Development/.ref/obsidian-dev
+for repo in obsidian-api obsidian-sample-plugin obsidian-developer-docs obsidian-plugin-docs obsidian-sample-theme eslint-plugin; do
     cd "$repo" && git pull && cd ..
 done
 
@@ -130,8 +154,8 @@ git diff HEAD~1 HEAD -- AGENTS.md
 **PowerShell version (Windows)**:
 ```powershell
 # 1. Pull all repos (using symlinks - adjust path as needed)
-cd ..\.ref
-foreach ($repo in @('obsidian-api', 'obsidian-sample-plugin', 'obsidian-developer-docs', 'obsidian-plugin-docs')) {
+cd ..\.ref\obsidian-dev
+foreach ($repo in @('obsidian-api', 'obsidian-sample-plugin', 'obsidian-developer-docs', 'obsidian-plugin-docs', 'obsidian-sample-theme', 'eslint-plugin')) {
     cd $repo
     git pull
     cd ..

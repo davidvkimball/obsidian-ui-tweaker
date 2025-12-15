@@ -642,6 +642,27 @@ body:not(.is-mobile).hide-tab-close-button-reveal .workspace-tab-header-inner-cl
 }
 
 /* ========================================
+   Hide Mobile Title
+   ======================================== */
+
+body.hide-mobile-title.is-phone .view-header-title-container,
+body.hide-mobile-title .minimal-tab-title-visible .view-header-title-container {
+	display: none;
+}
+
+/* ========================================
+   Hide Mobile Sync Icon
+   ======================================== */
+
+.hide-mobile-sync-icon.is-mobile .sync-status-indicator,
+.hide-mobile-sync-icon.is-mobile .mobile-navbar .sync-button,
+.hide-mobile-sync-icon.is-mobile .nav-buttons-container .sync-icon,
+.hide-mobile-sync-icon.is-mobile .status-bar-item.sync-status,
+.hide-mobile-sync-icon.is-mobile [data-tooltip="Sync status"] {
+	display: none !important;
+}
+
+/* ========================================
    Mobile Swap New Tab Icon
    ======================================== */
 
@@ -704,3 +725,138 @@ body:not(.is-mobile).hide-tab-close-button-reveal .workspace-tab-header-inner-cl
 .order-navbar-button-nth-child-6-4 .mobile-navbar-action-menu { order: 4; }
 .order-navbar-button-nth-child-6-5 .mobile-navbar-action-menu { order: 5; }
 .order-navbar-button-nth-child-6-6 .mobile-navbar-action-menu { order: 6; }
+
+/* ========================================
+   Window Dragging (Windows)
+   ======================================== */
+
+/* Only apply when tab bar is hidden and window dragging is enabled */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows {
+	--drag-bump: 12px;          /* Increased bump for notes and find/replace */
+	--controls-offset: 48px;    /* graph/canvas controls offset */
+	--toolbar-right-offset: 130px; /* padding for base controls */
+}
+
+/* Draggable strip (leave OS window buttons untouched) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows .titlebar {
+	display: block !important;
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100% !important;
+	z-index: 10 !important;
+	background: transparent !important;
+	-webkit-app-region: drag !important;
+}
+
+/* Inline title editable */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows .inline-title {
+	-webkit-app-region: no-drag !important;
+	z-index: 11 !important;
+	position: relative !important;
+	margin-top: 0 !important; /* reset by default */
+}
+
+/* Only apply bump when tab bar is hidden (body.hider-tabs present) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows .workspace-leaf-content[data-type="markdown"] .inline-title {
+	margin-top: var(--drag-bump) !important;
+}
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows .workspace-leaf-content[data-type="markdown"] .document-search-container {
+	margin-top: var(--drag-bump) !important; /* Match note content offset */
+	z-index: 12 !important; /* Above titlebar and inline-title */
+}
+
+/* Graph & Canvas controls stay clear of window buttons (only when right sidebar is closed) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows .workspace:not(.is-right-sidedock-open) .graph-controls { 
+	top: var(--controls-offset) !important; 
+}
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows .workspace:not(.is-right-sidedock-open) .canvas-controls { 
+	top: var(--controls-offset) !important; 
+}
+
+/* Push entire toolbar to the right of minimize/maximize/close (only when right sidebar is closed) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-windows .workspace:not(.is-right-sidedock-open) .bases-toolbar {
+	padding-right: var(--toolbar-right-offset) !important;
+}
+
+/* ========================================
+   Window Dragging (macOS)
+   ======================================== */
+
+/* Only apply when tab bar is hidden and window dragging is enabled */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-macos {
+	--drag-bump: 8px;           /* bump for notes */
+	--toolbar-left-offset: 100px; /* padding for base controls on left */
+}
+
+/* Draggable strip (leave OS window buttons untouched) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-macos .titlebar {
+	display: block !important;
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100% !important;
+	z-index: 10 !important;
+	background: transparent !important;
+	-webkit-app-region: drag !important;
+}
+
+/* Inline title editable */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-macos .inline-title {
+	-webkit-app-region: no-drag !important;
+	z-index: 11 !important;
+	position: relative !important;
+	margin-top: 0 !important; /* reset by default */
+}
+
+/* Only apply bump when tab bar is hidden (body.hider-tabs present) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-macos .workspace-leaf-content[data-type="markdown"] .inline-title {
+	margin-top: var(--drag-bump) !important;
+}
+body:not(.is-mobile).hider-tabs.enable-window-dragging-macos .workspace-leaf-content[data-type="markdown"] .document-search-container {
+	margin-top: var(--drag-bump) !important; /* Match note content offset */
+	z-index: 12 !important; /* Above titlebar and inline-title */
+}
+
+/* Push entire toolbar to the right of Mac window buttons (only when left sidebar is closed) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-macos .workspace:not(.is-left-sidedock-open) .bases-toolbar {
+	padding-left: var(--toolbar-left-offset) !important;
+}
+
+/* ========================================
+   Window Dragging (Neutral/Linux)
+   ======================================== */
+
+/* Only apply when tab bar is hidden and window dragging is enabled */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-neutral {
+	--drag-bump: 8px; /* bump for notes */
+}
+
+/* Draggable strip (leave OS window buttons untouched) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-neutral .titlebar {
+	display: block !important;
+	position: fixed !important;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100% !important;
+	z-index: 10 !important;
+	background: transparent !important;
+	-webkit-app-region: drag !important;
+}
+
+/* Inline title editable */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-neutral .inline-title {
+	-webkit-app-region: no-drag !important;
+	z-index: 11 !important;
+	position: relative !important;
+	margin-top: 0 !important; /* reset by default */
+}
+
+/* Only apply bump when tab bar is hidden (body.hider-tabs present) */
+body:not(.is-mobile).hider-tabs.enable-window-dragging-neutral .workspace-leaf-content[data-type="markdown"] .inline-title {
+	margin-top: var(--drag-bump) !important;
+}
+body:not(.is-mobile).hider-tabs.enable-window-dragging-neutral .workspace-leaf-content[data-type="markdown"] .document-search-container {
+	margin-top: var(--drag-bump) !important; /* Match note content offset */
+	z-index: 12 !important; /* Above titlebar and inline-title */
+}

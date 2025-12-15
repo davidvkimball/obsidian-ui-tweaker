@@ -9,21 +9,25 @@ Applicability: Both
 
 **Sync Tracking**: All sync dates are tracked centrally in [sync-status.json](sync-status.json). Always update this file with the actual current date when syncing (use `Get-Date -Format "yyyy-MM-dd"` to get the date - never use placeholder dates).
 
-This document outlines the standard procedure for keeping the `.agents` directory content synchronized with the latest updates from:
-- [Obsidian Sample Plugin](https://github.com/obsidianmd/obsidian-sample-plugin) - Template plugin with best practices
+This document outlines the standard procedure for keeping the `.agents` directory content synchronized with the latest updates from the 6 core Obsidian repositories:
 - [Obsidian API](https://github.com/obsidianmd/obsidian-api) - Official API documentation and type definitions
+- [Obsidian Sample Plugin](https://github.com/obsidianmd/obsidian-sample-plugin) - Template plugin with best practices
 - [Obsidian Developer Docs](https://github.com/obsidianmd/obsidian-developer-docs) - Source vault for docs.obsidian.md
 - [Obsidian Plugin Docs](https://github.com/obsidianmd/obsidian-plugin-docs) - Plugin-specific documentation
 - [Obsidian Sample Theme](https://github.com/obsidianmd/obsidian-sample-theme) - Theme template (for reference patterns)
+- [ESLint Plugin](https://github.com/obsidianmd/eslint-plugin) - ESLint rules for Obsidian plugins
 
 ## Prerequisites
 
 1. **Set up reference repositories** (see [ref-instructions.md](ref-instructions.md)):
-   - Clone `obsidian-api` to `.ref/obsidian-api` (or use symlink to central location)
-   - Clone `obsidian-sample-plugin` to `.ref/obsidian-sample-plugin` (or use symlink)
-   - Clone `obsidian-developer-docs` to `.ref/obsidian-developer-docs` (or use symlink)
-   - Clone `obsidian-plugin-docs` to `.ref/obsidian-plugin-docs` (or use symlink)
-   - Optionally clone `obsidian-sample-theme` to `.ref/obsidian-sample-theme` (for theme patterns reference)
+   - The 6 core Obsidian projects should be available in `.ref/` (either as symlinks to a central location or as local clones):
+     - `obsidian-api/` - API documentation
+     - `obsidian-sample-plugin/` - Sample plugin template
+     - `obsidian-developer-docs/` - Developer documentation
+     - `obsidian-plugin-docs/` - Plugin-specific docs
+     - `obsidian-sample-theme/` - Theme template
+     - `eslint-plugin/` - ESLint rules
+   - **Important**: If using symlinks (recommended), they typically point to a central location like `..\.ref\obsidian-dev` (one level up from project root) or `~/Development/.ref/obsidian-dev`
 
 ## Sync Workflow
 
@@ -33,68 +37,169 @@ $syncDate = Get-Date -Format "yyyy-MM-dd"
 Write-Host "Sync date: $syncDate"
 ```
 
-### Step 1: Update Reference Repositories
+### Step 1: Determine Your .ref Setup
 
-Update the reference repos to get the latest content:
+**CRITICAL**: Before updating repos, you need to determine whether `.ref` contains symlinks or actual repos. Git operations must be performed on the **actual target location**, not on symlinks.
 
-```bash
-# If using symlinks to a central location (adjust path as needed):
-cd ../.ref/obsidian-api  # or cd ~/Development/.ref/obsidian-api
-git pull
+#### Check if .ref Contains Symlinks
 
-cd ../obsidian-sample-plugin
-git pull
-
-cd ../obsidian-developer-docs
-git pull
-
-cd ../obsidian-plugin-docs
-git pull
-
-# Optionally update sample theme
-cd ../obsidian-sample-theme
-git pull
-
-# OR if using local clones in each project:
-cd .ref/obsidian-api
-git pull
-
-cd ../obsidian-sample-plugin
-git pull
-
-cd ../obsidian-developer-docs
-git pull
-
-cd ../obsidian-plugin-docs
-git pull
+**Windows (PowerShell)**:
+```powershell
+# Check if a specific repo is a symlink
+$item = Get-Item .ref/obsidian-api
+if ($item.LinkType -eq "Junction" -or $item.LinkType -eq "SymbolicLink") {
+    Write-Host "Symlink detected - target: $($item.Target)"
+    # Navigate to the actual target location
+    cd $item.Target
+} else {
+    Write-Host "Regular directory - can use .ref/obsidian-api directly"
+    cd .ref/obsidian-api
+}
 ```
 
-### Step 2: Review Changes
+**macOS/Linux**:
+```bash
+# Check if a specific repo is a symlink
+if [ -L .ref/obsidian-api ]; then
+    echo "Symlink detected - target: $(readlink .ref/obsidian-api)"
+    # Navigate to the actual target location
+    cd "$(readlink -f .ref/obsidian-api)"
+else
+    echo "Regular directory - can use .ref/obsidian-api directly"
+    cd .ref/obsidian-api
+fi
+```
 
-Check what's changed in the reference repos:
+**Quick Check**: If `.ref` contains symlinks, they typically point to `..\.ref\obsidian-dev` (one level up from project root) or a central location like `~/Development/.ref/obsidian-dev` or `C:\Users\YourName\Development\.ref\obsidian-dev`.
 
+### Step 2: Update Reference Repositories
+
+Once you know your setup, update the repos:
+
+#### Option A: If Using Symlinks to Central Location
+
+**Windows (PowerShell)**:
 ```powershell
+# First, check where symlinks point (usually ..\.ref\obsidian-dev)
+$target = (Get-Item .ref/obsidian-api).Target
+Write-Host "Symlinks point to: $target"
+
+# Navigate to central location and update all repos
+cd ..\.ref\obsidian-dev  # Adjust path if your central .ref is elsewhere
+cd obsidian-api; git pull; cd ..
+cd obsidian-sample-plugin; git pull; cd ..
+cd obsidian-developer-docs; git pull; cd ..
+cd obsidian-plugin-docs; git pull; cd ..
+cd obsidian-sample-theme; git pull; cd ..
+cd eslint-plugin; git pull; cd ..
+```
+
+**macOS/Linux**:
+```bash
+# First, check where symlinks point (usually ../.ref/obsidian-dev)
+TARGET=$(readlink -f .ref/obsidian-api | sed 's|/obsidian-api$||')
+echo "Symlinks point to: $TARGET"
+
+# Navigate to central location and update all repos
+cd "$TARGET"  # or cd ../.ref/obsidian-dev if that's your central location
+cd obsidian-api && git pull && cd ..
+cd obsidian-sample-plugin && git pull && cd ..
+cd obsidian-developer-docs && git pull && cd ..
+cd obsidian-plugin-docs && git pull && cd ..
+cd obsidian-sample-theme && git pull && cd ..
+cd eslint-plugin && git pull && cd ..
+```
+
+#### Option B: If Using Local Clones (No Symlinks)
+
+If `.ref` contains actual repos (not symlinks), update from project root:
+
+**Windows (PowerShell)**:
+```powershell
+# Always start from project root for each command
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref/obsidian-api; git pull
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref/obsidian-sample-plugin; git pull
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref/obsidian-developer-docs; git pull
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref/obsidian-plugin-docs; git pull
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref/obsidian-sample-theme; git pull
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref/eslint-plugin; git pull
+```
+
+**macOS/Linux**:
+```bash
+# Always start from project root for each command
+cd .ref/obsidian-api && git pull && cd ../..
+cd .ref/obsidian-sample-plugin && git pull && cd ../..
+cd .ref/obsidian-developer-docs && git pull && cd ../..
+cd .ref/obsidian-plugin-docs && git pull && cd ../..
+cd .ref/obsidian-sample-theme && git pull && cd ../..
+cd .ref/eslint-plugin && git pull && cd ../..
+```
+
+**Important**: When using local clones, always navigate back to project root between commands to avoid path accumulation errors.
+
+### Step 3: Review Changes
+
+Check what's changed in the reference repos. **Remember**: If using symlinks, navigate to the actual target location (usually `..\.ref\obsidian-dev`), not the symlink.
+
+**Windows (PowerShell)** - If using symlinks:
+```powershell
+# Navigate to central location first
+cd ..\.ref\obsidian-dev  # Adjust if your central .ref is elsewhere
+
 # Check recent commits in obsidian-api
-cd .ref\obsidian-api
+cd obsidian-api
 git log --oneline -10
+cd ..
 
 # Check recent commits in obsidian-sample-plugin
-cd ..\obsidian-sample-plugin
+cd obsidian-sample-plugin
 git log --oneline -10
-
-# Check if AGENTS.md changed in sample plugin
-git diff HEAD~1 HEAD -- AGENTS.md
+git diff HEAD~1 HEAD -- AGENTS.md  # Check if AGENTS.md changed
+cd ..
 
 # Check developer docs changes
-cd ..\obsidian-developer-docs
+cd obsidian-developer-docs
 git log --oneline -10
+cd ..
 
 # Check plugin docs changes
-cd ..\obsidian-plugin-docs
+cd obsidian-plugin-docs
 git log --oneline -10
+cd ..
 ```
 
-### Step 3: Identify Files to Update
+**Windows (PowerShell)** - If using local clones:
+```powershell
+# Always start from project root for each command
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref\obsidian-api
+git log --oneline -10
+cd C:\Users\david\Development\obsidian-sample-plugin
+cd .ref\obsidian-sample-plugin
+git log --oneline -10
+git diff HEAD~1 HEAD -- AGENTS.md
+```
+
+**macOS/Linux** - If using symlinks:
+```bash
+# Navigate to central location first
+cd ../.ref/obsidian-dev  # or cd ~/Development/.ref/obsidian-dev
+
+# Check recent commits
+cd obsidian-api && git log --oneline -10 && cd ..
+cd obsidian-sample-plugin && git log --oneline -10 && git diff HEAD~1 HEAD -- AGENTS.md && cd ..
+cd obsidian-developer-docs && git log --oneline -10 && cd ..
+cd obsidian-plugin-docs && git log --oneline -10 && cd ..
+```
+
+### Step 4: Identify Files to Update
 
 Based on the changes, identify which `.agents` files need updates:
 
@@ -131,7 +236,7 @@ Based on the changes, identify which `.agents` files need updates:
   - `file-conventions.md` - File organization patterns
   - `versioning-releases.md` - Release workflow similarities
 
-### Step 4: Update .agents Files
+### Step 5: Update .agents Files
 
 For each file that needs updating:
 
@@ -163,7 +268,7 @@ For each file that needs updating:
 
 4. **Note**: Individual file headers still have "Last synced" dates, but the authoritative source is `.agents/sync-status.json`. When syncing, update the central file rather than individual file headers.
 
-### Step 5: Verify and Test
+### Step 6: Verify and Test
 
 - Review updated files for accuracy
 - Ensure links still work
@@ -172,10 +277,15 @@ For each file that needs updating:
 
 ## Quick Sync Checklist
 
-- [ ] Pull latest from `obsidian-api` repo
+- [ ] **Determine setup**: Check if `.ref` contains symlinks or actual repos
+- [ ] **If symlinks**: Identify central location (usually `..\.ref\obsidian-dev` or `~/Development/.ref/obsidian-dev`)
+- [ ] **If local clones**: Note that you must navigate from project root for each command
+- [ ] Pull latest from `obsidian-api` repo (from actual target location, not symlink)
 - [ ] Pull latest from `obsidian-sample-plugin` repo
 - [ ] Pull latest from `obsidian-developer-docs` repo
 - [ ] Pull latest from `obsidian-plugin-docs` repo
+- [ ] Pull latest from `obsidian-sample-theme` repo
+- [ ] Pull latest from `eslint-plugin` repo
 - [ ] Review `AGENTS.md` in sample plugin for changes
 - [ ] Review API documentation for breaking changes
 - [ ] Review developer docs for policy/guideline updates
@@ -183,6 +293,41 @@ For each file that needs updating:
 - [ ] Update relevant `.agents/*.md` files
 - [ ] **Update `.agents/sync-status.json` with actual current date** (use `Get-Date -Format "yyyy-MM-dd"` - never use placeholder dates)
 - [ ] Review and commit changes
+
+## Troubleshooting
+
+### "Cannot find path" errors when running git commands
+
+**Problem**: You're trying to run git commands on a symlink, or paths are accumulating incorrectly.
+
+**Solution**:
+1. Check if `.ref` contains symlinks: `Get-Item .ref/obsidian-api | Select-Object LinkType, Target` (Windows) or `ls -la .ref/obsidian-api` (Unix)
+2. If symlinks, navigate to the **actual target location** (usually `..\.ref\obsidian-dev`) before running git commands
+3. If local clones, always start from project root for each command
+
+### "Already up to date" but you want to verify
+
+**Solution**: Use `git fetch` first to check for updates without merging:
+```bash
+git fetch
+git log HEAD..origin/main --oneline  # Shows what's new
+```
+
+### Not sure if you're using symlinks or local clones
+
+**Windows**:
+```powershell
+Get-Item .ref/obsidian-api | Select-Object LinkType, Target
+# If LinkType shows "Junction" or "SymbolicLink", you're using symlinks
+# If LinkType is empty/null, it's a regular directory
+```
+
+**macOS/Linux**:
+```bash
+ls -la .ref/obsidian-api
+# If it shows "->" with a path, it's a symlink
+# If it shows "d" (directory) without "->", it's a regular directory
+```
 
 ## Frequency Recommendations
 

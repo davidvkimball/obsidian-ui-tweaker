@@ -18,6 +18,32 @@ export class UIManager {
 		this.applyStyles();
 	}
 
+	private detectOS(): 'windows' | 'macos' | 'neutral' {
+		const body = document.body;
+		
+		// Check for Obsidian body classes first
+		if (body.classList.contains('mod-macos')) {
+			return 'macos';
+		}
+		if (body.classList.contains('mod-windows')) {
+			return 'windows';
+		}
+		
+		// Fallback to navigator
+		if (typeof navigator !== 'undefined') {
+			const platform = navigator.platform.toLowerCase();
+			if (platform.includes('mac') || platform.includes('darwin')) {
+				return 'macos';
+			}
+			if (platform.includes('win')) {
+				return 'windows';
+			}
+		}
+		
+		// Default to neutral/Linux
+		return 'neutral';
+	}
+
 	applyStyles() {
 		const body = document.body;
 
@@ -36,6 +62,18 @@ export class UIManager {
 
 		// Simple toggles
 		body.classList.toggle('hider-tabs', this.settings.tabBar);
+		
+		// Window dragging - only apply when tab bar is hidden
+		if (this.settings.tabBar && this.settings.enableWindowDragging) {
+			const os = this.detectOS();
+			// Remove all window dragging classes first
+			body.classList.remove('enable-window-dragging-windows', 'enable-window-dragging-macos', 'enable-window-dragging-neutral');
+			// Apply OS-specific class
+			body.classList.add(`enable-window-dragging-${os}`);
+		} else {
+			// Remove all window dragging classes if not enabled
+			body.classList.remove('enable-window-dragging-windows', 'enable-window-dragging-macos', 'enable-window-dragging-neutral');
+		}
 		body.classList.toggle('hide-button-new-note', this.settings.newNoteButton);
 		body.classList.toggle('hide-button-new-folder', this.settings.newFolderButton);
 		body.classList.toggle('hide-button-sort-order', this.settings.sortOrderButton);
@@ -73,6 +111,8 @@ export class UIManager {
 		body.classList.toggle('hide-button-mobile-navbar-action-tabs', this.settings.openTabButton);
 		body.classList.toggle('hide-button-mobile-navbar-action-menu', this.settings.ribbonMenuButton);
 		body.classList.toggle('swap-mobile-new-tab-icon', this.settings.swapMobileNewTabIcon);
+		body.classList.toggle('hide-mobile-title', this.settings.hideMobileTitle);
+		body.classList.toggle('hide-mobile-sync-icon', this.settings.hideMobileSyncIcon);
 
 		// Mobile navigation menu positions
 		// Remove all existing order classes first
@@ -139,6 +179,7 @@ export class UIManager {
 			    className.startsWith('hide-') ||
 			    className.startsWith('metadata-') ||
 			    className.startsWith('order-navbar-button-') ||
+			    className.startsWith('enable-window-dragging-') ||
 			    className === 'auto-collapse-ribbon' ||
 			    className === 'swap-mobile-new-tab-icon' ||
 			    className === 'always-show-title-bar') {

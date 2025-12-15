@@ -8,20 +8,29 @@ cd /d "%~dp0\.."
 echo Setting up symlinks to core Obsidian projects...
 
 REM Central .ref location (one level up from project)
-set "CENTRAL_REF=..\.ref"
+set "CENTRAL_REF_ROOT=..\.ref"
+set "CENTRAL_REF=..\.ref\obsidian-dev"
 
-REM Create central .ref if it doesn't exist
+REM Create central .ref root if it doesn't exist
+if not exist "%CENTRAL_REF_ROOT%" mkdir "%CENTRAL_REF_ROOT%"
+
+REM Create obsidian-dev subfolder if it doesn't exist
 if not exist "%CENTRAL_REF%" mkdir "%CENTRAL_REF%"
 
 REM Ensure plugins and themes folders exist
 if not exist "%CENTRAL_REF%\plugins" mkdir "%CENTRAL_REF%\plugins"
 if not exist "%CENTRAL_REF%\themes" mkdir "%CENTRAL_REF%\themes"
 
-REM Clone the 6 core repos if they don't exist
+REM Clone the 6 core repos if they don't exist, or pull latest if they do
 if not exist "%CENTRAL_REF%\obsidian-api" (
     echo Cloning obsidian-api...
     cd "%CENTRAL_REF%"
     git clone https://github.com/obsidianmd/obsidian-api.git obsidian-api
+    cd "%~dp0\.."
+) else (
+    echo Updating obsidian-api...
+    cd "%CENTRAL_REF%\obsidian-api"
+    git pull
     cd "%~dp0\.."
 )
 
@@ -30,12 +39,22 @@ if not exist "%CENTRAL_REF%\obsidian-sample-plugin" (
     cd "%CENTRAL_REF%"
     git clone https://github.com/obsidianmd/obsidian-sample-plugin.git obsidian-sample-plugin
     cd "%~dp0\.."
+) else (
+    echo Updating obsidian-sample-plugin...
+    cd "%CENTRAL_REF%\obsidian-sample-plugin"
+    git pull
+    cd "%~dp0\.."
 )
 
 if not exist "%CENTRAL_REF%\obsidian-developer-docs" (
     echo Cloning obsidian-developer-docs...
     cd "%CENTRAL_REF%"
     git clone https://github.com/obsidianmd/obsidian-developer-docs.git obsidian-developer-docs
+    cd "%~dp0\.."
+) else (
+    echo Updating obsidian-developer-docs...
+    cd "%CENTRAL_REF%\obsidian-developer-docs"
+    git pull
     cd "%~dp0\.."
 )
 
@@ -44,6 +63,11 @@ if not exist "%CENTRAL_REF%\obsidian-plugin-docs" (
     cd "%CENTRAL_REF%"
     git clone https://github.com/obsidianmd/obsidian-plugin-docs.git obsidian-plugin-docs
     cd "%~dp0\.."
+) else (
+    echo Updating obsidian-plugin-docs...
+    cd "%CENTRAL_REF%\obsidian-plugin-docs"
+    git pull
+    cd "%~dp0\.."
 )
 
 if not exist "%CENTRAL_REF%\obsidian-sample-theme" (
@@ -51,12 +75,22 @@ if not exist "%CENTRAL_REF%\obsidian-sample-theme" (
     cd "%CENTRAL_REF%"
     git clone https://github.com/obsidianmd/obsidian-sample-theme.git obsidian-sample-theme
     cd "%~dp0\.."
+) else (
+    echo Updating obsidian-sample-theme...
+    cd "%CENTRAL_REF%\obsidian-sample-theme"
+    git pull
+    cd "%~dp0\.."
 )
 
 if not exist "%CENTRAL_REF%\eslint-plugin" (
     echo Cloning eslint-plugin...
     cd "%CENTRAL_REF%"
     git clone https://github.com/obsidianmd/eslint-plugin.git eslint-plugin
+    cd "%~dp0\.."
+) else (
+    echo Updating eslint-plugin...
+    cd "%CENTRAL_REF%\eslint-plugin"
+    git pull
     cd "%~dp0\.."
 )
 

@@ -10,47 +10,72 @@ cd "$PROJECT_ROOT"
 echo "Setting up symlinks to core Obsidian projects..."
 
 # Central .ref location (one level up from project)
-CENTRAL_REF="../.ref"
+CENTRAL_REF_ROOT="../.ref"
+CENTRAL_REF="../.ref/obsidian-dev"
 
-# Create central .ref if it doesn't exist
+# Create central .ref root if it doesn't exist
+if [ ! -d "$CENTRAL_REF_ROOT" ]; then
+    mkdir -p "$CENTRAL_REF_ROOT"
+    echo "Created central .ref directory"
+fi
+
+# Create obsidian-dev subfolder if it doesn't exist
 if [ ! -d "$CENTRAL_REF" ]; then
     mkdir -p "$CENTRAL_REF"
-    echo "Created central .ref directory"
+    echo "Created obsidian-dev subfolder"
 fi
 
 # Ensure plugins and themes folders exist
 mkdir -p "$CENTRAL_REF/plugins"
 mkdir -p "$CENTRAL_REF/themes"
 
-# Clone the 6 core repos if they don't exist
+# Clone the 6 core repos if they don't exist, or pull latest if they do
 if [ ! -d "$CENTRAL_REF/obsidian-api" ]; then
     echo "Cloning obsidian-api..."
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/obsidian-api.git obsidian-api)
+else
+    echo "Updating obsidian-api..."
+    (cd "$CENTRAL_REF/obsidian-api" && git pull)
 fi
 
 if [ ! -d "$CENTRAL_REF/obsidian-sample-plugin" ]; then
     echo "Cloning obsidian-sample-plugin..."
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/obsidian-sample-plugin.git obsidian-sample-plugin)
+else
+    echo "Updating obsidian-sample-plugin..."
+    (cd "$CENTRAL_REF/obsidian-sample-plugin" && git pull)
 fi
 
 if [ ! -d "$CENTRAL_REF/obsidian-developer-docs" ]; then
     echo "Cloning obsidian-developer-docs..."
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/obsidian-developer-docs.git obsidian-developer-docs)
+else
+    echo "Updating obsidian-developer-docs..."
+    (cd "$CENTRAL_REF/obsidian-developer-docs" && git pull)
 fi
 
 if [ ! -d "$CENTRAL_REF/obsidian-plugin-docs" ]; then
     echo "Cloning obsidian-plugin-docs..."
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/obsidian-plugin-docs.git obsidian-plugin-docs)
+else
+    echo "Updating obsidian-plugin-docs..."
+    (cd "$CENTRAL_REF/obsidian-plugin-docs" && git pull)
 fi
 
 if [ ! -d "$CENTRAL_REF/obsidian-sample-theme" ]; then
     echo "Cloning obsidian-sample-theme..."
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/obsidian-sample-theme.git obsidian-sample-theme)
+else
+    echo "Updating obsidian-sample-theme..."
+    (cd "$CENTRAL_REF/obsidian-sample-theme" && git pull)
 fi
 
 if [ ! -d "$CENTRAL_REF/eslint-plugin" ]; then
     echo "Cloning eslint-plugin..."
     (cd "$CENTRAL_REF" && git clone https://github.com/obsidianmd/eslint-plugin.git eslint-plugin)
+else
+    echo "Updating eslint-plugin..."
+    (cd "$CENTRAL_REF/eslint-plugin" && git pull)
 fi
 
 # Ensure project .ref directory exists

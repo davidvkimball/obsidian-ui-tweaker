@@ -22,10 +22,10 @@ After making any changes to plugin code:
    ```powershell
    npm --version
    ```
-   - If npm is not found, inform the user that Node.js/npm needs to be installed
+   - If npm is not found, inform the user that Node.js (which includes npm) needs to be installed
    - Do not automatically install npm - let the user handle installation
 
-3. **Check for errors** and fix any build issues before proceeding.
+3. **Check for errors** and fix any build issues before proceeding. See [troubleshooting.md](troubleshooting.md) and [common-pitfalls.md](common-pitfalls.md) for common build issues.
 
 ## For Themes
 
@@ -40,10 +40,10 @@ After making any changes to theme code:
    ```powershell
    npm --version
    ```
-   - If npm is not found, inform the user that Node.js/npm needs to be installed
+   - If npm is not found, inform the user that Node.js (which includes npm) needs to be installed
    - Do not automatically install npm - let the user handle installation
 
-3. **Check for errors** and fix any build issues before proceeding.
+3. **Check for errors** and fix any build issues before proceeding. See [troubleshooting.md](troubleshooting.md) and [common-pitfalls.md](common-pitfalls.md) for common build issues.
 
 ## Why This Matters
 

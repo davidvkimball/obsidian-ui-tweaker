@@ -123,12 +123,21 @@ this.addRibbonIcon("icon-name", "Tooltip", () => { /* ... */ });
 - Improvement description
 ```
 
+## Release Preparation
+
+**Before releasing** (plugins only):
+- Run release readiness check: See [release-readiness.md](release-readiness.md)
+- Verify all checklist items (platform testing, files, policies, etc.)
+- Ensure LICENSE file exists and third-party code is properly attributed
+
+See [versioning-releases.md](versioning-releases.md) for release process.
+
 ## Sync Reference Repos
 
-**Quick pull all repos** (from [quick-sync-guide.md](quick-sync-guide.md)):
+**Quick pull all 6 core repos** (from [quick-sync-guide.md](quick-sync-guide.md)):
 ```bash
 # Navigate to central .ref location (adjust path as needed)
-cd ../.ref  # or cd ~/Development/.ref
+cd ../.ref/obsidian-dev  # or cd ~/Development/.ref/obsidian-dev
 
 # Pull all repos
 cd obsidian-api && git pull && cd ..
@@ -136,7 +145,10 @@ cd obsidian-sample-plugin && git pull && cd ..
 cd obsidian-developer-docs && git pull && cd ..
 cd obsidian-plugin-docs && git pull && cd ..
 cd obsidian-sample-theme && git pull && cd ..
+cd eslint-plugin && git pull && cd ..
 ```
+
+**Note**: If using symlinks, navigate to the actual target location (usually `..\.ref\obsidian-dev`) before running git commands. See [quick-sync-guide.md](quick-sync-guide.md) for setup detection.
 
 ## API Authority
 

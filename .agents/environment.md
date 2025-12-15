@@ -34,7 +34,7 @@ npm run dev
 npm run build
 ```
 
-**Important for AI Agents**: Always run `npm run build` after making changes to plugins to catch build errors early. If npm is not installed, install it first with `npm install` (or install Node.js if npm is not available).
+**Important for AI Agents**: Always run `npm run build` after making changes to plugins to catch build errors early. If npm is not installed, install Node.js (which includes npm). Do not run `npm install` to install npm itself - that command installs project dependencies.
 
 ### Linting
 
@@ -74,7 +74,7 @@ For themes using Grunt (like Obsidian Sample Theme):
 npx grunt build
 ```
 
-**Important for AI Agents**: Always run `npx grunt build` after making changes to themes to catch build errors early. If npm is not installed, install it first with `npm install` (or install Node.js if npm is not available).
+**Important for AI Agents**: Always run `npx grunt build` after making changes to themes to catch build errors early. If npm is not installed, install Node.js (which includes npm). Do not run `npm install` to install npm itself - that command installs project dependencies.
 
 ### Linting (Optional)
 

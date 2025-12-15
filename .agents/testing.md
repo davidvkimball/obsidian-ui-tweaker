@@ -15,6 +15,8 @@ Applicability: Plugin / Theme
   ```
 - Reload Obsidian and enable the plugin in **Settings → Community plugins**.
 
+**Platform testing**: Before release, test on all applicable platforms (Windows, macOS, Linux, Android, iOS). See [release-readiness.md](release-readiness.md) for the complete testing checklist.
+
 ## Themes
 
 - Manual install for testing: copy `manifest.json` and `theme.css` to:
@@ -22,5 +24,7 @@ Applicability: Plugin / Theme
   <Vault>/.obsidian/themes/<theme-name>/
   ```
 - Reload Obsidian and select the theme in **Settings → Appearance → Themes**.
+
+**Platform testing**: Before release, test on all applicable platforms (Windows, macOS, Linux, Android, iOS). See [release-readiness.md](release-readiness.md) for the complete testing checklist.
 
 

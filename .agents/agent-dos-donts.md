@@ -8,7 +8,12 @@ Applicability: Both
 # Agent do/don't
 
 **Do**
-- **.ref folder setup**: When user asks to add a reference, check if it already exists first. For external repos, clone to `../.ref/` (global) then symlink in project's `.ref/`. For local projects, symlink directly in project's `.ref/` (don't clone to global). See [ref-instructions.md](ref-instructions.md) for details.
+- **.ref folder setup**: When user asks to add a reference, check if it already exists first. For external repos:
+  - **Clone directly** into the target folder: `../.ref/obsidian-dev/plugins/<name>/` (for plugins), `../.ref/obsidian-dev/themes/<name>/` (for themes), or `../.ref/obsidian-dev/<name>/` (for other projects)
+  - **DO NOT** create a `.ref` subfolder inside the plugins/themes folder - clone the repo directly there
+  - Then create symlink in project's `.ref/` folder pointing to the global location
+  - For local projects, symlink directly in project's `.ref/` (don't clone to global)
+  - See [ref-instructions.md](ref-instructions.md) for details.
 - **Plugins**: Add commands with stable IDs (don't rename once released).
 - **Plugins**: Provide defaults and validation in settings.
 - **Plugins**: Write idempotent code paths so reload/unload doesn't leak listeners or intervals.
@@ -18,6 +23,7 @@ Applicability: Both
 - **Themes**: Test themes in both light and dark modes.
 - **Themes**: **Always run `npx grunt build` after making changes** to catch build errors early. Only check for npm installation if the build fails. See [build-workflow.md](build-workflow.md) for details.
 - **Summarize commands**: When user requests "Summarize" or "Summarize for release", follow the workflow in [summarize-commands.md](summarize-commands.md). Always read actual file changes, not just chat history.
+- **Release preparation**: When user asks "is my plugin ready for release?" or similar, use [release-readiness.md](release-readiness.md) checklist. Run automated checks where possible, ask user interactively for items requiring their input (like platform testing).
 
 **Don't**
 - Introduce network calls without an obvious user-facing reason and documentation.

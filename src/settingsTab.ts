@@ -83,6 +83,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 
 		this.addToggleSetting(navigationGroup, 'Hide tab bar', 'Hides the tab container at the top of the window.', 'tabBar');
 
+		this.addToggleSetting(navigationGroup, 'Make top of window draggable without tab bar', 'Enables window dragging from the top of the window when the tab bar is hidden. Only works when "Hide tab bar" is enabled.', 'enableWindowDragging');
+
 		this.addToggleSetting(navigationGroup, 'Hide "New note" button', 'Hide "New note" button in navigation headers.', 'newNoteButton');
 
 		this.addToggleSetting(navigationGroup, 'Hide "New folder" button', 'Hide "New folder" button in navigation headers.', 'newFolderButton');
@@ -120,7 +122,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		if (!this.plugin.settings.helpButtonReplacement) {
 			this.plugin.settings.helpButtonReplacement = {
 				enabled: false,
-				commandId: 'ui-tweaker:open-settings',
+				commandId: '',
 				iconId: 'wrench',
 			};
 		}
@@ -134,7 +136,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						if (!this.plugin.settings.helpButtonReplacement) {
 							this.plugin.settings.helpButtonReplacement = {
 								enabled: true,
-								commandId: 'ui-tweaker:open-settings',
+								commandId: '',
 								iconId: 'wrench',
 							};
 						}
@@ -166,10 +168,16 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					if (commands && commands.listCommands) {
 						const allCommands = commands.listCommands();
 						const command = allCommands.find((cmd) => cmd.id === commandId);
-						return command?.name || commandId;
+						if (command?.name) {
+							return command.name;
+						}
 					}
 				} catch (e) {
 					console.warn('[UI Tweaker] Error getting command name:', e);
+				}
+				// Fallback: format command ID nicely
+				if (commandId === 'ui-tweaker:open-settings') {
+					return 'Open UI Tweaker';
 				}
 				return commandId;
 			};
@@ -360,7 +368,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		const mobileGroup = createSettingsGroup(containerEl, 'Mobile');
 
-		this.addToggleSetting(mobileGroup, 'Hide "Mobile chevrons" icon', 'Hide "Mobile chevrons" icon in mobile navbar.', 'mobileChevronsIcon');
+		this.addToggleSetting(mobileGroup, 'Hide "Mobile chevrons" icon', 'Hide "Mobile chevrons" icon (long-press flair) in mobile navbar.', 'mobileChevronsIcon');
 
 		this.addToggleSetting(mobileGroup, 'Hide "Navigate back" button', 'Hide "Navigate back" button in mobile navbar.', 'navigateBackButton');
 
@@ -376,6 +384,158 @@ export class UITweakerSettingTab extends PluginSettingTab {
 
 		// Swap button icon
 		this.addToggleSetting(mobileGroup, 'Swap mobile new tab icon', 'Replace the new tab plus icon with a home button icon in mobile navbar.', 'swapMobileNewTabIcon');
+
+		this.addToggleSetting(mobileGroup, 'Hide title', 'Hide the title in mobile view headers.', 'hideMobileTitle');
+
+		this.addToggleSetting(mobileGroup, 'Hide sync icon', 'Hide sync status icons in mobile interface.', 'hideMobileSyncIcon');
+
+		// Replace sync button with custom action
+		if (!this.plugin.settings.syncButtonReplacement) {
+			this.plugin.settings.syncButtonReplacement = {
+				enabled: false,
+				commandId: 'ui-tweaker:open-settings',
+				iconId: 'wrench',
+			};
+		}
+
+		mobileGroup.addSetting((setting) =>
+			setting
+				.setName('Replace sync button with custom action')
+				.setDesc('Replace the sync button in the mobile sidebar with a custom icon and command. This will hide the original sync button and show your custom button instead.')
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange(async (value) => {
+						if (!this.plugin.settings.syncButtonReplacement) {
+							this.plugin.settings.syncButtonReplacement = {
+								enabled: true,
+								commandId: '',
+								iconId: 'wrench',
+							};
+						}
+						this.plugin.settings.syncButtonReplacement.enabled = value;
+						await this.plugin.saveSettings();
+						this.plugin.refresh();
+						
+						// Save scroll position before re-rendering
+						const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
+						const scrollTop = scrollContainer?.scrollTop || 0;
+						
+						this.display(); // Re-render to show/hide options
+						
+						// Restore scroll position after a brief delay to allow rendering
+						requestAnimationFrame(() => {
+							if (scrollContainer) {
+								scrollContainer.scrollTop = scrollTop;
+							}
+						});
+					})
+				)
+		);
+
+		// Show command and icon pickers only if replacement is enabled
+		if (this.plugin.settings.syncButtonReplacement?.enabled) {
+			const getCommandName = (commandId: string): string => {
+				try {
+					const commands = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
+					if (commands && commands.listCommands) {
+						const allCommands = commands.listCommands();
+						const command = allCommands.find((cmd) => cmd.id === commandId);
+						if (command?.name) {
+							return command.name;
+						}
+					}
+				} catch (e) {
+					console.warn('[UI Tweaker] Error getting command name:', e);
+				}
+				// Fallback: format command ID nicely
+				if (commandId === 'ui-tweaker:open-settings') {
+					return 'Open UI Tweaker';
+				}
+				return commandId;
+			};
+
+			const commandName = getCommandName(this.plugin.settings.syncButtonReplacement.commandId);
+			mobileGroup.addSetting((setting) =>
+				setting
+					.setName('Command')
+					.setDesc('Select the command to execute when the button is clicked')
+					.addButton((button) =>
+						button.setButtonText(commandName || 'Select command...').onClick(() => {
+							const modal = new CommandPickerModal(this.app, async (commandId) => {
+								if (!this.plugin.settings.syncButtonReplacement) {
+									this.plugin.settings.syncButtonReplacement = {
+										enabled: true,
+										commandId: '',
+										iconId: 'wrench',
+									};
+								}
+								this.plugin.settings.syncButtonReplacement.commandId = commandId;
+								await this.plugin.saveSettings();
+								this.plugin.refresh();
+								
+								// Save scroll position before re-rendering
+								const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
+								const scrollTop = scrollContainer?.scrollTop || 0;
+								
+								this.display(); // Re-render to show updated command name
+								
+								// Restore scroll position after a brief delay to allow rendering
+								requestAnimationFrame(() => {
+									if (scrollContainer) {
+										scrollContainer.scrollTop = scrollTop;
+									}
+								});
+							});
+							modal.open();
+						})
+					)
+			);
+
+			const getIconName = (iconId: string): string => {
+				if (!iconId) return '';
+				return iconId
+					.replace(/^lucide-/, '')
+					.split('-')
+					.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+					.join(' ');
+			};
+
+			const iconName = getIconName(this.plugin.settings.syncButtonReplacement.iconId);
+			mobileGroup.addSetting((setting) =>
+				setting
+					.setName('Icon')
+					.setDesc('Select the icon to display on the button')
+					.addButton((button) =>
+						button.setButtonText(iconName || 'Select icon...').onClick(() => {
+							const modal = new IconPickerModal(this.app, async (iconId) => {
+								if (!this.plugin.settings.syncButtonReplacement) {
+									this.plugin.settings.syncButtonReplacement = {
+										enabled: true,
+										commandId: 'ui-tweaker:open-settings',
+										iconId: 'wrench',
+									};
+								}
+								this.plugin.settings.syncButtonReplacement.iconId = iconId;
+								await this.plugin.saveSettings();
+								this.plugin.refresh();
+								
+								// Save scroll position before re-rendering
+								const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
+								const scrollTop = scrollContainer?.scrollTop || 0;
+								
+								this.display(); // Re-render to show updated icon name
+								
+								// Restore scroll position after a brief delay to allow rendering
+								requestAnimationFrame(() => {
+									if (scrollContainer) {
+										scrollContainer.scrollTop = scrollTop;
+									}
+								});
+							});
+							modal.open();
+						})
+					)
+			);
+		}
 
 		// ========================================
 		// Mobile navigation menu

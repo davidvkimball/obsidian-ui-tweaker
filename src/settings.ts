@@ -18,6 +18,7 @@ export interface UISettings {
 
 	// Simple toggles (Show/Hide only)
 	tabBar: boolean;
+	enableWindowDragging: boolean;
 	newNoteButton: boolean;
 	newFolderButton: boolean;
 	sortOrderButton: boolean;
@@ -49,6 +50,8 @@ export interface UISettings {
 	openTabButton: boolean;
 	ribbonMenuButton: boolean;
 	swapMobileNewTabIcon: boolean;
+	hideMobileTitle: boolean;
+	hideMobileSyncIcon: boolean;
 
 	// Mobile navigation menu positions
 	navigateButtonPosition: MobileNavPosition;
@@ -61,6 +64,11 @@ export interface UISettings {
 	// Advanced settings
 	vaultSwitcherBackgroundTransparency: number; // 0-1
 	helpButtonReplacement: {
+		enabled: boolean;
+		commandId: string;
+		iconId: string;
+	};
+	syncButtonReplacement: {
 		enabled: boolean;
 		commandId: string;
 		iconId: string;
@@ -81,6 +89,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 
 	// Simple toggles
 	tabBar: false,
+	enableWindowDragging: false,
 	newNoteButton: false,
 	newFolderButton: false,
 	sortOrderButton: false,
@@ -112,6 +121,8 @@ export const DEFAULT_SETTINGS: UISettings = {
 	openTabButton: false,
 	ribbonMenuButton: false,
 	swapMobileNewTabIcon: false,
+	hideMobileTitle: false,
+	hideMobileSyncIcon: false,
 
 	// Mobile navigation menu positions
 	navigateButtonPosition: '1',
@@ -122,10 +133,15 @@ export const DEFAULT_SETTINGS: UISettings = {
 	ribbonMenuPosition: '6',
 
 	// Advanced
-	vaultSwitcherBackgroundTransparency: 0.9,
+	vaultSwitcherBackgroundTransparency: 0.98,
 	helpButtonReplacement: {
 		enabled: false,
-		commandId: 'ui-tweaker:open-settings',
+		commandId: '',
+		iconId: 'wrench',
+	},
+	syncButtonReplacement: {
+		enabled: false,
+		commandId: '',
 		iconId: 'wrench',
 	},
 };
