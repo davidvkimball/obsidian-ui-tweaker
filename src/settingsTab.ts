@@ -573,11 +573,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName(name)
 				.setDesc(desc)
 				.addDropdown((dropdown) => {
+					const currentValue = this.plugin.settings[key];
+					const stringValue = typeof currentValue === 'string' ? currentValue : 'show';
 					dropdown
 						.addOption('show', 'Show')
 						.addOption('hide', 'Hide')
 						.addOption('reveal', 'Reveal')
-						.setValue(String(this.plugin.settings[key] ?? 'show'))
+						.setValue(stringValue)
 						.onChange((value) => {
 							(this.plugin.settings[key] as UIVisibilityState) = value as UIVisibilityState;
 							void this.plugin.saveSettings();
@@ -612,7 +614,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						dropdown.addOption(String(i), String(i));
 					}
 					const currentValue = this.plugin.settings[key];
-					dropdown.setValue(typeof currentValue === 'string' ? currentValue : String(currentValue ?? '1')).onChange((value) => {
+					const stringValue = typeof currentValue === 'string' ? currentValue : '1';
+					dropdown.setValue(stringValue).onChange((value) => {
 						(this.plugin.settings[key] as string) = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();

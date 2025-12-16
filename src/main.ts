@@ -235,7 +235,7 @@ export default class UITweakerPlugin extends Plugin {
 			customButton.onclick = null;
 			
 			// Replace the icon using Obsidian's setIcon function
-			const iconContainer = (customButton.querySelector('svg')?.parentElement || customButton) as HTMLElement;
+			const iconContainer = customButton.querySelector('svg')?.parentElement || customButton;
 			const iconId = this.settings.helpButtonReplacement?.iconId;
 			if (iconId) {
 				try {
@@ -253,25 +253,27 @@ export default class UITweakerPlugin extends Plugin {
 			}
 
 			// Add our custom click handler
-			customButton.addEventListener('click', async (evt: MouseEvent) => {
+			customButton.addEventListener('click', (evt: MouseEvent) => {
 				evt.preventDefault();
 				evt.stopPropagation();
 				
 				const commandId = this.settings.helpButtonReplacement?.commandId;
 				if (commandId) {
-					try {
-						// Use type assertion for executeCommandById as it's not in the public API types
-						// but is available in the runtime API
-						const commands = (this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
-						if (commands?.executeCommandById) {
-							await commands.executeCommandById(commandId);
-						} else {
-							throw new Error('Command execution not available');
+					void (async () => {
+						try {
+							// Use type assertion for executeCommandById as it's not in the public API types
+							// but is available in the runtime API
+							const commands = (this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
+							if (commands?.executeCommandById) {
+								await commands.executeCommandById(commandId);
+							} else {
+								throw new Error('Command execution not available');
+							}
+						} catch (error) {
+							console.warn('[UI Tweaker] Error executing command:', error);
+							new Notice(`Failed to execute command: ${commandId}`);
 						}
-					} catch (error) {
-						console.warn('[UI Tweaker] Error executing command:', error);
-						new Notice(`Failed to execute command: ${commandId}`);
-					}
+					})();
 				}
 			}, true); // Use capture phase to ensure we handle it first
 
@@ -396,7 +398,7 @@ export default class UITweakerPlugin extends Plugin {
 		// Wait for the DOM to be ready
 		const trySetup = () => {
 			if (this.settings.syncButtonReplacement?.enabled) {
-				this.updateSyncButton();
+				void this.updateSyncButton();
 			}
 		};
 
@@ -499,7 +501,7 @@ export default class UITweakerPlugin extends Plugin {
 			customButton.onclick = null;
 			
 			// Replace the icon using Obsidian's setIcon function
-			const iconContainer = (customButton.querySelector('svg')?.parentElement || customButton) as HTMLElement;
+			const iconContainer = customButton.querySelector('svg')?.parentElement || customButton;
 			const iconId = this.settings.syncButtonReplacement?.iconId;
 			if (iconId) {
 				try {
@@ -517,25 +519,27 @@ export default class UITweakerPlugin extends Plugin {
 			}
 
 			// Add our custom click handler
-			customButton.addEventListener('click', async (evt: MouseEvent) => {
+			customButton.addEventListener('click', (evt: MouseEvent) => {
 				evt.preventDefault();
 				evt.stopPropagation();
 				
 				const commandId = this.settings.syncButtonReplacement?.commandId;
 				if (commandId) {
-					try {
-						// Use type assertion for executeCommandById as it's not in the public API types
-						// but is available in the runtime API
-						const commands = (this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
-						if (commands?.executeCommandById) {
-							await commands.executeCommandById(commandId);
-						} else {
-							throw new Error('Command execution not available');
+					void (async () => {
+						try {
+							// Use type assertion for executeCommandById as it's not in the public API types
+							// but is available in the runtime API
+							const commands = (this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
+							if (commands?.executeCommandById) {
+								await commands.executeCommandById(commandId);
+							} else {
+								throw new Error('Command execution not available');
+							}
+						} catch (error) {
+							console.warn('[UI Tweaker] Error executing command:', error);
+							new Notice(`Failed to execute command: ${commandId}`);
 						}
-					} catch (error) {
-						console.warn('[UI Tweaker] Error executing command:', error);
-						new Notice(`Failed to execute command: ${commandId}`);
-					}
+					})();
 				}
 			}, true); // Use capture phase to ensure we handle it first
 

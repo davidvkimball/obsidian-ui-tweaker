@@ -34,13 +34,13 @@ export function createSettingsGroup(
 		// Use SettingGroup - it's guaranteed to exist if requireApiVersion returns true
 		// Access SettingGroup via type assertion since it may not be in type definitions
 		// for older TypeScript versions, but exists at runtime in Obsidian 1.11.0+
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const SettingGroupClass = (ObsidianModule as any).SettingGroup as new (containerEl: HTMLElement) => {
+		// Using unknown instead of any to satisfy eslint while maintaining type safety
+		const SettingGroupClass = (ObsidianModule as unknown as { SettingGroup?: new (containerEl: HTMLElement) => {
 			setHeading(heading: string): {
 				addSetting(cb: (setting: Setting) => void): void;
 			};
 			addSetting(cb: (setting: Setting) => void): void;
-		};
+		} }).SettingGroup;
 		
 		if (SettingGroupClass) {
 			const group = heading 
