@@ -860,3 +860,37 @@ body:not(.is-mobile).hider-tabs.enable-window-dragging-neutral .workspace-leaf-c
 	margin-top: var(--drag-bump) !important; /* Match note content offset */
 	z-index: 12 !important; /* Above titlebar and inline-title */
 }
+
+/* ========================================
+   Help Button Replacement
+   ======================================== */
+
+/* Hide help button when replacement is enabled or when helpButton is set to "hide" */
+body.ui-tweaker-hide-help-button .workspace-drawer-vault-actions .clickable-icon:has(svg.help) {
+	display: none !important;
+}
+
+/* ========================================
+   Sync Button Replacement
+   ======================================== */
+
+/* Hide sync button when replacement is enabled */
+body.ui-tweaker-hide-sync-button .is-mobile .sync-status-indicator,
+body.ui-tweaker-hide-sync-button .is-mobile .mobile-navbar .sync-button,
+body.ui-tweaker-hide-sync-button .is-mobile .nav-buttons-container .sync-icon,
+body.ui-tweaker-hide-sync-button .is-mobile .status-bar-item.sync-status,
+body.ui-tweaker-hide-sync-button .is-mobile [data-tooltip="Sync status"],
+body.ui-tweaker-hide-sync-button .is-mobile .workspace-split.mod-right-split .workspace-drawer-vault-actions .clickable-icon:has(svg.lucide-cloud),
+body.ui-tweaker-hide-sync-button .is-mobile .workspace-split.mod-right-split .workspace-drawer-vault-actions .clickable-icon:has(svg.lucide-cloud-off) {
+	display: none !important;
+}
+
+/* ========================================
+   Custom Button Display
+   ======================================== */
+
+/* Ensure custom replacement buttons are visible */
+.ui-tweaker-help-replacement,
+.ui-tweaker-sync-replacement {
+	display: block !important;
+}

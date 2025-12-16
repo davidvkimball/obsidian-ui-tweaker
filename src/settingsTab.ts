@@ -2,7 +2,7 @@
  * Settings Tab - UI implementation
  */
 
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab } from 'obsidian';
 import { UISettings } from './settings';
 import { UIVisibilityState } from './types';
 import { CommandPickerModal } from './modals/CommandPickerModal';
@@ -68,9 +68,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
 				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange(async (value) => {
+					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value) => {
 						this.plugin.settings.ribbonRevealOnHover = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 					})
 				)
@@ -132,7 +132,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName('Replace help button with custom action')
 				.setDesc('Replace the help button with a custom icon and command. This will hide the original help button and show your custom button instead.')
 				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange(async (value) => {
+					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange((value) => {
 						if (!this.plugin.settings.helpButtonReplacement) {
 							this.plugin.settings.helpButtonReplacement = {
 								enabled: true,
@@ -141,7 +141,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							};
 						}
 						this.plugin.settings.helpButtonReplacement.enabled = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 						
 						// Save scroll position before re-rendering
@@ -162,12 +162,22 @@ export class UITweakerSettingTab extends PluginSettingTab {
 
 		// Show command and icon pickers only if replacement is enabled
 		if (this.plugin.settings.helpButtonReplacement?.enabled) {
+			// Use the exact same approach as CommandPickerModal - just look up by ID
 			const getCommandName = (commandId: string): string => {
+				if (!commandId) return 'Select command...';
+				
 				try {
-					const commands = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
-					if (commands && commands.listCommands) {
-						const allCommands = commands.listCommands();
-						const command = allCommands.find((cmd) => cmd.id === commandId);
+					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
+					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
+						const commands = commandRegistry.listCommands();
+						// Find command by ID - try multiple formats
+						const command = commands.find((cmd) => 
+							cmd && cmd.name && (
+								cmd.id === commandId || 
+								cmd.id === commandId.replace(/^ui-tweaker:+/g, '') ||
+								cmd.id === `ui-tweaker:${commandId.replace(/^ui-tweaker:+/g, '')}`
+							)
+						);
 						if (command?.name) {
 							return command.name;
 						}
@@ -175,11 +185,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				} catch (e) {
 					console.warn('[UI Tweaker] Error getting command name:', e);
 				}
-				// Fallback: format command ID nicely
-				if (commandId === 'ui-tweaker:open-settings') {
-					return 'Open UI Tweaker';
-				}
-				return commandId;
+				return 'Select command...';
 			};
 
 			const commandName = getCommandName(this.plugin.settings.helpButtonReplacement.commandId);
@@ -189,7 +195,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					.setDesc('Select the command to execute when the button is clicked')
 					.addButton((button) =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
-							const modal = new CommandPickerModal(this.app, async (commandId) => {
+							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
 									this.plugin.settings.helpButtonReplacement = {
 										enabled: true,
@@ -198,7 +204,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.helpButtonReplacement.commandId = commandId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -235,16 +241,16 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					.setDesc('Select the icon to display on the button')
 					.addButton((button) =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
-							const modal = new IconPickerModal(this.app, async (iconId) => {
+							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
 									this.plugin.settings.helpButtonReplacement = {
 										enabled: true,
-										commandId: 'ui-tweaker:open-settings',
+										commandId: 'open-settings',
 										iconId: 'wrench',
 									};
 								}
 								this.plugin.settings.helpButtonReplacement.iconId = iconId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -282,9 +288,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.setLimits(0, 1, 0.01)
 						.setValue(this.plugin.settings.vaultSwitcherBackgroundTransparency)
 						.setDynamicTooltip()
-						.onChange(async (value) => {
+						.onChange((value) => {
 							this.plugin.settings.vaultSwitcherBackgroundTransparency = value;
-							await this.plugin.saveSettings();
+							void this.plugin.saveSettings();
 							this.plugin.refresh();
 						})
 				)
@@ -393,7 +399,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		if (!this.plugin.settings.syncButtonReplacement) {
 			this.plugin.settings.syncButtonReplacement = {
 				enabled: false,
-				commandId: 'ui-tweaker:open-settings',
+				commandId: 'open-settings',
 				iconId: 'wrench',
 			};
 		}
@@ -403,7 +409,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName('Replace sync button with custom action')
 				.setDesc('Replace the sync button in the mobile sidebar with a custom icon and command. This will hide the original sync button and show your custom button instead.')
 				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange(async (value) => {
+					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange((value) => {
 						if (!this.plugin.settings.syncButtonReplacement) {
 							this.plugin.settings.syncButtonReplacement = {
 								enabled: true,
@@ -412,7 +418,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							};
 						}
 						this.plugin.settings.syncButtonReplacement.enabled = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 						
 						// Save scroll position before re-rendering
@@ -433,12 +439,22 @@ export class UITweakerSettingTab extends PluginSettingTab {
 
 		// Show command and icon pickers only if replacement is enabled
 		if (this.plugin.settings.syncButtonReplacement?.enabled) {
+			// Use the exact same approach as CommandPickerModal - just look up by ID
 			const getCommandName = (commandId: string): string => {
+				if (!commandId) return 'Select command...';
+				
 				try {
-					const commands = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
-					if (commands && commands.listCommands) {
-						const allCommands = commands.listCommands();
-						const command = allCommands.find((cmd) => cmd.id === commandId);
+					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
+					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
+						const commands = commandRegistry.listCommands();
+						// Find command by ID - try multiple formats
+						const command = commands.find((cmd) => 
+							cmd && cmd.name && (
+								cmd.id === commandId || 
+								cmd.id === commandId.replace(/^ui-tweaker:+/g, '') ||
+								cmd.id === `ui-tweaker:${commandId.replace(/^ui-tweaker:+/g, '')}`
+							)
+						);
 						if (command?.name) {
 							return command.name;
 						}
@@ -446,11 +462,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				} catch (e) {
 					console.warn('[UI Tweaker] Error getting command name:', e);
 				}
-				// Fallback: format command ID nicely
-				if (commandId === 'ui-tweaker:open-settings') {
-					return 'Open UI Tweaker';
-				}
-				return commandId;
+				return 'Select command...';
 			};
 
 			const commandName = getCommandName(this.plugin.settings.syncButtonReplacement.commandId);
@@ -460,7 +472,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					.setDesc('Select the command to execute when the button is clicked')
 					.addButton((button) =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
-							const modal = new CommandPickerModal(this.app, async (commandId) => {
+							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
 									this.plugin.settings.syncButtonReplacement = {
 										enabled: true,
@@ -469,7 +481,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.syncButtonReplacement.commandId = commandId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -506,16 +518,16 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					.setDesc('Select the icon to display on the button')
 					.addButton((button) =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
-							const modal = new IconPickerModal(this.app, async (iconId) => {
+							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
 									this.plugin.settings.syncButtonReplacement = {
 										enabled: true,
-										commandId: 'ui-tweaker:open-settings',
+										commandId: 'open-settings',
 										iconId: 'wrench',
 									};
 								}
 								this.plugin.settings.syncButtonReplacement.iconId = iconId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -565,10 +577,10 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.addOption('show', 'Show')
 						.addOption('hide', 'Hide')
 						.addOption('reveal', 'Reveal')
-						.setValue(String(this.plugin.settings[key]))
-						.onChange(async (value) => {
+						.setValue(String(this.plugin.settings[key] ?? 'show'))
+						.onChange((value) => {
 							(this.plugin.settings[key] as UIVisibilityState) = value as UIVisibilityState;
-							await this.plugin.saveSettings();
+							void this.plugin.saveSettings();
 							this.plugin.refresh();
 						});
 				})
@@ -581,9 +593,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName(name)
 				.setDesc(desc)
 				.addToggle((toggle) =>
-					toggle.setValue(Boolean(this.plugin.settings[key])).onChange(async (value) => {
+					toggle.setValue(Boolean(this.plugin.settings[key])).onChange((value) => {
 						(this.plugin.settings[key] as boolean) = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 					})
 				)
@@ -599,9 +611,10 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					for (let i = 1; i <= 6; i++) {
 						dropdown.addOption(String(i), String(i));
 					}
-					dropdown.setValue(String(this.plugin.settings[key])).onChange(async (value) => {
+					const currentValue = this.plugin.settings[key];
+					dropdown.setValue(typeof currentValue === 'string' ? currentValue : String(currentValue ?? '1')).onChange((value) => {
 						(this.plugin.settings[key] as string) = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 					});
 				})

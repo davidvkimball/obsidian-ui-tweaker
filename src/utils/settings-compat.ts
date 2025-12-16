@@ -3,7 +3,8 @@
  * Provides backward compatibility for SettingGroup (requires API 1.11.0+)
  */
 
-import { Setting, SettingGroup, requireApiVersion } from 'obsidian';
+import { Setting, requireApiVersion } from 'obsidian';
+import * as ObsidianModule from 'obsidian';
 
 /**
  * Interface that works with both SettingGroup and fallback container
@@ -31,15 +32,30 @@ export function createSettingsGroup(
 	// requireApiVersion is the official Obsidian API method for version checking
 	if (requireApiVersion('1.11.0')) {
 		// Use SettingGroup - it's guaranteed to exist if requireApiVersion returns true
-		const group = heading 
-			? new SettingGroup(containerEl).setHeading(heading)
-			: new SettingGroup(containerEl);
-		return {
-			addSetting(cb: (setting: Setting) => void) {
-				group.addSetting(cb);
-			}
+		// Access SettingGroup via type assertion since it may not be in type definitions
+		// for older TypeScript versions, but exists at runtime in Obsidian 1.11.0+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const SettingGroupClass = (ObsidianModule as any).SettingGroup as new (containerEl: HTMLElement) => {
+			setHeading(heading: string): {
+				addSetting(cb: (setting: Setting) => void): void;
+			};
+			addSetting(cb: (setting: Setting) => void): void;
 		};
-	} else {
+		
+		if (SettingGroupClass) {
+			const group = heading 
+				? new SettingGroupClass(containerEl).setHeading(heading)
+				: new SettingGroupClass(containerEl);
+			return {
+				addSetting(cb: (setting: Setting) => void) {
+					group.addSetting(cb);
+				}
+			};
+		}
+	}
+	
+	// Fallback path (either API < 1.11.0 or SettingGroup not found)
+	{
 		// Fallback: Create a heading manually for older API versions
 		// Note: While best practice prefers Setting.setHeading(), the fallback path
 		// is for versions that may not support it, so manual heading is appropriate here

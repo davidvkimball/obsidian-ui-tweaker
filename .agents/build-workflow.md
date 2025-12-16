@@ -31,9 +31,26 @@ After making any changes to plugin code:
 
 After making any changes to theme code:
 
+### Simple CSS Themes
+
+If your theme is simple with just `theme.css` and no build tools:
+
+- **No build step required** - just edit `theme.css` directly
+- Changes take effect immediately when Obsidian reloads the theme
+
+### Themes with Build Tools
+
+If your theme uses build tools (Grunt, npm scripts, SCSS compiler, etc.):
+
 1. **Run the build** (assume npm is already installed):
    ```powershell
+   # For themes using Grunt
    npx grunt build
+   
+   # For themes using npm scripts
+   npm run build
+   
+   # Or whatever build command your theme uses
    ```
 
 2. **If the build fails with npm/node errors**, then check if npm is installed:

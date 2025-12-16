@@ -2,8 +2,16 @@
  * UI Manager - handles CSS class injection and reveal-on-hover functionality
  */
 
+import { Platform } from 'obsidian';
 import { UISettings } from './settings';
 import { UIVisibilityState } from './types';
+
+// Lightweight helper that mirrors Obsidian's setCssProps API where unavailable
+function setCssProps(el: HTMLElement, props: Record<string, string | number>) {
+	Object.entries(props).forEach(([key, value]) => {
+		el.style.setProperty(key, String(value));
+	});
+}
 
 export class UIManager {
 	private settings: UISettings;
@@ -19,25 +27,12 @@ export class UIManager {
 	}
 
 	private detectOS(): 'windows' | 'macos' | 'neutral' {
-		const body = document.body;
-		
-		// Check for Obsidian body classes first
-		if (body.classList.contains('mod-macos')) {
+		// Use Obsidian's Platform API
+		if (Platform.isMacOS) {
 			return 'macos';
 		}
-		if (body.classList.contains('mod-windows')) {
+		if (Platform.isWin) {
 			return 'windows';
-		}
-		
-		// Fallback to navigator
-		if (typeof navigator !== 'undefined') {
-			const platform = navigator.platform.toLowerCase();
-			if (platform.includes('mac') || platform.includes('darwin')) {
-				return 'macos';
-			}
-			if (platform.includes('win')) {
-				return 'windows';
-			}
 		}
 		
 		// Default to neutral/Linux
@@ -130,17 +125,15 @@ export class UIManager {
 		body.classList.add(`order-navbar-button-nth-child-6-${this.settings.ribbonMenuPosition}`);
 
 		// Vault switcher background transparency
-		// Note: CSS custom properties (variables) require direct style manipulation
-		// as they are dynamic values that cannot be set via CSS classes
-		body.style.setProperty('--auto-hide-vault-switcher-bg-transparency', String(this.settings.vaultSwitcherBackgroundTransparency));
+		// Use setCssProps for CSS custom properties (variables)
+		const maskValue = this.settings.vaultSwitcherBackgroundTransparency >= 1
+			? 'none'
+			: 'linear-gradient(to top, hsl(0, 0%, 0%) 0%, hsla(0, 0%, 0%, 0.99) 18.4%, hsla(0, 0%, 0%, 0.963) 33.7%, hsla(0, 0%, 0%, 0.92) 46.4%, hsla(0, 0%, 0%, 0.864) 56.7%, hsla(0, 0%, 0%, 0.796) 64.8%, hsla(0, 0%, 0%, 0.72) 71.2%, hsla(0, 0%, 0%, 0.637) 76.1%, hsla(0, 0%, 0%, 0.55) 79.9%, hsla(0, 0%, 0%, 0.46) 82.8%, hsla(0, 0%, 0%, 0.37) 85.2%, hsla(0, 0%, 0%, 0.283) 87.3%, hsla(0, 0%, 0%, 0.2) 89.6%, hsla(0, 0%, 0%, 0.124) 92.3%, hsla(0, 0%, 0%, 0.056) 95.6%, hsla(0, 0%, 0%, 0) 100%)';
 		
-		// Set mask based on transparency
-		if (this.settings.vaultSwitcherBackgroundTransparency >= 1) {
-			body.style.setProperty('--auto-hide-vault-switcher-mask', 'none');
-		} else {
-			body.style.setProperty('--auto-hide-vault-switcher-mask', 
-				'linear-gradient(to top, hsl(0, 0%, 0%) 0%, hsla(0, 0%, 0%, 0.99) 18.4%, hsla(0, 0%, 0%, 0.963) 33.7%, hsla(0, 0%, 0%, 0.92) 46.4%, hsla(0, 0%, 0%, 0.864) 56.7%, hsla(0, 0%, 0%, 0.796) 64.8%, hsla(0, 0%, 0%, 0.72) 71.2%, hsla(0, 0%, 0%, 0.637) 76.1%, hsla(0, 0%, 0%, 0.55) 79.9%, hsla(0, 0%, 0%, 0.46) 82.8%, hsla(0, 0%, 0%, 0.37) 85.2%, hsla(0, 0%, 0%, 0.283) 87.3%, hsla(0, 0%, 0%, 0.2) 89.6%, hsla(0, 0%, 0%, 0.124) 92.3%, hsla(0, 0%, 0%, 0.056) 95.6%, hsla(0, 0%, 0%, 0) 100%)');
-		}
+		setCssProps(body, {
+			'--auto-hide-vault-switcher-bg-transparency': String(this.settings.vaultSwitcherBackgroundTransparency),
+			'--auto-hide-vault-switcher-mask': maskValue,
+		});
 	}
 
 	private applyVisibilityState(body: HTMLElement, className: string, state: UIVisibilityState, useAlwaysShow: boolean = false) {
@@ -173,16 +166,16 @@ export class UIManager {
 		const body = document.body;
 		const classesToRemove: string[] = [];
 		body.classList.forEach((className) => {
-			if (className.startsWith('ui-tweaker-') || 
-			    className.startsWith('auto-hide-') ||
-			    className.startsWith('hider-') ||
-			    className.startsWith('hide-') ||
-			    className.startsWith('metadata-') ||
-			    className.startsWith('order-navbar-button-') ||
-			    className.startsWith('enable-window-dragging-') ||
-			    className === 'auto-collapse-ribbon' ||
-			    className === 'swap-mobile-new-tab-icon' ||
-			    className === 'always-show-title-bar') {
+			if (className.startsWith('ui-tweaker-') ||
+				className.startsWith('auto-hide-') ||
+				className.startsWith('hider-') ||
+				className.startsWith('hide-') ||
+				className.startsWith('metadata-') ||
+				className.startsWith('order-navbar-button-') ||
+				className.startsWith('enable-window-dragging-') ||
+				className === 'auto-collapse-ribbon' ||
+				className === 'swap-mobile-new-tab-icon' ||
+				className === 'always-show-title-bar') {
 				classesToRemove.push(className);
 			}
 		});

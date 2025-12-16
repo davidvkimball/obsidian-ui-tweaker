@@ -11,10 +11,8 @@ import { UITweakerSettingTab } from './settingsTab';
 export default class UITweakerPlugin extends Plugin {
 	settings: UISettings;
 	private uiManager: UIManager;
-	private helpButtonStyleEl?: HTMLStyleElement;
 	private customHelpButton?: HTMLElement;
 	private helpButtonObserver?: MutationObserver;
-	private syncButtonStyleEl?: HTMLStyleElement;
 	private customSyncButton?: HTMLElement;
 	private syncButtonObserver?: MutationObserver;
 	private settingTab?: UITweakerSettingTab;
@@ -74,7 +72,12 @@ export default class UITweakerPlugin extends Plugin {
 				if (!this.settings.helpButtonReplacement.iconId) {
 					this.settings.helpButtonReplacement.iconId = 'wrench';
 				}
-				// commandId can be empty - user must pick
+				// Migrate old command IDs (remove ui-tweaker: prefix)
+				if (this.settings.helpButtonReplacement.commandId?.startsWith('ui-tweaker:')) {
+					this.settings.helpButtonReplacement.commandId = this.settings.helpButtonReplacement.commandId.replace(/^ui-tweaker:+/g, '');
+					// Save migrated settings
+					await this.saveSettings();
+				}
 			}
 			
 			// Ensure syncButtonReplacement structure exists
@@ -89,7 +92,12 @@ export default class UITweakerPlugin extends Plugin {
 				if (!this.settings.syncButtonReplacement.iconId) {
 					this.settings.syncButtonReplacement.iconId = 'wrench';
 				}
-				// commandId can be empty - user must pick
+				// Migrate old command IDs (remove ui-tweaker: prefix)
+				if (this.settings.syncButtonReplacement.commandId?.startsWith('ui-tweaker:')) {
+					this.settings.syncButtonReplacement.commandId = this.settings.syncButtonReplacement.commandId.replace(/^ui-tweaker:+/g, '');
+					// Save migrated settings
+					await this.saveSettings();
+				}
 			}
 		} catch (error) {
 			console.error('[UI Tweaker] Failed to load settings:', error);
@@ -123,7 +131,7 @@ export default class UITweakerPlugin extends Plugin {
 		// Wait for the DOM to be ready
 		const trySetup = () => {
 			if (this.settings.helpButtonReplacement?.enabled) {
-				this.updateHelpButton();
+				void this.updateHelpButton();
 			}
 		};
 
@@ -140,25 +148,11 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	public updateHelpButtonCSS() {
-		// Remove existing style if any
-		if (this.helpButtonStyleEl) {
-			this.helpButtonStyleEl.remove();
-		}
-
 		// Hide help button if either helpButton is set to "hide" OR replacement is enabled
 		const shouldHideHelpButton = this.settings.helpButton === 'hide' || this.settings.helpButtonReplacement?.enabled;
 		
-		if (shouldHideHelpButton) {
-			// Create style element to hide help button globally
-			this.helpButtonStyleEl = document.createElement('style');
-			this.helpButtonStyleEl.id = 'ui-tweaker-hide-help-button';
-			this.helpButtonStyleEl.textContent = `
-				.workspace-drawer-vault-actions .clickable-icon:has(svg.help) {
-					display: none !important;
-				}
-			`;
-			document.head.appendChild(this.helpButtonStyleEl);
-		}
+		// Use CSS class instead of style element
+		document.body.classList.toggle('ui-tweaker-hide-help-button', shouldHideHelpButton);
 	}
 
 	public async updateHelpButton() {
@@ -194,7 +188,7 @@ export default class UITweakerPlugin extends Plugin {
 				// Also retry after a short delay
 				setTimeout(() => {
 					if (this.settings.helpButtonReplacement?.enabled) {
-						this.updateHelpButton();
+						void this.updateHelpButton();
 					}
 				}, 500);
 				return;
@@ -218,7 +212,7 @@ export default class UITweakerPlugin extends Plugin {
 				// Also retry after a short delay
 				setTimeout(() => {
 					if (this.settings.helpButtonReplacement?.enabled) {
-						this.updateHelpButton();
+						void this.updateHelpButton();
 					}
 				}, 500);
 				return;
@@ -232,7 +226,6 @@ export default class UITweakerPlugin extends Plugin {
 
 			// Create a new custom button
 			const customButton = helpButton.cloneNode(true) as HTMLElement;
-			customButton.style.display = '';
 			customButton.removeAttribute('aria-label');
 			// Add unique identifier to avoid conflicts with other plugins
 			customButton.setAttribute('data-ui-tweaker-help-replacement', 'true');
@@ -242,18 +235,18 @@ export default class UITweakerPlugin extends Plugin {
 			customButton.onclick = null;
 			
 			// Replace the icon using Obsidian's setIcon function
-			const iconContainer = customButton.querySelector('svg')?.parentElement || customButton;
+			const iconContainer = (customButton.querySelector('svg')?.parentElement || customButton) as HTMLElement;
 			const iconId = this.settings.helpButtonReplacement?.iconId;
 			if (iconId) {
 				try {
-					setIcon(iconContainer as HTMLElement, iconId);
+					setIcon(iconContainer, iconId);
 				} catch (error) {
 					console.warn('[UI Tweaker] Error setting icon:', error);
 				}
 			} else {
 				console.warn('[UI Tweaker] Icon ID is undefined, using default "wrench"');
 				try {
-					setIcon(iconContainer as HTMLElement, 'wrench');
+					setIcon(iconContainer, 'wrench');
 				} catch (error) {
 					console.warn('[UI Tweaker] Error setting default icon:', error);
 				}
@@ -333,7 +326,7 @@ export default class UITweakerPlugin extends Plugin {
 					if (this.customHelpButton && !document.body.contains(this.customHelpButton)) {
 						this.customHelpButton = undefined;
 					}
-					this.updateHelpButton();
+					void this.updateHelpButton();
 				}
 			}, 100);
 		});
@@ -375,11 +368,10 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	private restoreHelpButton() {
-		// Only remove CSS if neither helpButton is set to "hide" nor replacement is enabled
+		// Only remove CSS class if neither helpButton is set to "hide" nor replacement is enabled
 		const shouldHideHelpButton = this.settings.helpButton === 'hide' || this.settings.helpButtonReplacement?.enabled;
-		if (!shouldHideHelpButton && this.helpButtonStyleEl) {
-			this.helpButtonStyleEl.remove();
-			this.helpButtonStyleEl = undefined;
+		if (!shouldHideHelpButton) {
+			document.body.classList.remove('ui-tweaker-hide-help-button');
 		}
 
 		// Remove the custom button (only if replacement is disabled)
@@ -421,29 +413,9 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	public updateSyncButtonCSS() {
-		// Remove existing style if any
-		if (this.syncButtonStyleEl) {
-			this.syncButtonStyleEl.remove();
-		}
-
 		// Hide sync button if replacement is enabled
-		if (this.settings.syncButtonReplacement?.enabled) {
-			// Create style element to hide sync button globally
-			this.syncButtonStyleEl = document.createElement('style');
-			this.syncButtonStyleEl.id = 'ui-tweaker-hide-sync-button';
-			this.syncButtonStyleEl.textContent = `
-				.is-mobile .sync-status-indicator,
-				.is-mobile .mobile-navbar .sync-button,
-				.is-mobile .nav-buttons-container .sync-icon,
-				.is-mobile .status-bar-item.sync-status,
-				.is-mobile [data-tooltip="Sync status"],
-				.is-mobile .workspace-split.mod-right-split .workspace-drawer-vault-actions .clickable-icon:has(svg.lucide-cloud),
-				.is-mobile .workspace-split.mod-right-split .workspace-drawer-vault-actions .clickable-icon:has(svg.lucide-cloud-off) {
-					display: none !important;
-				}
-			`;
-			document.head.appendChild(this.syncButtonStyleEl);
-		}
+		// Use CSS class instead of style element
+		document.body.classList.toggle('ui-tweaker-hide-sync-button', this.settings.syncButtonReplacement?.enabled ?? false);
 	}
 
 	public async updateSyncButton() {
@@ -480,7 +452,7 @@ export default class UITweakerPlugin extends Plugin {
 				// Also retry after a short delay
 				setTimeout(() => {
 					if (this.settings.syncButtonReplacement?.enabled) {
-						this.updateSyncButton();
+						void this.updateSyncButton();
 					}
 				}, 500);
 				return;
@@ -504,7 +476,7 @@ export default class UITweakerPlugin extends Plugin {
 				// Also retry after a short delay
 				setTimeout(() => {
 					if (this.settings.syncButtonReplacement?.enabled) {
-						this.updateSyncButton();
+						void this.updateSyncButton();
 					}
 				}, 500);
 				return;
@@ -518,7 +490,6 @@ export default class UITweakerPlugin extends Plugin {
 
 			// Create a new custom button
 			const customButton = syncButton.cloneNode(true) as HTMLElement;
-			customButton.style.display = '';
 			customButton.removeAttribute('aria-label');
 			// Add unique identifier to avoid conflicts with other plugins
 			customButton.setAttribute('data-ui-tweaker-sync-replacement', 'true');
@@ -528,18 +499,18 @@ export default class UITweakerPlugin extends Plugin {
 			customButton.onclick = null;
 			
 			// Replace the icon using Obsidian's setIcon function
-			const iconContainer = customButton.querySelector('svg')?.parentElement || customButton;
+			const iconContainer = (customButton.querySelector('svg')?.parentElement || customButton) as HTMLElement;
 			const iconId = this.settings.syncButtonReplacement?.iconId;
 			if (iconId) {
 				try {
-					setIcon(iconContainer as HTMLElement, iconId);
+					setIcon(iconContainer, iconId);
 				} catch (error) {
 					console.warn('[UI Tweaker] Error setting icon:', error);
 				}
 			} else {
 				console.warn('[UI Tweaker] Icon ID is undefined, using default "wrench"');
 				try {
-					setIcon(iconContainer as HTMLElement, 'wrench');
+					setIcon(iconContainer, 'wrench');
 				} catch (error) {
 					console.warn('[UI Tweaker] Error setting default icon:', error);
 				}
@@ -619,7 +590,7 @@ export default class UITweakerPlugin extends Plugin {
 					if (this.customSyncButton && !document.body.contains(this.customSyncButton)) {
 						this.customSyncButton = undefined;
 					}
-					this.updateSyncButton();
+					void this.updateSyncButton();
 				}
 			}, 100);
 		});
@@ -661,10 +632,9 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	private restoreSyncButton() {
-		// Only remove CSS if replacement is disabled
-		if (!this.settings.syncButtonReplacement?.enabled && this.syncButtonStyleEl) {
-			this.syncButtonStyleEl.remove();
-			this.syncButtonStyleEl = undefined;
+		// Only remove CSS class if replacement is disabled
+		if (!this.settings.syncButtonReplacement?.enabled) {
+			document.body.classList.remove('ui-tweaker-hide-sync-button');
 		}
 
 		// Remove the custom button (only if replacement is disabled)

@@ -56,7 +56,11 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 ## Help: Interactive Guidance
 
-**When the user asks for "help"** or **"what's the latest"**, present these options and guide them based on their choice:
+**When the user asks for "help"**:
+1. **First, display the Quick Commands table**: Read and show the Quick Commands section from [quick-reference.md](.agents/quick-reference.md#quick-commands) (the table with all one-word commands)
+2. **Then, present these additional options** below for more detailed workflows:
+
+**When the user asks for "what's the latest"**, present these options and guide them based on their choice:
 
 ---
 

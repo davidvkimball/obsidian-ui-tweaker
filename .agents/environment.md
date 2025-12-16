@@ -38,13 +38,46 @@ npm run build
 
 ### Linting
 
-**Recommended**: Use `eslint-plugin-obsidianmd` (npm package name) for Obsidian-specific linting rules. The repository is at `.ref/eslint-plugin/` - see its README for setup and complete rule documentation.
+**Recommended**: Use `eslint-plugin-obsidianmd` for Obsidian-specific linting rules. The repository is at `.ref/eslint-plugin/` - see its README for setup and complete rule documentation.
 
-**Basic ESLint setup**:
-- Install: `npm install -D eslint eslint-plugin-obsidianmd`
-- Configure ESLint to use the `obsidianmd` plugin (see `.ref/eslint-plugin/README.md` for configuration examples)
-- Run: `eslint src/` (or `eslint src/main.ts` for a single file)
-- ESLint will report suggestions for code improvement by file and line number
+**Quick Setup**:
+```bash
+npm install --save-dev eslint@^8.57.1 eslint-plugin-obsidianmd@^0.1.9 @typescript-eslint/eslint-plugin@latest @typescript-eslint/parser@latest typescript-eslint@latest @eslint/json
+```
+
+**Important**: Use ESLint v8 (not v9) for compatibility with `.eslintrc` format. ESLint v9 requires the new flat config format (`eslint.config.js`).
+
+**Basic .eslintrc configuration**:
+```json
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "env": { "node": true },
+  "plugins": ["@typescript-eslint", "obsidianmd"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parserOptions": { "sourceType": "module" },
+  "rules": {
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }],
+    "@typescript-eslint/ban-ts-comment": "off",
+    "no-prototype-builtins": "off",
+    "@typescript-eslint/no-empty-function": "off"
+  }
+}
+```
+
+**Note**: The `plugin:obsidianmd/recommended` config is not available, but the plugin still works when loaded in the `plugins` array. The rules are automatically applied.
+
+**Run ESLint**:
+```bash
+npm run lint
+# Or for specific files:
+npx eslint src/**/*.ts
+```
 
 **Common issues caught by `eslint-plugin-obsidianmd`**: See [common-pitfalls.md](common-pitfalls.md#common-linting-issues) for details on style manipulation, settings headings, UI text case, file deletion, and more.
 
@@ -66,15 +99,19 @@ npm install -D sass
 npm run build  # Compile SCSS to CSS
 ```
 
-### Theme Build (Grunt)
+### Theme Build Tools (Optional)
 
-For themes using Grunt (like Obsidian Sample Theme):
+Simple themes with just CSS don't need build tools. More complex themes might use Grunt, npm scripts, or other build tools for tasks like SCSS compilation, minification, or preprocessing:
 
 ```bash
+# For themes using Grunt
 npx grunt build
+
+# For themes using npm scripts
+npm run build
 ```
 
-**Important for AI Agents**: Always run `npx grunt build` after making changes to themes to catch build errors early. If npm is not installed, install Node.js (which includes npm). Do not run `npm install` to install npm itself - that command installs project dependencies.
+Only use build commands if your theme has a `Gruntfile.js`, `package.json` with build scripts, or other build configuration files.
 
 ### Linting (Optional)
 
