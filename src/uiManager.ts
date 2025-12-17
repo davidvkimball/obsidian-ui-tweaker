@@ -7,7 +7,7 @@ import { UISettings } from './settings';
 import { UIVisibilityState } from './types';
 
 // Lightweight helper that mirrors Obsidian's setCssProps API where unavailable
-function setCssProps(el: HTMLElement, props: Record<string, string | number>) {
+export function setCssProps(el: HTMLElement, props: Record<string, string | number>) {
 	Object.entries(props).forEach(([key, value]) => {
 		el.style.setProperty(key, String(value));
 	});

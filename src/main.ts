@@ -4,7 +4,7 @@
 
 import { Plugin, Notice, setIcon, Platform } from 'obsidian';
 import { UISettings, DEFAULT_SETTINGS } from './settings';
-import { UIManager } from './uiManager';
+import { UIManager, setCssProps } from './uiManager';
 import { registerCommands } from './commands';
 import { UITweakerSettingTab } from './settingsTab';
 
@@ -66,7 +66,8 @@ export default class UITweakerPlugin extends Plugin {
 
 	async loadSettings() {
 		try {
-			this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+			const data = await this.loadData() as Partial<UISettings>;
+			this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 			// Ensure helpButtonReplacement structure exists
 			if (!this.settings.helpButtonReplacement) {
 				this.settings.helpButtonReplacement = {
@@ -533,9 +534,11 @@ export default class UITweakerPlugin extends Plugin {
 			
 			// Ensure icon container has proper display for centering
 			if (iconContainer) {
-				iconContainer.style.display = 'flex';
-				iconContainer.style.alignItems = 'center';
-				iconContainer.style.justifyContent = 'center';
+				setCssProps(iconContainer, {
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center'
+				});
 			}
 			
 			const iconId = this.settings.syncButtonReplacement?.iconId;
@@ -574,17 +577,18 @@ export default class UITweakerPlugin extends Plugin {
 				if (commandId) {
 					// For open-settings, execute directly (this works!)
 					if (commandId === 'open-settings' || commandId === 'ui-tweaker:open-settings') {
-						const settingApi = (this.app as any).setting;
+						const settingApi = (this.app as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
 						if (settingApi) {
 							settingApi.open?.();
-							const pluginInstance = this as any;
+							// Use type assertion for settingTab as it's a private property
+							const pluginInstance = this as unknown as { settingTab?: { id?: string } };
 							if (pluginInstance.settingTab?.id && settingApi.openTabById) {
 								settingApi.openTabById(pluginInstance.settingTab.id);
 							}
 						}
 					} else {
 						// For other commands, try executeCommandById
-						(this.app as any).commands?.executeCommandById?.(commandId).catch((error: any) => {
+						((this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands as { executeCommandById?: (id: string) => Promise<void> })?.executeCommandById?.(commandId).catch((error: unknown) => {
 							console.warn('[UI Tweaker] Error executing command:', error);
 							new Notice(`Failed to execute command: ${commandId}`);
 						});
@@ -601,17 +605,18 @@ export default class UITweakerPlugin extends Plugin {
 				if (commandId) {
 					// For open-settings, execute directly (this works!)
 					if (commandId === 'open-settings' || commandId === 'ui-tweaker:open-settings') {
-						const settingApi = (this.app as any).setting;
+						const settingApi = (this.app as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
 						if (settingApi) {
 							settingApi.open?.();
-							const pluginInstance = this as any;
+							// Use type assertion for settingTab as it's a private property
+							const pluginInstance = this as unknown as { settingTab?: { id?: string } };
 							if (pluginInstance.settingTab?.id && settingApi.openTabById) {
 								settingApi.openTabById(pluginInstance.settingTab.id);
 							}
 						}
 					} else {
 						// For other commands, try executeCommandById
-						(this.app as any).commands?.executeCommandById?.(commandId).catch((error: any) => {
+						((this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands as { executeCommandById?: (id: string) => Promise<void> })?.executeCommandById?.(commandId).catch((error: unknown) => {
 							console.warn('[UI Tweaker] Error executing command:', error);
 							new Notice(`Failed to execute command: ${commandId}`);
 						});
@@ -620,7 +625,7 @@ export default class UITweakerPlugin extends Plugin {
 			}, true);
 			
 			// Hide the original button directly (more reliable than CSS selectors)
-			syncButton.style.display = 'none';
+			setCssProps(syncButton, { display: 'none' });
 			// Add data attribute to track it (in case Obsidian recreates it)
 			syncButton.setAttribute('data-ui-tweaker-original-sync-hidden', 'true');
 			
@@ -666,7 +671,7 @@ export default class UITweakerPlugin extends Plugin {
 				
 				// If we have an original button reference, make sure it's still hidden
 				if (this.originalSyncButton && document.body.contains(this.originalSyncButton)) {
-					this.originalSyncButton.style.display = 'none';
+					setCssProps(this.originalSyncButton, { display: 'none' });
 				}
 				
 				// Also check for any newly created sync buttons that aren't our custom one
@@ -677,10 +682,10 @@ export default class UITweakerPlugin extends Plugin {
 					for (const btn of allSyncButtons) {
 						const button = btn as HTMLElement;
 						// Don't hide our custom replacement button
-						if (!button.hasAttribute('data-ui-tweaker-sync-replacement') && 
-						    !button.hasAttribute('data-ui-tweaker-original-sync-hidden')) {
+						if (!button.hasAttribute('data-ui-tweaker-sync-replacement') &&
+							!button.hasAttribute('data-ui-tweaker-original-sync-hidden')) {
 							// This is a new sync button, hide it
-							button.style.display = 'none';
+							setCssProps(button, { display: 'none' });
 							button.setAttribute('data-ui-tweaker-original-sync-hidden', 'true');
 							// Update our reference
 							this.originalSyncButton = button;
@@ -760,7 +765,7 @@ export default class UITweakerPlugin extends Plugin {
 			
 			// Restore the original button's visibility (we hid it with style.display = 'none')
 			if (this.originalSyncButton && document.body.contains(this.originalSyncButton)) {
-				this.originalSyncButton.style.display = '';
+				this.originalSyncButton.style.removeProperty('display');
 			}
 			this.originalSyncButton = undefined;
 		}
