@@ -18,6 +18,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
@@ -63,18 +64,18 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		);
 
 		// Ribbon - boolean toggle
-		generalGroup.addSetting((setting) =>
+		generalGroup.addSetting((setting): void => {
 			setting
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
 				.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange(async (value) => {
+				toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value) => {
 					this.plugin.settings.ribbonRevealOnHover = value;
-					await this.plugin.saveSettings();
+					void this.plugin.saveSettings();
 					this.plugin.refresh();
 				})
-				)
-		);
+			);
+		});
 
 		// ========================================
 		// Navigation
@@ -127,12 +128,12 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			};
 		}
 
-		vaultProfileGroup.addSetting((setting) =>
+		vaultProfileGroup.addSetting((setting): void => {
 			setting
 				.setName('Replace help button with custom action')
 				.setDesc('Replace the help button with a custom icon and command. This will hide the original help button and show your custom button instead.')
 				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange(async (value) => {
+					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange((value) => {
 						if (!this.plugin.settings.helpButtonReplacement) {
 							this.plugin.settings.helpButtonReplacement = {
 								enabled: true,
@@ -141,7 +142,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							};
 						}
 						this.plugin.settings.helpButtonReplacement.enabled = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 						
 						// Save scroll position before re-rendering
@@ -157,8 +158,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							}
 						});
 					})
-				)
-		);
+				);
+		});
 
 		// Show command and icon pickers only if replacement is enabled
 		if (this.plugin.settings.helpButtonReplacement?.enabled) {
@@ -189,13 +190,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			};
 
 			const commandName = getCommandName(this.plugin.settings.helpButtonReplacement.commandId);
-			vaultProfileGroup.addSetting((setting) =>
+			vaultProfileGroup.addSetting((setting): void => {
 				setting
 					.setName('Command')
 					.setDesc('Select the command to execute when the button is clicked')
 					.addButton((button) =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
-							const modal = new CommandPickerModal(this.app, async (commandId) => {
+							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
 									this.plugin.settings.helpButtonReplacement = {
 										enabled: true,
@@ -204,7 +205,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.helpButtonReplacement.commandId = commandId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -222,8 +223,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							});
 							modal.open();
 						})
-					)
-			);
+					);
+			});
 
 			const getIconName = (iconId: string): string => {
 				if (!iconId) return '';
@@ -235,13 +236,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			};
 
 			const iconName = getIconName(this.plugin.settings.helpButtonReplacement.iconId);
-			vaultProfileGroup.addSetting((setting) =>
+			vaultProfileGroup.addSetting((setting): void => {
 				setting
 					.setName('Icon')
 					.setDesc('Select the icon to display on the button')
 					.addButton((button) =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
-							const modal = new IconPickerModal(this.app, async (iconId) => {
+							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
 									this.plugin.settings.helpButtonReplacement = {
 										enabled: true,
@@ -250,7 +251,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.helpButtonReplacement.iconId = iconId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -268,8 +269,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							});
 							modal.open();
 						})
-					)
-			);
+					);
+			});
 		}
 
 		this.addVisibilitySetting(
@@ -279,7 +280,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			'settingsButton'
 		);
 
-		vaultProfileGroup.addSetting((setting) =>
+		vaultProfileGroup.addSetting((setting): void => {
 			setting
 				.setName('Vault switcher background transparency')
 				.setDesc('Adjust the transparency of the vault switcher background when hidden. Range: 0 (fully transparent) to 1 (fully opaque).')
@@ -288,13 +289,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.setLimits(0, 1, 0.01)
 						.setValue(this.plugin.settings.vaultSwitcherBackgroundTransparency)
 						.setDynamicTooltip()
-						.onChange(async (value) => {
+						.onChange((value) => {
 							this.plugin.settings.vaultSwitcherBackgroundTransparency = value;
-							await this.plugin.saveSettings();
+							void this.plugin.saveSettings();
 							this.plugin.refresh();
 						})
-				)
-		);
+				);
+		});
 
 		// ========================================
 		// Tab icons
@@ -404,12 +405,12 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			};
 		}
 
-		mobileGroup.addSetting((setting) =>
+		mobileGroup.addSetting((setting): void => {
 			setting
 				.setName('Replace sync button with custom action')
 				.setDesc('Replace the sync button in the mobile sidebar with a custom icon and command. This will hide the original sync button and show your custom button instead.')
 				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange(async (value) => {
+					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange((value) => {
 						if (!this.plugin.settings.syncButtonReplacement) {
 							this.plugin.settings.syncButtonReplacement = {
 								enabled: true,
@@ -418,7 +419,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							};
 						}
 						this.plugin.settings.syncButtonReplacement.enabled = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 						
 						// Save scroll position before re-rendering
@@ -434,8 +435,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							}
 						});
 					})
-				)
-		);
+				);
+		});
 
 		// Show command and icon pickers only if replacement is enabled
 		if (this.plugin.settings.syncButtonReplacement?.enabled) {
@@ -466,13 +467,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			};
 
 			const commandName = getCommandName(this.plugin.settings.syncButtonReplacement.commandId);
-			mobileGroup.addSetting((setting) =>
+			mobileGroup.addSetting((setting): void => {
 				setting
 					.setName('Command')
 					.setDesc('Select the command to execute when the button is clicked')
 					.addButton((button) =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
-							const modal = new CommandPickerModal(this.app, async (commandId) => {
+							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
 									this.plugin.settings.syncButtonReplacement = {
 										enabled: true,
@@ -481,7 +482,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.syncButtonReplacement.commandId = commandId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -499,8 +500,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							});
 							modal.open();
 						})
-					)
-			);
+					);
+			});
 
 			const getIconName = (iconId: string): string => {
 				if (!iconId) return '';
@@ -512,13 +513,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			};
 
 			const iconName = getIconName(this.plugin.settings.syncButtonReplacement.iconId);
-			mobileGroup.addSetting((setting) =>
+			mobileGroup.addSetting((setting): void => {
 				setting
 					.setName('Icon')
 					.setDesc('Select the icon to display on the button')
 					.addButton((button) =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
-							const modal = new IconPickerModal(this.app, async (iconId) => {
+							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
 									this.plugin.settings.syncButtonReplacement = {
 										enabled: true,
@@ -527,7 +528,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.syncButtonReplacement.iconId = iconId;
-								await this.plugin.saveSettings();
+								void this.plugin.saveSettings();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -545,8 +546,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							});
 							modal.open();
 						})
-					)
-			);
+					);
+			});
 		}
 
 		// ========================================
@@ -568,7 +569,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 	}
 
 	private addVisibilitySetting(group: SettingsContainer, name: string, desc: string, key: keyof UISettings) {
-		group.addSetting((setting) =>
+		group.addSetting((setting): void => {
 			setting
 				.setName(name)
 				.setDesc(desc)
@@ -580,32 +581,32 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.addOption('hide', 'Hide')
 						.addOption('reveal', 'Reveal')
 						.setValue(stringValue)
-						.onChange(async (value) => {
+						.onChange((value) => {
 							(this.plugin.settings[key] as UIVisibilityState) = value as UIVisibilityState;
-							await this.plugin.saveSettings();
+							void this.plugin.saveSettings();
 							this.plugin.refresh();
 						});
-				})
-		);
+				});
+		});
 	}
 
 	private addToggleSetting(group: SettingsContainer, name: string, desc: string, key: keyof UISettings) {
-		group.addSetting((setting) =>
+		group.addSetting((setting): void => {
 			setting
 				.setName(name)
 				.setDesc(desc)
 				.addToggle((toggle) =>
-				toggle.setValue(Boolean(this.plugin.settings[key])).onChange(async (value) => {
-					(this.plugin.settings[key] as boolean) = value;
-					await this.plugin.saveSettings();
-					this.plugin.refresh();
-				})
-				)
-		);
+					toggle.setValue(Boolean(this.plugin.settings[key])).onChange((value) => {
+						(this.plugin.settings[key] as boolean) = value;
+						void this.plugin.saveSettings();
+						this.plugin.refresh();
+					})
+				);
+		});
 	}
 
 	private addPositionSetting(group: SettingsContainer, name: string, desc: string, key: keyof UISettings) {
-		group.addSetting((setting) =>
+		group.addSetting((setting): void => {
 			setting
 				.setName(name)
 				.setDesc(desc)
@@ -615,12 +616,12 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					}
 					const currentValue = this.plugin.settings[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : '1';
-					dropdown.setValue(stringValue).onChange(async (value) => {
+					dropdown.setValue(stringValue).onChange((value) => {
 						(this.plugin.settings[key] as string) = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 					});
-				})
-		);
+				});
+		});
 	}
 }
