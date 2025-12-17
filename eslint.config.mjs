@@ -43,7 +43,7 @@ export default defineConfig([
       "@typescript-eslint/ban-ts-comment": "off",
       "@typescript-eslint/no-empty-function": "off",
       "no-prototype-builtins": "off",
-      "@typescript-eslint/no-misused-promises": "error"
+      "@typescript-eslint/no-misused-promises": ["error",{"checksVoidReturn":{"attributes":false,"properties":false,"returns":false,"variables":false}}]
     },
   },
   {

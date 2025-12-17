@@ -41,7 +41,12 @@ function generateEslintConfig(customRules = {}) {
     "@typescript-eslint/no-empty-function": "off",
     "no-prototype-builtins": "off",
     "@typescript-eslint/no-misused-promises": ["error", {
-      "checksVoidReturn": false
+      "checksVoidReturn": {
+        "attributes": false,
+        "properties": false,
+        "returns": false,
+        "variables": false
+      }
     }]
   };
   
@@ -199,31 +204,132 @@ function fixBuiltinModules(esbuildConfigPath, projectRoot) {
       console.log('✓ Updated esbuild.config.mjs: replaced builtins with builtinModules');
     }
     
-    // Fix entryPoints to detect main.ts location
-    const mainTsRoot = join(projectRoot, 'main.ts');
-    const mainTsSrc = join(projectRoot, 'src', 'main.ts');
-    const hasMainTsRoot = existsSync(mainTsRoot);
-    const hasMainTsSrc = existsSync(mainTsSrc);
+    // Add existsSync import if not present and update entryPoints to detect main.ts location
+    const hasExistsSyncImport = content.includes("existsSync") && (content.includes("from \"fs\"") || content.includes("from 'fs'"));
+    const needsExistsSync = !hasExistsSyncImport;
     
-    if (hasMainTsSrc && !hasMainTsRoot) {
-      // main.ts is in src/, but config might point to root
-      if (content.includes('entryPoints: ["main.ts"]') || content.includes("entryPoints: ['main.ts']")) {
-        content = content.replace(
-          /entryPoints:\s*\[["']main\.ts["']\]/g,
-          'entryPoints: ["src/main.ts"]'
-        );
+    // Check if entryPoints needs to be updated to use detection logic
+    const hasHardcodedEntryPoint = /entryPoints:\s*\[["'](src\/)?main\.ts["']\]/.test(content);
+    const hasEntryPointVar = /const\s+entryPoint\s*=/.test(content);
+    const entryPointIndex = hasEntryPointVar ? content.indexOf('const entryPoint') : -1;
+    const esbuildContextIndex = content.indexOf('esbuild.context');
+    const hasCorrectEntryPoint = hasEntryPointVar && 
+      entryPointIndex >= 0 && 
+      esbuildContextIndex >= 0 && 
+      entryPointIndex < esbuildContextIndex;
+    const hasEntryPointDetection = hasCorrectEntryPoint || (hasEntryPointVar && content.includes("existsSync(\"src/main.ts\")") || content.includes("existsSync('src/main.ts')"));
+    
+    // Always remove ALL entryPoint declarations first (we'll add it back in the correct place)
+    // This ensures we don't have duplicates or incorrectly placed ones
+    if (hasEntryPointVar) {
+      // Remove comment lines that mention entry point detection
+      content = content.replace(/\s*\/\/\s*.*[Dd]etect\s+entry\s+point.*?\n/gi, '');
+      content = content.replace(/\s*\/\/\s*.*entry\s+point.*?\n/gi, '');
+      // Remove const entryPoint declarations - match the full line including any whitespace
+      content = content.replace(/^\s*const\s+entryPoint\s*=.*?;\s*$/gm, '');
+      // Also remove any that might be on the same line as other code (less common)
+      content = content.replace(/\s*const\s+entryPoint\s*=\s*existsSync\([^)]+\)\s*\?[^;]+;\s*/g, '');
+      content = content.replace(/\s*const\s+entryPoint\s*=\s*[^;]+;\s*/g, '');
+      // Clean up any double newlines that might result
+      content = content.replace(/\n\n\n+/g, '\n\n');
+      updated = true;
+      console.log('✓ Removed existing entryPoint declaration(s)');
+    }
+    
+    if (hasHardcodedEntryPoint || (hasEntryPointVar && !hasCorrectEntryPoint)) {
+      // Add existsSync import if needed
+      if (needsExistsSync) {
+        // Find the import statement and add existsSync to it, or add a new import
+        if (content.includes("import { builtinModules } from \"module\"")) {
+          content = content.replace(
+            /import\s+{\s*builtinModules\s*}\s+from\s+["']module["']/,
+            "import { builtinModules } from \"module\";\nimport { existsSync } from \"fs\";"
+          );
+        } else if (content.includes("import { builtinModules } from 'module'")) {
+          content = content.replace(
+            /import\s+{\s*builtinModules\s*}\s+from\s+['']module['']/,
+            "import { builtinModules } from 'module';\nimport { existsSync } from 'fs';"
+          );
+        } else {
+          // Add import after process import or at the top
+          const processImportMatch = content.match(/import\s+process\s+from\s+["']process["'];?/);
+          if (processImportMatch) {
+            content = content.replace(
+              /(import\s+process\s+from\s+["']process["'];?)/,
+              "$1\nimport { existsSync } from \"fs\";"
+            );
+          } else {
+            // Add at the beginning after first import
+            const firstImportMatch = content.match(/^import\s+[^;]+;?/m);
+            if (firstImportMatch) {
+              content = content.replace(
+                /^(import\s+[^;]+;?)/m,
+                "$1\nimport { existsSync } from \"fs\";"
+              );
+            }
+          }
+        }
         updated = true;
-        console.log('✓ Updated esbuild.config.mjs: fixed entryPoints to src/main.ts');
+        console.log('✓ Updated esbuild.config.mjs: added existsSync import');
       }
-    } else if (hasMainTsRoot && !hasMainTsSrc) {
-      // main.ts is in root, but config might point to src/
-      if (content.includes('entryPoints: ["src/main.ts"]') || content.includes("entryPoints: ['src/main.ts']")) {
+      
+      // Replace hardcoded entryPoints with detection logic or fix incorrectly placed ones
+      // Re-check after removal (content may have changed)
+      const entryPointPattern = /entryPoints:\s*\[["'](src\/)?main\.ts["']\]/;
+      const currentHasEntryPointVar = /const\s+entryPoint\s*=/.test(content);
+      const currentEntryPointIndex = currentHasEntryPointVar ? content.indexOf('const entryPoint') : -1;
+      const currentEsbuildContextIndex = content.indexOf('esbuild.context');
+      const currentHasCorrectEntryPoint = currentHasEntryPointVar && 
+        currentEntryPointIndex >= 0 && 
+        currentEsbuildContextIndex >= 0 && 
+        currentEntryPointIndex < currentEsbuildContextIndex;
+      
+      // If we have a hardcoded entry point OR the entryPoint var is missing/incorrectly placed, fix it
+      if (entryPointPattern.test(content) || !currentHasCorrectEntryPoint) {
+        // Add entryPoint declaration if it doesn't exist or is incorrectly placed
+        if (!currentHasCorrectEntryPoint) {
+          // Find the "const prod" line - it's almost always present and right before esbuild.context
+          const prodMatch = content.match(/(const\s+prod\s*=.*?;)\s*\n/);
+          if (prodMatch) {
+            // Insert entryPoint declaration right after const prod line
+            const entryPointCode = `\n// Detect entry point: prefer src/main.ts, fallback to main.ts\nconst entryPoint = existsSync("src/main.ts") ? "src/main.ts" : "main.ts";\n`;
+            content = content.replace(
+              /(const\s+prod\s*=.*?;)\s*\n/,
+              "$1" + entryPointCode
+            );
+          } else {
+            // Fallback: find esbuild.context and insert before it (but outside object literal)
+            // Look for the line that starts with "const context = await esbuild.context" or similar
+            const lines = content.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+              if (/^\s*const\s+\w+\s*=\s*(?:await\s+)?esbuild\.context\s*\(/.test(lines[i])) {
+                const indent = lines[i].match(/^(\s*)/)[1];
+                const entryPointCode = `${indent}// Detect entry point: prefer src/main.ts, fallback to main.ts\n${indent}const entryPoint = existsSync("src/main.ts") ? "src/main.ts" : "main.ts";\n`;
+                lines.splice(i, 0, entryPointCode);
+                content = lines.join('\n');
+                break;
+              }
+            }
+          }
+        }
+        
+        // Then replace the entryPoints line to use the variable
         content = content.replace(
-          /entryPoints:\s*\[["']src\/main\.ts["']\]/g,
-          'entryPoints: ["main.ts"]'
+          /(\s+)entryPoints:\s*\[["'](src\/)?main\.ts["']\],?/,
+          "$1entryPoints: [entryPoint],"
         );
         updated = true;
-        console.log('✓ Updated esbuild.config.mjs: fixed entryPoints to main.ts');
+        console.log('✓ Updated esbuild.config.mjs: added entry point detection (supports both src/main.ts and main.ts)');
+      } else if (hasEntryPointVar && /entryPoints:\s*\[entryPoint\]/.test(content)) {
+        // Already has entry point detection, nothing to do
+      } else if (hasEntryPointVar) {
+        // Has entryPoint var but entryPoints line doesn't use it - fix that
+        content = content.replace(
+          /(\s+)entryPoints:\s*\[["'][^"']+["']\],?/,
+          "$1entryPoints: [entryPoint],"
+        );
+        updated = true;
+        console.log('✓ Updated esbuild.config.mjs: fixed entryPoints to use entryPoint variable');
       }
     }
     

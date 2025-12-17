@@ -1,6 +1,7 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from "module";
+import { existsSync } from "fs";;
 
 const banner =
 `/*
@@ -10,12 +11,13 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
-
+// Detect entry point: prefer src/main.ts, fallback to main.ts
+const entryPoint = existsSync("src/main.ts") ? "src/main.ts" : "main.ts";
 const context = await esbuild.context({
 	banner: {
 		js: banner,
 	},
-	entryPoints: ["src/main.ts"],
+	entryPoints: [entryPoint],
 	bundle: true,
 	external: [
 		"obsidian",
