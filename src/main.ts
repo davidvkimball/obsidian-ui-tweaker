@@ -2,7 +2,7 @@
  * Main plugin file
  */
 
-import { Plugin, Notice, setIcon } from 'obsidian';
+import { Plugin, Notice, setIcon, Platform } from 'obsidian';
 import { UISettings, DEFAULT_SETTINGS } from './settings';
 import { UIManager } from './uiManager';
 import { registerCommands } from './commands';
@@ -15,6 +15,8 @@ export default class UITweakerPlugin extends Plugin {
 	private helpButtonObserver?: MutationObserver;
 	private customSyncButton?: HTMLElement;
 	private syncButtonObserver?: MutationObserver;
+	private originalSyncButton?: HTMLElement; // Store original to restore later
+	private isUpdatingSyncButton: boolean = false; // Prevent infinite loops
 	private settingTab?: UITweakerSettingTab;
 
 	async onload() {
@@ -39,8 +41,13 @@ export default class UITweakerPlugin extends Plugin {
 		// Set up help button replacement
 		this.setupHelpButtonReplacement();
 		
-		// Set up sync button replacement
-		this.setupSyncButtonReplacement();
+		// Set up sync button replacement (only on mobile)
+		if (Platform.isMobile) {
+			this.setupSyncButtonReplacement();
+		} else {
+			// Make sure class is removed on desktop
+			document.body.classList.remove('ui-tweaker-hide-sync-button');
+		}
 	}
 
 	onunload() {
@@ -115,7 +122,14 @@ export default class UITweakerPlugin extends Plugin {
 			this.uiManager.updateSettings(this.settings);
 		}
 		this.setupHelpButtonReplacement();
-		this.setupSyncButtonReplacement();
+		// Always update sync button CSS to ensure it matches current settings
+		this.updateSyncButtonCSS();
+		if (Platform.isMobile) {
+			this.setupSyncButtonReplacement();
+		} else {
+			// Make sure class is removed on desktop
+			document.body.classList.remove('ui-tweaker-hide-sync-button');
+		}
 	}
 
 	private setupHelpButtonReplacement() {
@@ -386,14 +400,14 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	private setupSyncButtonReplacement() {
-		// Only proceed if replacement is enabled
-		if (!this.settings.syncButtonReplacement?.enabled) {
+		// Always update CSS first (will remove class if disabled)
+		this.updateSyncButtonCSS();
+		
+		// Only proceed if replacement is enabled AND we're on mobile
+		if (!this.settings.syncButtonReplacement?.enabled || !Platform.isMobile) {
 			this.restoreSyncButton();
 			return;
 		}
-		
-		// Update CSS and button
-		this.updateSyncButtonCSS();
 		
 		// Wait for the DOM to be ready
 		const trySetup = () => {
@@ -415,9 +429,10 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	public updateSyncButtonCSS() {
-		// Hide sync button if replacement is enabled
+		// Hide sync button if replacement is enabled AND we're on mobile
 		// Use CSS class instead of style element
-		document.body.classList.toggle('ui-tweaker-hide-sync-button', this.settings.syncButtonReplacement?.enabled ?? false);
+		const shouldHide = (this.settings.syncButtonReplacement?.enabled ?? false) && Platform.isMobile;
+		document.body.classList.toggle('ui-tweaker-hide-sync-button', shouldHide);
 	}
 
 	public async updateSyncButton() {
@@ -445,30 +460,29 @@ export default class UITweakerPlugin extends Plugin {
 				return;
 			}
 
-			// Find the sync button in mobile right sidebar (bottom right)
-			// The sync button is typically in the right sidebar vault actions area
-			const rightSidebar = document.querySelector('.workspace-split.mod-right-split .workspace-drawer-vault-actions');
-			if (!rightSidebar) {
-				// Set up observer to catch it when it appears
-				this.setupSyncButtonObserver();
-				// Also retry after a short delay
-				setTimeout(() => {
-					if (this.settings.syncButtonReplacement?.enabled) {
-						void this.updateSyncButton();
-					}
-				}, 500);
-				return;
-			}
-
-			// Find the sync button - look for cloud icons
-			const clickableIcons = Array.from(rightSidebar.querySelectorAll('.clickable-icon'));
+			// Find the sync button in mobile right drawer header
+			// Actual pattern: clickable-icon workspace-drawer-header-icon mod-raised sync-status-icon
 			let syncButton: HTMLElement | null = null;
 			
-			for (const icon of clickableIcons) {
-				const svg = icon.querySelector('svg.lucide-cloud, svg.lucide-cloud-off');
-				if (svg) {
-					syncButton = icon as HTMLElement;
-					break;
+			// Search in right drawer header
+			const rightDrawer = document.querySelector('.workspace-drawer.mod-right');
+			if (rightDrawer) {
+				const drawerHeader = rightDrawer.querySelector('.workspace-drawer-header');
+				if (drawerHeader) {
+					// Look for sync-status-icon class (this is the actual class!)
+					syncButton = drawerHeader.querySelector('.sync-status-icon, .workspace-drawer-header-icon.sync-status-icon') as HTMLElement;
+					
+					// Fallback: look for refresh-cw-off SVG (sync icon in error/paused state)
+					if (!syncButton) {
+						const clickableIcons = Array.from(drawerHeader.querySelectorAll('.clickable-icon'));
+						for (const icon of clickableIcons) {
+							const svg = icon.querySelector('svg.refresh-cw-off, svg.refresh-cw');
+							if (svg) {
+								syncButton = icon as HTMLElement;
+								break;
+							}
+						}
+					}
 				}
 			}
 			
@@ -490,18 +504,40 @@ export default class UITweakerPlugin extends Plugin {
 			}
 			this.customSyncButton = undefined;
 
-			// Create a new custom button
+			// Create a new custom button (clone preserves all original classes)
 			const customButton = syncButton.cloneNode(true) as HTMLElement;
 			customButton.removeAttribute('aria-label');
 			// Add unique identifier to avoid conflicts with other plugins
 			customButton.setAttribute('data-ui-tweaker-sync-replacement', 'true');
 			customButton.classList.add('ui-tweaker-sync-replacement');
 			
-			// Clear any existing click handlers
+			// Ensure the button is visible (preserve original classes but ensure visibility)
+			// The original classes (workspace-drawer-header-icon, clickable-icon, etc.) should be preserved from clone
+			
+			// Clear any existing click handlers - remove all event listeners
 			customButton.onclick = null;
+			// Remove any data attributes that might have click handlers
+			customButton.removeAttribute('data-command');
 			
 			// Replace the icon using Obsidian's setIcon function
-			const iconContainer = customButton.querySelector('svg')?.parentElement || customButton;
+			// Find the SVG container - it should be directly in the button or in a child
+			let iconContainer: HTMLElement | null = null;
+			const existingSvg = customButton.querySelector('svg');
+			if (existingSvg) {
+				iconContainer = existingSvg.parentElement as HTMLElement;
+				// Remove the old SVG
+				existingSvg.remove();
+			} else {
+				iconContainer = customButton;
+			}
+			
+			// Ensure icon container has proper display for centering
+			if (iconContainer) {
+				iconContainer.style.display = 'flex';
+				iconContainer.style.alignItems = 'center';
+				iconContainer.style.justifyContent = 'center';
+			}
+			
 			const iconId = this.settings.syncButtonReplacement?.iconId;
 			if (iconId) {
 				try {
@@ -518,33 +554,78 @@ export default class UITweakerPlugin extends Plugin {
 				}
 			}
 
-			// Add our custom click handler
+			// Insert custom button in place of the original (like help button replacement)
+			// Insert right before the original, then hide the original directly
+			const parent = syncButton.parentElement;
+			if (parent) {
+				parent.insertBefore(customButton, syncButton);
+			} else {
+				// Fallback: just insert after if parent is missing
+				syncButton.parentElement?.insertBefore(customButton, syncButton.nextSibling);
+			}
+			
+			// Add our custom click handler AFTER insertion
+			// Don't prevent default - let the click happen naturally, just execute our command
 			customButton.addEventListener('click', (evt: MouseEvent) => {
 				evt.preventDefault();
 				evt.stopPropagation();
 				
 				const commandId = this.settings.syncButtonReplacement?.commandId;
 				if (commandId) {
-					void (async () => {
-						try {
-							// Use type assertion for executeCommandById as it's not in the public API types
-							// but is available in the runtime API
-							const commands = (this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
-							if (commands?.executeCommandById) {
-								await commands.executeCommandById(commandId);
-							} else {
-								throw new Error('Command execution not available');
+					// For open-settings, execute directly (this works!)
+					if (commandId === 'open-settings' || commandId === 'ui-tweaker:open-settings') {
+						const settingApi = (this.app as any).setting;
+						if (settingApi) {
+							settingApi.open?.();
+							const pluginInstance = this as any;
+							if (pluginInstance.settingTab?.id && settingApi.openTabById) {
+								settingApi.openTabById(pluginInstance.settingTab.id);
 							}
-						} catch (error) {
+						}
+					} else {
+						// For other commands, try executeCommandById
+						(this.app as any).commands?.executeCommandById?.(commandId).catch((error: any) => {
 							console.warn('[UI Tweaker] Error executing command:', error);
 							new Notice(`Failed to execute command: ${commandId}`);
-						}
-					})();
+						});
+					}
 				}
 			}, true); // Use capture phase to ensure we handle it first
-
-			// Insert the custom button right after the original (hidden) button
-			syncButton.parentElement?.insertBefore(customButton, syncButton.nextSibling);
+			
+			// Also add touchstart for mobile - same logic as click
+			customButton.addEventListener('touchstart', (evt: TouchEvent) => {
+				evt.preventDefault();
+				evt.stopPropagation();
+				
+				const commandId = this.settings.syncButtonReplacement?.commandId;
+				if (commandId) {
+					// For open-settings, execute directly (this works!)
+					if (commandId === 'open-settings' || commandId === 'ui-tweaker:open-settings') {
+						const settingApi = (this.app as any).setting;
+						if (settingApi) {
+							settingApi.open?.();
+							const pluginInstance = this as any;
+							if (pluginInstance.settingTab?.id && settingApi.openTabById) {
+								settingApi.openTabById(pluginInstance.settingTab.id);
+							}
+						}
+					} else {
+						// For other commands, try executeCommandById
+						(this.app as any).commands?.executeCommandById?.(commandId).catch((error: any) => {
+							console.warn('[UI Tweaker] Error executing command:', error);
+							new Notice(`Failed to execute command: ${commandId}`);
+						});
+					}
+				}
+			}, true);
+			
+			// Hide the original button directly (more reliable than CSS selectors)
+			syncButton.style.display = 'none';
+			// Add data attribute to track it (in case Obsidian recreates it)
+			syncButton.setAttribute('data-ui-tweaker-original-sync-hidden', 'true');
+			
+			// Store reference to original button so we can restore it later
+			this.originalSyncButton = syncButton;
 			
 			// Store reference to custom button
 			this.customSyncButton = customButton;
@@ -579,9 +660,33 @@ export default class UITweakerPlugin extends Plugin {
 				clearTimeout(updateTimeout);
 			}
 			updateTimeout = window.setTimeout(() => {
-				// Check if sync button was recreated (CSS will hide it, but we need to inject our custom button)
-				const rightSidebar = document.querySelector('.workspace-split.mod-right-split .workspace-drawer-vault-actions');
-				if (!rightSidebar) return;
+				// Check if sync button was recreated (we need to hide it and ensure custom button exists)
+				const rightDrawer = document.querySelector('.workspace-drawer.mod-right');
+				if (!rightDrawer) return;
+				
+				// If we have an original button reference, make sure it's still hidden
+				if (this.originalSyncButton && document.body.contains(this.originalSyncButton)) {
+					this.originalSyncButton.style.display = 'none';
+				}
+				
+				// Also check for any newly created sync buttons that aren't our custom one
+				const drawerHeader = rightDrawer.querySelector('.workspace-drawer-header');
+				if (drawerHeader) {
+					// Target sync-status-icon class (the actual class!)
+					const allSyncButtons = Array.from(drawerHeader.querySelectorAll('.sync-status-icon, .workspace-drawer-header-icon.sync-status-icon, .clickable-icon.sync-status-icon'));
+					for (const btn of allSyncButtons) {
+						const button = btn as HTMLElement;
+						// Don't hide our custom replacement button
+						if (!button.hasAttribute('data-ui-tweaker-sync-replacement') && 
+						    !button.hasAttribute('data-ui-tweaker-original-sync-hidden')) {
+							// This is a new sync button, hide it
+							button.style.display = 'none';
+							button.setAttribute('data-ui-tweaker-original-sync-hidden', 'true');
+							// Update our reference
+							this.originalSyncButton = button;
+						}
+					}
+				}
 				
 				// Check if we have a custom button AND it's still in the DOM
 				const customButtonExists = this.customSyncButton && 
@@ -589,36 +694,41 @@ export default class UITweakerPlugin extends Plugin {
 					document.body.contains(this.customSyncButton) &&
 					this.customSyncButton.hasAttribute('data-ui-tweaker-sync-replacement');
 				
-				if (!customButtonExists) {
+				// Only recreate if custom button doesn't exist AND we're not currently updating
+				if (!customButtonExists && !this.isUpdatingSyncButton) {
 					// Clear stale reference if button was removed
 					if (this.customSyncButton && !document.body.contains(this.customSyncButton)) {
 						this.customSyncButton = undefined;
 					}
-					void this.updateSyncButton();
+					// Set flag to prevent infinite loops
+					this.isUpdatingSyncButton = true;
+					void this.updateSyncButton().finally(() => {
+						this.isUpdatingSyncButton = false;
+					});
 				}
 			}, 100);
 		});
 
-		// Observe the right sidebar vault actions area
-		const rightSidebar = document.querySelector('.workspace-split.mod-right-split .workspace-drawer-vault-actions');
-		if (rightSidebar) {
-			this.syncButtonObserver.observe(rightSidebar, {
+		// Observe the right drawer header (where sync button is located)
+		const rightDrawer = document.querySelector('.workspace-drawer.mod-right');
+		if (rightDrawer) {
+			this.syncButtonObserver.observe(rightDrawer, {
 				childList: true,
 				subtree: true,
 			});
-		}
-		
-		// Also observe the parent vault profile area
-		const vaultProfile = document.querySelector('.workspace-split.mod-right-split .workspace-sidedock-vault-profile');
-		if (vaultProfile) {
-			this.syncButtonObserver.observe(vaultProfile, {
-				childList: true,
-				subtree: false,
-			});
+			
+			// Specifically observe the header
+			const drawerHeader = rightDrawer.querySelector('.workspace-drawer-header');
+			if (drawerHeader) {
+				this.syncButtonObserver.observe(drawerHeader, {
+					childList: true,
+					subtree: true,
+				});
+			}
 		}
 		
 		// Add fallback observers if the specific elements don't exist yet
-		if (!rightSidebar && !vaultProfile) {
+		if (!rightDrawer) {
 			const workspace = document.querySelector('.workspace-split.mod-right-split');
 			if (workspace) {
 				this.syncButtonObserver.observe(workspace, {
@@ -636,17 +746,23 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	private restoreSyncButton() {
-		// Only remove CSS class if replacement is disabled
-		if (!this.settings.syncButtonReplacement?.enabled) {
+		// Remove CSS class if replacement is disabled or not on mobile
+		if (!this.settings.syncButtonReplacement?.enabled || !Platform.isMobile) {
 			document.body.classList.remove('ui-tweaker-hide-sync-button');
 		}
 
 		// Remove the custom button (only if replacement is disabled)
-		if (!this.settings.syncButtonReplacement?.enabled && this.customSyncButton) {
-			if (document.body.contains(this.customSyncButton)) {
+		if (!this.settings.syncButtonReplacement?.enabled) {
+			if (this.customSyncButton && document.body.contains(this.customSyncButton)) {
 				this.customSyncButton.remove();
 			}
 			this.customSyncButton = undefined;
+			
+			// Restore the original button's visibility (we hid it with style.display = 'none')
+			if (this.originalSyncButton && document.body.contains(this.originalSyncButton)) {
+				this.originalSyncButton.style.display = '';
+			}
+			this.originalSyncButton = undefined;
 		}
 	}
 }

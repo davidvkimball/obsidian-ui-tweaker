@@ -654,11 +654,13 @@ body.hide-mobile-title .minimal-tab-title-visible .view-header-title-container {
    Hide Mobile Sync Icon
    ======================================== */
 
-.hide-mobile-sync-icon.is-mobile .sync-status-indicator,
-.hide-mobile-sync-icon.is-mobile .mobile-navbar .sync-button,
-.hide-mobile-sync-icon.is-mobile .nav-buttons-container .sync-icon,
-.hide-mobile-sync-icon.is-mobile .status-bar-item.sync-status,
-.hide-mobile-sync-icon.is-mobile [data-tooltip="Sync status"] {
+/* Use the same selectors that work for sync button replacement */
+/* Hide sync button - but NOT the custom replacement button */
+/* Target: sync-status-icon class (the actual sync button class!) */
+.hide-mobile-sync-icon.is-mobile .workspace-drawer.mod-right .workspace-drawer-header .sync-status-icon:not(.ui-tweaker-sync-replacement),
+.hide-mobile-sync-icon.is-mobile .workspace-drawer.mod-right .workspace-drawer-header .workspace-drawer-header-icon.sync-status-icon:not(.ui-tweaker-sync-replacement),
+.hide-mobile-sync-icon.is-mobile .workspace-drawer.mod-right .workspace-drawer-header .clickable-icon.sync-status-icon:not(.ui-tweaker-sync-replacement),
+.hide-mobile-sync-icon.is-mobile .status-bar > .plugin-sync:not(.ui-tweaker-sync-replacement) {
 	display: none !important;
 }
 
@@ -875,13 +877,13 @@ body.ui-tweaker-hide-help-button .workspace-drawer-vault-actions .clickable-icon
    ======================================== */
 
 /* Hide sync button when replacement is enabled */
-body.ui-tweaker-hide-sync-button .is-mobile .sync-status-indicator,
-body.ui-tweaker-hide-sync-button .is-mobile .mobile-navbar .sync-button,
-body.ui-tweaker-hide-sync-button .is-mobile .nav-buttons-container .sync-icon,
-body.ui-tweaker-hide-sync-button .is-mobile .status-bar-item.sync-status,
-body.ui-tweaker-hide-sync-button .is-mobile [data-tooltip="Sync status"],
-body.ui-tweaker-hide-sync-button .is-mobile .workspace-split.mod-right-split .workspace-drawer-vault-actions .clickable-icon:has(svg.lucide-cloud),
-body.ui-tweaker-hide-sync-button .is-mobile .workspace-split.mod-right-split .workspace-drawer-vault-actions .clickable-icon:has(svg.lucide-cloud-off) {
+/* Target: sync-status-icon class (the actual sync button class!) */
+/* Also target status bar sync indicator if it exists */
+/* Don't hide our custom replacement button */
+body.ui-tweaker-hide-sync-button .is-mobile .workspace-drawer.mod-right .workspace-drawer-header .sync-status-icon:not(.ui-tweaker-sync-replacement),
+body.ui-tweaker-hide-sync-button .is-mobile .workspace-drawer.mod-right .workspace-drawer-header .workspace-drawer-header-icon.sync-status-icon:not(.ui-tweaker-sync-replacement),
+body.ui-tweaker-hide-sync-button .is-mobile .workspace-drawer.mod-right .workspace-drawer-header .clickable-icon.sync-status-icon:not(.ui-tweaker-sync-replacement),
+body.ui-tweaker-hide-sync-button .is-mobile .status-bar > .plugin-sync:not(.ui-tweaker-sync-replacement) {
 	display: none !important;
 }
 
@@ -893,4 +895,15 @@ body.ui-tweaker-hide-sync-button .is-mobile .workspace-split.mod-right-split .wo
 .ui-tweaker-help-replacement,
 .ui-tweaker-sync-replacement {
 	display: block !important;
+}
+
+/* Center icon within custom sync replacement button */
+.ui-tweaker-sync-replacement {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+}
+
+.ui-tweaker-sync-replacement svg {
+	margin: 0 !important;
 }

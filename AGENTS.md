@@ -1,33 +1,195 @@
 # AI Agent Instructions
 
-This file serves as the entry point for AI agents working on Obsidian plugin or theme development projects. The detailed instructions have been organized into a structured directory for better maintainability.
+This file serves as the **project-specific entry point** for AI agents working on this Obsidian plugin or theme project. General-purpose instructions are located in the [`.agents`](.agents/) directory (symlinked from a central location).
 
-**Applicability**: Each file in `.agents` is marked with its applicability:
-- **Plugin** - Only relevant for plugin development
-- **Theme** - Only relevant for theme development  
-- **Both** - Relevant for both plugins and themes
+**Note**: The `.agents/` directory in this project is a symlink to `../.ref/obsidian-dev/.agents/`, providing access to shared, general-purpose guidance files. This allows updates to propagate automatically across all projects. See the setup scripts in `scripts/` to configure this.
+
+---
+
+## Project Context
+
+<!--
+Source: Project-specific (not synced from reference repos)
+Last updated: [Maintain manually - this file is project-specific]
+Applicability: Plugin
+-->
+
+### Project Overview
+
+**UI Tweaker** is a comprehensive Obsidian plugin for customizing the user interface by hiding, showing, and revealing UI elements. It consolidates UI hiding/auto-hide features that were previously part of the obsidian-oxygen-settings plugin into a dedicated, focused plugin.
+
+**Current functionality:**
+- Auto-hide elements with Show/Hide/Reveal states (title bar, navigation headers, tab headers, ribbon, vault switcher, settings button, etc.)
+- Simple visibility toggles for UI elements (help button, vault name, tab bar, file explorer buttons, etc.)
+- Mobile-specific UI controls (hide buttons, swap icons, navigation menu positioning)
+- Advanced features (vault switcher background transparency, help button replacement with custom command)
+- Comprehensive command system with toggle commands for all features
+
+### Important Project-Specific Details
+
+- **Project Type**: Production plugin for Obsidian community
+- **Purpose**: Provide comprehensive UI customization without requiring theme modifications
+- **Status**: Active development
+- **Architecture**: Modular structure with separate files for settings, UI management, commands, and settings tab
+- **Key Dependencies**: 
+  - References obsidian-oxygen-settings plugin (`.ref/plugins/obsidian-oxygen-settings`) for feature patterns
+  - References obsidian-hider plugin (`.ref/plugins/obsidian-hider`) for CSS class injection patterns
+  - References obsidian-oxygen theme (`.ref/themes/obsidian-oxygen`) for CSS patterns
+
+### Maintenance Tasks
+
+- **README.md**: Keep documentation updated with all features, commands, and usage instructions
+- **Settings Interface**: When adding new features, ensure they follow the Show/Hide/Reveal pattern where applicable
+- **CSS Styles**: Keep CSS selectors aligned with Obsidian's DOM structure - test after Obsidian updates
+- **Command IDs**: Use stable command IDs (`ui-tweaker:toggle-{feature-name}`) - avoid renaming once released
+- **Settings Keys**: Use camelCase for all settings keys, maintain consistency with existing patterns
+- **Reference Projects**: Keep reference projects (oxygen-settings, hider, oxygen theme) updated to learn from their patterns
+
+### Project-Specific Conventions
+
+#### Code Organization
+- **Source files in `src/` directory**: 
+  - `main.ts` - Plugin entry point and lifecycle
+  - `settings.ts` - Settings interface and defaults
+  - `uiManager.ts` - CSS class injection and UI state management
+  - `commands.ts` - Command registration
+  - `settingsTab.ts` - Settings UI implementation
+  - `types.ts` - TypeScript type definitions
+  - `modals/CommandPickerModal.ts` - Command selection modal
+
+#### Settings Patterns
+- **Show/Hide/Reveal states**: Use `UIVisibilityState` type (`'show' | 'hide' | 'reveal'`)
+- **Simple toggles**: Use `boolean` for Show/Hide only features
+- **Naming**: Settings with Show/Hide/Reveal use descriptive names without "hide" prefix; simple toggles use "Hide {element}" naming
+
+#### CSS Class Naming
+- Pattern: `.ui-tweaker-{feature-name}` for hide classes
+- Reveal state: `.ui-tweaker-{feature-name}-reveal` for reveal-on-hover
+- Apply classes to `document.body` element
+
+#### Command Naming
+- Pattern: `ui-tweaker:toggle-{feature-name}`
+- Toggle behavior: Show ↔ Hide (resets Reveal to Show first)
+- Ribbon toggle excluded (uses base Obsidian command)
+
+#### Settings UI Organization
+- **Flat list with headers** (Obsidian best practice)
+- Use `containerEl.createEl('h2', { text: 'Section Name' })` for headers
+- Group related settings together (e.g., all file explorer buttons)
+- Use dropdowns for Show/Hide/Reveal, toggles for simple Show/Hide
+
+### Project-Specific References
+
+If this project references specific plugins or themes that are relevant to its development, document them here. These should be symlinked in `.ref/plugins/` or `.ref/themes/` as needed.
+
+**Example structure**:
+- `.ref/plugins/plugin-name/` - Reference to a specific plugin that demonstrates patterns used in this project
+- `.ref/themes/theme-name/` - Reference to a specific theme that demonstrates patterns used in this project
+
+**Note**: The 6 core Obsidian projects (obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme, eslint-plugin) are always relevant and should be in every project's `.ref` folder. Only document project-specific plugins/themes here.
+
+**Current project-specific references**:
+- `.ref/plugins/obsidian-oxygen-settings/` - Primary source for feature implementation patterns, especially the HiderSettings.ts file
+- `.ref/plugins/obsidian-hider/` - Reference for CSS class injection patterns and similar functionality
+- `.ref/themes/obsidian-oxygen/` - Reference for CSS patterns and theme structure
+- `.ref/obsidian-dev/app.css` - Obsidian's main CSS file for accurate DOM selectors and class names (especially for mobile UI elements). Located at `C:\Users\david\Development\.ref\obsidian-dev\app.css`
+
+### Overrides (Optional)
+
+None currently. This project follows the general `.agents` guidance.
+
+### Key Files and Their Purposes
+
+#### Source Files (`src/`)
+- `main.ts` - Main plugin class, lifecycle management, initializes UI manager and registers commands/settings
+- `settings.ts` - Settings interface (`UISettings`), default values (`DEFAULT_SETTINGS`)
+- `uiManager.ts` - Manages CSS class injection on `document.body`, handles reveal-on-hover functionality
+- `commands.ts` - Registers all toggle commands, handles toggle logic
+- `settingsTab.ts` - Implements settings UI with flat list organization and headers
+- `types.ts` - TypeScript type definitions (`UIVisibilityState`, `MobileNavPosition`)
+- `modals/CommandPickerModal.ts` - Modal for selecting Obsidian commands (used for help button replacement)
+
+#### Root Files
+- `main.js` - Compiled output (entry point for Obsidian)
+- `manifest.json` - Plugin metadata (ID: `obsidian-ui-tweaker`)
+- `styles.css` - CSS rules for hiding/showing/revealing UI elements
+- `package.json` - Node.js dependencies and build scripts
+- `esbuild.config.mjs` - Build configuration for TypeScript compilation
+- `README.md` - Project documentation with features, installation, and usage instructions
+- `version-bump.mjs` - Script for version management
+- `versions.json` - Version compatibility mapping
+
+### Development Notes
+
+#### Reference Projects
+- **obsidian-oxygen-settings** (`.ref/plugins/obsidian-oxygen-settings`): Primary source for feature implementation patterns, especially the HiderSettings.ts file
+- **obsidian-hider** (`.ref/plugins/obsidian-hider`): Reference for CSS class injection patterns and similar functionality
+- **obsidian-oxygen theme** (`.ref/themes/obsidian-oxygen`): Reference for CSS patterns and theme structure
+
+#### Feature Migration
+- This plugin extracts hider/auto-hide features from obsidian-oxygen-settings
+- Maintain feature parity where possible, but improve organization and user experience
+
+#### CSS Development
+- CSS selectors must match Obsidian's DOM structure
+- Test CSS after Obsidian updates as DOM structure may change
+- Use reveal-on-hover patterns with `opacity` transitions for smooth UX
+- Mobile-specific styles should be tested on actual mobile devices
+
+#### Settings Migration
+- When users migrate from oxygen-settings, consider adding migration logic if needed
+- Settings keys use camelCase to match Obsidian conventions
+- Default values should be sensible (most features default to 'show' or `false`)
+
+#### Testing Considerations
+- Test all three states (Show/Hide/Reveal) for applicable features
+- Test toggle commands cycle correctly
+- Test reveal-on-hover functionality works smoothly
+- Test mobile-specific features on mobile devices
+- Verify CSS doesn't conflict with themes
+- Test help button replacement functionality
+
+#### Future Enhancements
+- Consider adding preset support for common configurations
+- Consider adding import/export settings functionality
+- Monitor Obsidian API updates for new UI elements to support
+- Consider adding more granular controls for individual buttons/icons
+
+### When to Consider Using `.agents/.context/` Directory
+
+If your project needs project-specific versions of multiple `.agents` files (e.g., custom `build-workflow.md`, `code-patterns.md`, etc.), consider creating a `.agents/.context/` directory structure. This advanced feature is optional and only needed for complex projects. See the Navigation section below for details on the `.context/` directory structure.
+
+---
 
 ## Quick Start
 
-**All agent instructions are located in the [`.agents`](.agents/) directory.**
+**All general-purpose agent instructions are located in the [`.agents`](.agents/) directory** (symlinked from `../.ref/obsidian-dev/.agents/`).
 
-**Quick Commands**: See [quick-reference.md](.agents/quick-reference.md#quick-commands) for one-word commands like `build`, `sync`, `release ready?`, `summarize`, etc. **AI Agents: Execute these commands automatically when users type them** (detailed execution instructions are in the Help sections below).
-
-**New to this project?** Start here:
-
-**All agent instructions are located in the [`.agents`](.agents/) directory.**
+**Quick Commands**: See [quick-reference.md](.agents/quick-reference.md#quick-commands) for one-word commands like `build`, `sync`, `release ready?`, `summarize`, `bump the version`, etc. **AI Agents: Execute these commands automatically when users type them** (detailed execution instructions are in the Help sections below).
 
 **New to this project?** Start here:
+
 0. **Set up reference materials**: Check if `.ref` folder exists and has symlinks. If not, run the setup script:
    - **Windows**: `scripts\setup-ref-links.bat` or `.\scripts\setup-ref-links.ps1`
    - **macOS/Linux**: `./scripts/setup-ref-links.sh`
    - The script will automatically create `../.ref/obsidian-dev/` (if needed), clone the 6 core Obsidian projects (or update them if they already exist), and create symlinks
-1. Read [project-context.md](.agents/project-context.md) for project-specific information and overrides
-2. Read [project-overview.md](.agents/project-overview.md) to understand the structure
-3. Check [environment.md](.agents/environment.md) for setup requirements
-4. Review [common-tasks.md](.agents/common-tasks.md) for quick code snippets
-5. See [code-patterns.md](.agents/code-patterns.md) for complete examples
-6. Bookmark [quick-reference.md](.agents/quick-reference.md) for common commands
+
+1. **Set up `.agents` symlink**: If `.agents/` is not already a symlink, run:
+   - **Windows**: `.\scripts\setup-agents-link.ps1` or `scripts\setup-agents-link.bat`
+   - **macOS/Linux**: `./scripts/setup-agents-link.sh`
+   - This creates a symlink from `.agents/` to `../.ref/obsidian-dev/.agents/`
+
+2. Read the **Project Context** section above for project-specific information and overrides
+
+3. Read [project-overview.md](.agents/project-overview.md) to understand the structure
+
+4. Check [environment.md](.agents/environment.md) for setup requirements
+
+5. Review [common-tasks.md](.agents/common-tasks.md) for quick code snippets
+
+6. See [code-patterns.md](.agents/code-patterns.md) for complete examples
+
+7. Bookmark [quick-reference.md](.agents/quick-reference.md) for common commands
 
 **Note**: For complex projects, see `.agents/.context/` directory (optional advanced feature).
 
@@ -75,7 +237,7 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 2. **Determine setup**: Check if `.ref` contains symlinks (see [sync-procedure.md](.agents/sync-procedure.md#step-1-determine-your-ref-setup) for how to check). If symlinks, note the target location (usually `..\.ref\obsidian-dev`).
 3. **Check for updates** (read-only, safe):
    - **For core Obsidian projects**: Check `.ref/` root (all 6: obsidian-api, obsidian-sample-plugin, obsidian-developer-docs, obsidian-plugin-docs, obsidian-sample-theme, eslint-plugin)
-   - **For project-specific repos**: Check `.ref/plugins/` or `.ref/themes/` (only if documented in `project-context.md`)
+   - **For project-specific repos**: Check `.ref/plugins/` or `.ref/themes/` (only if documented in this `AGENTS.md`)
 4. **Use read-only git commands** (from actual target location if using symlinks):
    ```bash
    # If using symlinks, navigate to central location first (usually ..\.ref\obsidian-dev)
@@ -135,7 +297,7 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
      - For themes: Run `cd ../.ref/obsidian-dev/themes && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/themes/<name>/` (the actual repo)
      - For other projects: Run `cd ../.ref/obsidian-dev && git clone <URL> <name>` → Creates `../.ref/obsidian-dev/<name>/` (the actual repo)
    - **Execute symlink creation**: Create symlink at `.ref/plugins/<name>/` (or `.ref/themes/<name>/` or `.ref/<name>/`) pointing to the global location
-   - **Document if project-specific**: Document in `project-context.md` if it's project-specific
+   - **Document if project-specific**: Document in this `AGENTS.md` if it's project-specific
    
    **IMPORTANT**: Clone the repo directly into the target folder (e.g., `../.ref/obsidian-dev/plugins/plugin-name/`), NOT into a `.ref` subfolder. The repo folder name should match the project name.
    
@@ -143,7 +305,7 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
    - **Verify path exists**: Check that the local path exists
    - **Execute symlink creation**: Create symlink directly in project's `.ref/` folder pointing to the local project (e.g., `../my-other-plugin`)
    - **Do NOT** clone to global `.ref/obsidian-dev/` - this is project-specific
-   - Document in `project-context.md` if relevant
+   - Document in this `AGENTS.md` if relevant
 
 4. **Verify**: Check that the symlink was created and works (test by listing directory or reading a file)
 
@@ -151,7 +313,40 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 ---
 
-### Option 3: Start a New Plugin or Theme Project
+### Option 3: Bump the Version
+
+**Present this option when**: User says "bump the version", "bump version", or similar - they want to increment the version number.
+
+**Instructions for AI agent** (execute automatically, don't just show commands):
+1. **Parse the command**: Extract the version increment type from user input
+   - If no type specified → Default to `patch` (bumps by 0.0.1)
+   - If user specifies `patch`, `minor`, or `major` → Use that type
+   - If user specifies an exact version (e.g., "1.2.3") → Use that version
+   
+2. **Execute version bump**:
+   - Run `npm version <type>` where `<type>` is one of:
+     - `patch` (default) - bumps patch version: 1.0.0 → 1.0.1
+     - `minor` - bumps minor version: 1.0.0 → 1.1.0
+     - `major` - bumps major version: 1.0.0 → 2.0.0
+     - Or exact version: `1.2.3` (sets to that version)
+   - The `npm version` command automatically:
+     - Updates `package.json` version
+     - Runs the `version` script in `package.json` (which updates `manifest.json` and `versions.json` via `version-bump.mjs`)
+     - Stages `manifest.json` and `versions.json` for commit
+   
+3. **Verify**: Check that both `package.json` and `manifest.json` have the new version
+
+**Examples**:
+- `bump the version` → Runs `npm version patch` (default: 0.0.1 increment)
+- `bump version minor` → Runs `npm version minor`
+- `bump version major` → Runs `npm version major`
+- `bump version 1.2.3` → Runs `npm version 1.2.3`
+
+**Key files**: [versioning-releases.md](.agents/versioning-releases.md), `package.json`, `manifest.json`, `version-bump.mjs`
+
+---
+
+### Option 4: Start a New Plugin or Theme Project
 
 **Present this option when**: User wants to create a new Obsidian plugin or theme.
 
@@ -181,19 +376,21 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
    - [common-tasks.md](.agents/common-tasks.md) - Code examples
    - [references.md](.agents/references.md) - Official documentation links
    - **Set up `.ref` folder**: Run the setup script (`scripts/setup-ref-links.bat`, `.ps1`, or `.sh`) to configure reference materials
+   - **Set up `.agents` symlink**: Run the setup script (`scripts/setup-agents-link.bat`, `.ps1`, or `.sh`) to configure the `.agents/` symlink
 
 **Key files**: [project-overview.md](.agents/project-overview.md), [common-tasks.md](.agents/common-tasks.md), [references.md](.agents/references.md), [ref-instructions.md](.agents/ref-instructions.md)
 
 ## Static vs. Project-Specific Files
 
-**General `.agents` files** (most files in this directory):
+**General `.agents` files** (most files in the `.agents/` directory):
 - Are synced from reference repos (Sample Plugin, API, etc.)
-- Should remain static and not be edited directly
+- Should remain static and not be edited directly in plugin projects
 - Provide general-purpose guidance for all Obsidian plugins/themes
 - Can be updated by syncing from reference repositories
+- Are accessed via symlink from `../.ref/obsidian-dev/.agents/`
 
 **Project-specific files**:
-- **[project-context.md](.agents/project-context.md)** - Simple, recommended approach for most projects
+- **This `AGENTS.md` file** - Contains project-specific information and overrides (replaces the old `project-context.md`)
   - Contains project overview, specific details, maintenance tasks, and conventions
   - Can override general `.agents` guidance when project-specific needs differ
   - Is preserved when syncing updates from reference repos
@@ -207,13 +404,14 @@ This file serves as the entry point for AI agents working on Obsidian plugin or 
 
 ## How to Use This Documentation
 
-This documentation is organized into topic-based files in the `.agents/` directory. Most files are **general-purpose** and apply to all Obsidian plugins/themes. Some files are **project-specific** and can override general guidance.
+This documentation is organized into topic-based files in the `.agents/` directory (symlinked from a central location). Most files are **general-purpose** and apply to all Obsidian plugins/themes. Some files are **project-specific** and can override general guidance.
 
 **Key concepts**:
-- **General files**: Synced from official Obsidian repos, provide standard guidance
-- **Project-specific files**: `project-context.md` (and optional `.context/` directory) contain project-specific information
+- **General files**: Synced from official Obsidian repos, provide standard guidance, accessed via symlink
+- **Project-specific files**: This `AGENTS.md` file (and optional `.agents/.context/` directory) contain project-specific information
 - **Precedence**: Project-specific files override general guidance when conflicts exist
 - **`.ref` folder**: Contains symlinks to reference materials (not actual files). See [ref-instructions.md](.agents/ref-instructions.md) for details.
+- **`.agents/` folder**: Symlink to `../.ref/obsidian-dev/.agents/` providing access to shared guidance files
 
 **Quick Links by Task**:
 - **Starting a new project** → [project-overview.md](.agents/project-overview.md), [environment.md](.agents/environment.md), [file-conventions.md](.agents/file-conventions.md)
@@ -234,8 +432,8 @@ This documentation is organized into topic-based files in the `.agents/` directo
 - **Working with `.ref` folder** → [ref-instructions.md](.agents/ref-instructions.md)
 
 ### Project-Specific
-- **[project-context.md](.agents/project-context.md)** - Project-specific information and overrides (simple, recommended)
-- **`.context/` directory** - Optional project-specific structure for complex projects (advanced)
+- **This `AGENTS.md` file** - Project-specific information and overrides (simple, recommended)
+- **`.agents/.context/` directory** - Optional project-specific structure for complex projects (advanced)
 
 ### Core Development
 - **[project-overview.md](.agents/project-overview.md)** - Project structure, entry points, and artifacts (Plugin/Theme)
@@ -296,6 +494,28 @@ The `.ref` folder contains **symlinks** to reference materials (not actual files
 
 See [ref-instructions.md](.agents/ref-instructions.md) for complete details.
 
+## Important: .agents Folder (Symlink Architecture)
+
+The `.agents/` folder in this project is a **symlink** to `../.ref/obsidian-dev/.agents/`, providing access to shared, general-purpose guidance files. This architecture allows:
+
+- **Single source of truth**: General `.agents` files are maintained in one central location
+- **Automatic updates**: Changes to central `.agents` files propagate to all projects automatically
+- **Project-specific content**: This `AGENTS.md` file remains project-specific and is not symlinked
+- **No manual copying**: No need to manually copy `.agents` files to each project
+
+**Setup**: Run the setup script to create the symlink:
+- **Windows**: `.\scripts\setup-agents-link.ps1` or `scripts\setup-agents-link.bat`
+- **macOS/Linux**: `./scripts/setup-agents-link.sh`
+
+**For active development** (editing the central `.agents` files):
+- If you're developing the central `.agents` repository, edit files in that repo's `.agents/` directory
+- The symlink from `../.ref/obsidian-dev/.agents/` → your dev repo ensures changes are immediately available
+
+**Troubleshooting**:
+- If `.agents/` is not a symlink, run the setup script to create it
+- If symlink is broken, re-run the setup script to recreate it
+- The `.agents/` folder may be hidden by default in some file explorers, but it exists in the project root
+
 ## Source Attribution
 
 Each file in `.agents` includes a header comment with:
@@ -307,7 +527,7 @@ Each file in `.agents` includes a header comment with:
 
 ## Updating Content
 
-Content in this directory is based on:
+Content in the `.agents/` directory is based on:
 - **Obsidian API** (`.ref/obsidian-api/obsidian.d.ts`) - **Authoritative source** for all API information
 - Obsidian Sample Plugin repository - Implementation patterns and best practices
 - Obsidian Sample Theme repository - Theme patterns
@@ -322,7 +542,7 @@ Check the source attribution in each file header for update frequency guidance. 
 
 ## General Purpose / Reusable
 
-This `.agents` directory structure and content is designed to be **general-purpose and reusable** across Obsidian plugin and theme projects. The content is based on official Obsidian repositories and documentation, not project-specific code. You can:
+The `.agents` directory structure and content is designed to be **general-purpose and reusable** across Obsidian plugin and theme projects. The content is based on official Obsidian repositories and documentation, not project-specific code. You can:
 
 - Copy this structure to other Obsidian projects
 - Use it as a template for new projects
@@ -330,11 +550,11 @@ This `.agents` directory structure and content is designed to be **general-purpo
 - Adapt it for your specific needs
 
 The only project-specific content is in:
-- `project-context.md` - Project-specific information and overrides (maintained by developer)
-- `.context/` directory - Optional project-specific structure for complex projects (if it exists)
+- This `AGENTS.md` file - Project-specific information and overrides (maintained by developer)
+- `.agents/.context/` directory - Optional project-specific structure for complex projects (if it exists)
 - `ref-instructions.md` - OS-agnostic setup instructions that may need path adjustments
 
-Everything else syncs from official Obsidian sources.
+Everything else syncs from official Obsidian sources and is accessed via symlink.
 
 ## Troubleshooting
 
@@ -342,16 +562,19 @@ Everything else syncs from official Obsidian sources.
 - Run the setup script: `scripts\setup-ref-links.bat` (Windows), `.\scripts\setup-ref-links.ps1` (PowerShell), or `./scripts/setup-ref-links.sh` (macOS/Linux)
 - The script will automatically set everything up
 
+**If `.agents` folder is missing or not a symlink**:
+- Run the setup script: `scripts\setup-agents-link.bat` (Windows), `.\scripts\setup-agents-link.ps1` (PowerShell), or `./scripts/setup-agents-link.sh` (macOS/Linux)
+- The script will create the symlink to `../.ref/obsidian-dev/.agents/`
+
 **If symlinks are broken**:
-- Re-run the setup script - it will recreate the symlinks
+- Re-run the appropriate setup script - it will recreate the symlinks
 
 **If you can't find a reference**:
 - Check [ref-instructions.md](.agents/ref-instructions.md) for organization
-- Check `project-context.md` for project-specific references
+- Check this `AGENTS.md` file for project-specific references
 - Use `list_dir` or `glob_file_search` to search `.ref/` folder
 
 **If build fails**:
 - See [build-workflow.md](.agents/build-workflow.md) for build commands
 - See [troubleshooting.md](.agents/troubleshooting.md) for common issues
 - See [common-pitfalls.md](.agents/common-pitfalls.md) for common mistakes
-

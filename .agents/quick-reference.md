@@ -21,12 +21,16 @@ One-page cheat sheet for common Obsidian plugin and theme development tasks.
 | `release ready?` or `is my plugin ready for release?` | Run comprehensive release readiness checklist |
 | `summarize` | Generate git commit message from all changed files |
 | `summarize for release` | Generate markdown release notes for GitHub |
+| `bump the version` or `bump version` | Bump version by 0.0.1 (patch) by default, or specify: `patch`, `minor`, `major`, or exact version |
 | `add ref [name]` | Add a reference project (external URL or local path) |
 | `check API [feature]` | Look up a feature in `.ref/obsidian-api/obsidian.d.ts` |
 
 **Usage examples:**
 - `build` → Runs build command automatically
 - `sync` → Pulls latest from all core repos automatically
+- `bump the version` → Bumps version by 0.0.1 (patch) in package.json and manifest.json
+- `bump version minor` → Bumps minor version (e.g., 1.0.0 → 1.1.0)
+- `bump version major` → Bumps major version (e.g., 1.0.0 → 2.0.0)
 - `add ref my-plugin https://github.com/user/my-plugin.git` → Clones external repo
 - `add ref ../my-local-plugin` → Creates symlink to local project
 - `check API SettingGroup` → Searches obsidian.d.ts for SettingGroup

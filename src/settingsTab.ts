@@ -68,11 +68,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
 				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value) => {
-						this.plugin.settings.ribbonRevealOnHover = value;
-						void this.plugin.saveSettings();
-						this.plugin.refresh();
-					})
+				toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value) => {
+					this.plugin.settings.ribbonRevealOnHover = value;
+					void (async () => {
+						await this.plugin.saveSettings();
+					})();
+					this.plugin.refresh();
+				})
 				)
 		);
 
@@ -141,7 +143,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							};
 						}
 						this.plugin.settings.helpButtonReplacement.enabled = value;
-						void this.plugin.saveSettings();
+						void (async () => {
+							await this.plugin.saveSettings();
+						})();
 						this.plugin.refresh();
 						
 						// Save scroll position before re-rendering
@@ -204,7 +208,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.helpButtonReplacement.commandId = commandId;
-								void this.plugin.saveSettings();
+								void (async () => {
+									await this.plugin.saveSettings();
+								})();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -250,7 +256,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.helpButtonReplacement.iconId = iconId;
-								void this.plugin.saveSettings();
+								void (async () => {
+									await this.plugin.saveSettings();
+								})();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -290,7 +298,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.setDynamicTooltip()
 						.onChange((value) => {
 							this.plugin.settings.vaultSwitcherBackgroundTransparency = value;
-							void this.plugin.saveSettings();
+							void (async () => {
+								await this.plugin.saveSettings();
+							})();
 							this.plugin.refresh();
 						})
 				)
@@ -418,7 +428,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 							};
 						}
 						this.plugin.settings.syncButtonReplacement.enabled = value;
-						void this.plugin.saveSettings();
+						void (async () => {
+							await this.plugin.saveSettings();
+						})();
 						this.plugin.refresh();
 						
 						// Save scroll position before re-rendering
@@ -481,7 +493,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.syncButtonReplacement.commandId = commandId;
-								void this.plugin.saveSettings();
+								void (async () => {
+									await this.plugin.saveSettings();
+								})();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -527,7 +541,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 									};
 								}
 								this.plugin.settings.syncButtonReplacement.iconId = iconId;
-								void this.plugin.saveSettings();
+								void (async () => {
+									await this.plugin.saveSettings();
+								})();
 								this.plugin.refresh();
 								
 								// Save scroll position before re-rendering
@@ -582,7 +598,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.setValue(stringValue)
 						.onChange((value) => {
 							(this.plugin.settings[key] as UIVisibilityState) = value as UIVisibilityState;
-							void this.plugin.saveSettings();
+							void (async () => {
+								await this.plugin.saveSettings();
+							})();
 							this.plugin.refresh();
 						});
 				})
@@ -595,11 +613,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName(name)
 				.setDesc(desc)
 				.addToggle((toggle) =>
-					toggle.setValue(Boolean(this.plugin.settings[key])).onChange((value) => {
-						(this.plugin.settings[key] as boolean) = value;
-						void this.plugin.saveSettings();
-						this.plugin.refresh();
-					})
+				toggle.setValue(Boolean(this.plugin.settings[key])).onChange((value) => {
+					(this.plugin.settings[key] as boolean) = value;
+					void (async () => {
+						await this.plugin.saveSettings();
+					})();
+					this.plugin.refresh();
+				})
 				)
 		);
 	}
@@ -617,7 +637,9 @@ export class UITweakerSettingTab extends PluginSettingTab {
 					const stringValue = typeof currentValue === 'string' ? currentValue : '1';
 					dropdown.setValue(stringValue).onChange((value) => {
 						(this.plugin.settings[key] as string) = value;
-						void this.plugin.saveSettings();
+						void (async () => {
+							await this.plugin.saveSettings();
+						})();
 						this.plugin.refresh();
 					});
 				})
