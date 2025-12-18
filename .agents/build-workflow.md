@@ -15,8 +15,11 @@ After making any changes to plugin code:
 
 1. **Run the build** (assume npm is already installed):
    ```powershell
-   npm run build
+   npm run build    # Production build (outputs to dist/main.js)
+   npm run dev      # Development build with watch mode (outputs to main.js in root for local testing)
    ```
+   
+   **Note**: Production builds (`npm run build`) output to `dist/main.js` for releases. Development builds (`npm run dev`) output to `main.js` in the root for local testing in Obsidian.
 
 2. **If the build fails with npm/node errors**, then check if npm is installed:
    ```powershell
@@ -60,7 +63,7 @@ If your theme uses build tools (Grunt, npm scripts, SCSS compiler, etc.):
    - If npm is not found, inform the user that Node.js (which includes npm) needs to be installed
    - Do not automatically install npm - let the user handle installation
 
-3. **Check for errors** and fix any build issues before proceeding. See [troubleshooting.md](troubleshooting.md) and [common-pitfalls.md](common-pitfalls.md) for common build issues.
+3. **Check for errors** and fix any build issues before proceeding. See [troubleshooting.md](troubleshooting.md) for common build issues.
 
 ## Why This Matters
 

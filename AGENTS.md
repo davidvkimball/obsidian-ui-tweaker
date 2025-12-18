@@ -1,10 +1,12 @@
 # AI Agent Instructions
 
-This file serves as the **project-specific entry point** for AI agents working on this Obsidian plugin or theme project. General-purpose instructions are located in the [`.agents`](.agents/) directory (symlinked from a central location).
+This file serves as the **project-specific entry point** for AI agents working on this Obsidian plugin project. General-purpose instructions are located in the [`.agents`](.agents/) directory.
 
-**Note**: The `.agents/` directory in this project is a symlink to `../.ref/obsidian-dev/.agents/`, providing access to shared, general-purpose guidance files. This allows updates to propagate automatically across all projects. See the setup scripts in `scripts/` to configure this.
+**Note**: The `.agents/` directory contains guidance files tailored for Obsidian plugin development. Some files are plugin-specific, while others are shared with theme development.
 
 ---
+
+## Project Context
 
 ## Project Context
 
@@ -159,27 +161,23 @@ None currently. This project follows the general `.agents` guidance.
 
 If your project needs project-specific versions of multiple `.agents` files (e.g., custom `build-workflow.md`, `code-patterns.md`, etc.), consider creating a `.agents/.context/` directory structure. This advanced feature is optional and only needed for complex projects. See the Navigation section below for details on the `.context/` directory structure.
 
+
 ---
 
 ## Quick Start
 
-**All general-purpose agent instructions are located in the [`.agents`](.agents/) directory** (symlinked from `../.ref/obsidian-dev/.agents/`).
+**All general-purpose agent instructions are located in the [`.agents`](.agents/) directory**.
 
 **Quick Commands**: See [quick-reference.md](.agents/quick-reference.md#quick-commands) for one-word commands like `build`, `sync`, `release ready?`, `summarize`, `bump the version`, etc. **AI Agents: Execute these commands automatically when users type them** (detailed execution instructions are in the Help sections below).
 
 **New to this project?** Start here:
 
 0. **Set up reference materials**: Check if `.ref` folder exists and has symlinks. If not, run the setup script:
-   - **Windows**: `scripts\setup-ref-links.bat` or `.\scripts\setup-ref-links.ps1`
+   - **Windows**: `scripts\setup-ref-links.bat`
    - **macOS/Linux**: `./scripts/setup-ref-links.sh`
    - The script will automatically create `../.ref/obsidian-dev/` (if needed), clone the 6 core Obsidian projects (or update them if they already exist), and create symlinks
 
-1. **Set up `.agents` symlink**: If `.agents/` is not already a symlink, run:
-   - **Windows**: `.\scripts\setup-agents-link.ps1` or `scripts\setup-agents-link.bat`
-   - **macOS/Linux**: `./scripts/setup-agents-link.sh`
-   - This creates a symlink from `.agents/` to `../.ref/obsidian-dev/.agents/`
-
-2. Read the **Project Context** section above for project-specific information and overrides
+1. Read the **Project Context** section above for project-specific information and overrides
 
 3. Read [project-overview.md](.agents/project-overview.md) to understand the structure
 
@@ -208,7 +206,7 @@ If your project needs project-specific versions of multiple `.agents` files (e.g
 
 **When triggered:**
 1. Check if `.ref/obsidian-api` exists (note: this may be a symlink pointing to a central location)
-2. If missing, run setup script: `.\scripts\setup-ref-links.ps1` (Windows) or `./scripts/setup-ref-links.sh` (Unix)
+2. If missing, run setup script: `scripts\setup-ref-links.bat` (Windows) or `./scripts/setup-ref-links.sh` (Unix)
 3. If it exists but git commands fail, check if it's a symlink and navigate to the actual target location
 4. Then proceed with the API/documentation lookup
 
@@ -346,37 +344,26 @@ If your project needs project-specific versions of multiple `.agents` files (e.g
 
 ---
 
-### Option 4: Start a New Plugin or Theme Project
+### Option 4: Start a New Plugin Project
 
-**Present this option when**: User wants to create a new Obsidian plugin or theme.
+**Present this option when**: User wants to create a new Obsidian plugin.
 
 **Instructions for AI agent** - Follow this funnel:
 
-1. **Initial question**: "What kind of project are you wanting to make?"
-   - If **Plugin** → Go to Plugin Funnel
-   - If **Theme** → Go to Theme Funnel
-
-2. **Plugin Funnel** - Ask these questions in order:
+1. **Plugin Funnel** - Ask these questions in order:
    - "What functionality do you want your plugin to provide?" (core purpose)
    - "Will it need user settings or configuration?" → If yes, point to [commands-settings.md](.agents/commands-settings.md)
    - "What will it interact with?" (vault files, editor, UI components, workspace)
    - "Do you need any external API integrations?" → If yes, review [security-privacy.md](.agents/security-privacy.md) for guidelines
    - "Will it work on mobile, or desktop-only?" → Point to [mobile.md](.agents/mobile.md) and `isDesktopOnly` in [manifest.md](.agents/manifest.md)
 
-3. **Theme Funnel** - Ask these questions in order:
-   - "What visual style are you aiming for?" (color scheme, typography, layout)
-   - "Will it support both light and dark modes?" → Point to CSS variable usage
-   - "Are there specific UI elements you want to customize?" (editor, sidebar, status bar, etc.)
-   - "Do you want to include theme snippets?" → Point to file structure in [file-conventions.md](.agents/file-conventions.md)
-
-4. **After gathering answers**, guide them to:
+2. **After gathering answers**, guide them to:
    - [project-overview.md](.agents/project-overview.md) - Project structure
    - [environment.md](.agents/environment.md) - Setup and tooling
    - [file-conventions.md](.agents/file-conventions.md) - File organization
    - [common-tasks.md](.agents/common-tasks.md) - Code examples
    - [references.md](.agents/references.md) - Official documentation links
-   - **Set up `.ref` folder**: Run the setup script (`scripts/setup-ref-links.bat`, `.ps1`, or `.sh`) to configure reference materials
-   - **Set up `.agents` symlink**: Run the setup script (`scripts/setup-agents-link.bat`, `.ps1`, or `.sh`) to configure the `.agents/` symlink
+   - **Set up `.ref` folder**: Run the setup script (`scripts/setup-ref-links.bat` or `.sh`) to configure reference materials
 
 **Key files**: [project-overview.md](.agents/project-overview.md), [common-tasks.md](.agents/common-tasks.md), [references.md](.agents/references.md), [ref-instructions.md](.agents/ref-instructions.md)
 
@@ -385,9 +372,9 @@ If your project needs project-specific versions of multiple `.agents` files (e.g
 **General `.agents` files** (most files in the `.agents/` directory):
 - Are synced from reference repos (Sample Plugin, API, etc.)
 - Should remain static and not be edited directly in plugin projects
-- Provide general-purpose guidance for all Obsidian plugins/themes
+- Provide guidance tailored for Obsidian plugin development
+- Some files are plugin-specific, others are shared with theme development
 - Can be updated by syncing from reference repositories
-- Are accessed via symlink from `../.ref/obsidian-dev/.agents/`
 
 **Project-specific files**:
 - **This `AGENTS.md` file** - Contains project-specific information and overrides (replaces the old `project-context.md`)
@@ -404,14 +391,14 @@ If your project needs project-specific versions of multiple `.agents` files (e.g
 
 ## How to Use This Documentation
 
-This documentation is organized into topic-based files in the `.agents/` directory (symlinked from a central location). Most files are **general-purpose** and apply to all Obsidian plugins/themes. Some files are **project-specific** and can override general guidance.
+This documentation is organized into topic-based files in the `.agents/` directory. Most files are **general-purpose** and apply to all Obsidian plugins/themes. Some files are **project-specific** and can override general guidance.
 
 **Key concepts**:
-- **General files**: Synced from official Obsidian repos, provide standard guidance, accessed via symlink
+- **General files**: Synced from official Obsidian repos, provide standard guidance
 - **Project-specific files**: This `AGENTS.md` file (and optional `.agents/.context/` directory) contain project-specific information
 - **Precedence**: Project-specific files override general guidance when conflicts exist
 - **`.ref` folder**: Contains symlinks to reference materials (not actual files). See [ref-instructions.md](.agents/ref-instructions.md) for details.
-- **`.agents/` folder**: Symlink to `../.ref/obsidian-dev/.agents/` providing access to shared guidance files
+- **`.agents/` folder**: Contains general-purpose guidance files for Obsidian plugin and theme development
 
 **Quick Links by Task**:
 - **Starting a new project** → [project-overview.md](.agents/project-overview.md), [environment.md](.agents/environment.md), [file-conventions.md](.agents/file-conventions.md)
@@ -494,27 +481,16 @@ The `.ref` folder contains **symlinks** to reference materials (not actual files
 
 See [ref-instructions.md](.agents/ref-instructions.md) for complete details.
 
-## Important: .agents Folder (Symlink Architecture)
+## Important: .agents Folder
 
-The `.agents/` folder in this project is a **symlink** to `../.ref/obsidian-dev/.agents/`, providing access to shared, general-purpose guidance files. This architecture allows:
+The `.agents/` directory contains guidance files tailored for Obsidian plugin development. This directory structure provides:
 
-- **Single source of truth**: General `.agents` files are maintained in one central location
-- **Automatic updates**: Changes to central `.agents` files propagate to all projects automatically
-- **Project-specific content**: This `AGENTS.md` file remains project-specific and is not symlinked
-- **No manual copying**: No need to manually copy `.agents` files to each project
+- **Plugin-specific guidance**: Files like `code-patterns.md`, `commands-settings.md`, and `release-readiness.md` are plugin-only
+- **Shared guidance**: Files like `build-workflow.md`, `file-conventions.md`, and `versioning-releases.md` have sections for both plugins and themes
+- **Project-specific content**: This `AGENTS.md` file remains project-specific and contains project-specific information
+- **Easy maintenance**: Files can be updated by syncing from reference repositories
 
-**Setup**: Run the setup script to create the symlink:
-- **Windows**: `.\scripts\setup-agents-link.ps1` or `scripts\setup-agents-link.bat`
-- **macOS/Linux**: `./scripts/setup-agents-link.sh`
-
-**For active development** (editing the central `.agents` files):
-- If you're developing the central `.agents` repository, edit files in that repo's `.agents/` directory
-- The symlink from `../.ref/obsidian-dev/.agents/` → your dev repo ensures changes are immediately available
-
-**Troubleshooting**:
-- If `.agents/` is not a symlink, run the setup script to create it
-- If symlink is broken, re-run the setup script to recreate it
-- The `.agents/` folder may be hidden by default in some file explorers, but it exists in the project root
+**Note**: The `.agents/` folder may be hidden by default in some file explorers, but it exists in the project root.
 
 ## Source Attribution
 
@@ -554,17 +530,17 @@ The only project-specific content is in:
 - `.agents/.context/` directory - Optional project-specific structure for complex projects (if it exists)
 - `ref-instructions.md` - OS-agnostic setup instructions that may need path adjustments
 
-Everything else syncs from official Obsidian sources and is accessed via symlink.
+Everything else syncs from official Obsidian sources.
 
 ## Troubleshooting
 
 **If `.ref` folder is missing or empty**:
-- Run the setup script: `scripts\setup-ref-links.bat` (Windows), `.\scripts\setup-ref-links.ps1` (PowerShell), or `./scripts/setup-ref-links.sh` (macOS/Linux)
+- Run the setup script: `scripts\setup-ref-links.bat` (Windows) or `./scripts/setup-ref-links.sh` (macOS/Linux)
 - The script will automatically set everything up
 
-**If `.agents` folder is missing or not a symlink**:
-- Run the setup script: `scripts\setup-agents-link.bat` (Windows), `.\scripts\setup-agents-link.ps1` (PowerShell), or `./scripts/setup-agents-link.sh` (macOS/Linux)
-- The script will create the symlink to `../.ref/obsidian-dev/.agents/`
+**If `.agents` folder is missing**:
+- The `.agents/` folder should exist in the project root
+- If it's missing, it may need to be created or restored from the project template
 
 **If symlinks are broken**:
 - Re-run the appropriate setup script - it will recreate the symlinks

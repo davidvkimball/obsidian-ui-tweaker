@@ -1,14 +1,14 @@
 {
 	"name": "ui-tweaker",
-	"version": "0.0.8",
+	"version": "0.0.9",
 	"description": "Hide or hover-to-reveal various interface elements.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"lint": "eslint .",
-		"lint:fix": "eslint . --fix"
+		"lint": "node scripts/lint-wrapper.mjs",
+		"lint:fix": "node scripts/lint-wrapper.mjs --fix"
 	},
 	"keywords": [
 		"obsidian",
