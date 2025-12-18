@@ -8,8 +8,6 @@ This file serves as the **project-specific entry point** for AI agents working o
 
 ## Project Context
 
-## Project Context
-
 <!--
 Source: Project-specific (not synced from reference repos)
 Last updated: [Maintain manually - this file is project-specific]
@@ -156,11 +154,6 @@ None currently. This project follows the general `.agents` guidance.
 - Consider adding import/export settings functionality
 - Monitor Obsidian API updates for new UI elements to support
 - Consider adding more granular controls for individual buttons/icons
-
-### When to Consider Using `.agents/.context/` Directory
-
-If your project needs project-specific versions of multiple `.agents` files (e.g., custom `build-workflow.md`, `code-patterns.md`, etc.), consider creating a `.agents/.context/` directory structure. This advanced feature is optional and only needed for complex projects. See the Navigation section below for details on the `.context/` directory structure.
-
 
 ---
 
