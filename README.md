@@ -2,6 +2,10 @@
 
 Hide or hover-to-reveal various interface elements in Obsidian.
 
+## Made for Vault CMS
+
+Part of the [Vault CMS](https://github.com/davidvkimball/vault-cms) project.
+
 ## Features
 
 UI Tweaker provides extensive control over Obsidian's interface with three visibility states:
