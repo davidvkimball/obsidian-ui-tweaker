@@ -2,7 +2,6 @@
 Source: Based on Obsidian developer docs warnings, community patterns, and API best practices
 Last synced: See sync-status.json for authoritative sync dates
 Update frequency: Update as common issues are identified
-Applicability: Plugin
 -->
 
 # Common Pitfalls
@@ -326,9 +325,7 @@ project-root/
 **Why this matters**:
 - Having `main.ts` in both locations causes ambiguity - build tools don't know which one to use
 - This leads to build errors, confusion about which file is being compiled
-- The compiled `main.js` output location depends on build mode:
-  - Development builds (`npm run dev`): Outputs to `main.js` in root (for local testing)
-  - Production builds (`npm run build`): Outputs to `dist/main.js` (for releases)
+- The compiled `main.js` always outputs to `main.js` in the root directory
 - You should have only ONE source `main.ts`
 
 **Solution**: 
@@ -368,6 +365,42 @@ async loadSettings() {
 **Source**: Based on `eslint-plugin-obsidianmd` (npm package) rules and Obsidian plugin review requirements. The repository is at `.ref/eslint-plugin/` - see its README and rule documentation for complete details.
 
 **Note**: Install and configure `eslint-plugin-obsidianmd` in your project to catch these issues automatically. See [environment.md](environment.md) for setup instructions.
+
+### ESLint Disable Comment Placement (AI Agents Often Get This Wrong!)
+
+**Problem**: AI coding assistants (Cursor, GitHub Copilot, ChatGPT, etc.) frequently place `eslint-disable` comments in the wrong location, causing the error: "Fixing eslint-disable comment placement. They must be directly before the line with the error:"
+
+**Why it happens**: AI agents often place disable comments several lines above the error, or add blank lines between the comment and the error line. ESLint requires the disable comment to be **directly on the line immediately before** the error line with **no blank lines or other code** in between.
+
+**Wrong** (common AI agent mistakes):
+```ts
+// ❌ Wrong - Comment too far above error
+// eslint-disable-next-line obsidianmd/ui/sentence-case
+.setName('Show button')
+.setDesc('Display the button.') // Error is here, but disable is too far up
+
+// ❌ Wrong - Blank line between comment and error
+// eslint-disable-next-line obsidianmd/ui/sentence-case
+
+.setDesc('Display the button.') // Blank line breaks it
+
+// ❌ Wrong - Comment on same line as error
+.setDesc('Display the button.') // eslint-disable-next-line obsidianmd/ui/sentence-case
+```
+
+**Correct**:
+```ts
+// ✅ Correct - Comment directly before error line (no blank lines!)
+// False positive: Already in sentence case
+// eslint-disable-next-line obsidianmd/ui/sentence-case
+.setDesc('Display the button.') // Error is here, disable is right above
+```
+
+**Rule**: The `eslint-disable-next-line` comment **MUST** be on the line immediately before the error line. There can be NO blank lines or other code between them.
+
+**Solution**: Always verify placement after an AI agent adds a disable comment. If you see the placement error, move the comment to the line directly before the error.
+
+**See also**: [linting-fixes-guide.md](linting-fixes-guide.md) for detailed examples and formatting rules.
 
 ### Setting Styles Directly on DOM Elements
 
@@ -454,6 +487,42 @@ await this.app.fileManager.trashFile(file);
 ```
 
 **ESLint rule**: `prefer-file-manager-trash-file` (from `eslint-plugin-obsidianmd`)
+
+### addSetting Callback Return Type
+
+**Problem**: Using expression body arrow functions with `addSetting` from `createSettingsGroup()` or `SettingGroup` causes "Promise returned in function argument" errors.
+
+**When This Applies**: This only affects plugins using `SettingGroup` (API 1.11.0+) or the `createSettingsGroup()` compatibility utility. If you use `new Setting(containerEl)` directly (the most common pattern), you don't have this issue.
+
+**Wrong**:
+```typescript
+group.addSetting(setting =>
+  setting.setName("Feature").addToggle(toggle => {
+    toggle.onChange(async (value) => {
+      await this.plugin.saveData(this.plugin.settings);
+    });
+  })
+);
+```
+
+**Why It Fails**: The expression body returns the result of the chain (a `Setting` object), but `addSetting` expects a callback that returns `void`. The type signature is `addSetting(cb: (setting: Setting) => void)`, so expression body syntax violates this contract.
+
+**Correct**:
+```typescript
+group.addSetting(setting => {
+  setting.setName("Feature").addToggle(toggle => {
+    toggle.onChange(async (value) => {
+      await this.plugin.saveData(this.plugin.settings);
+    });
+  });
+});
+```
+
+**Rule**: Always use block body `{ }` with `addSetting` when using `createSettingsGroup()`. This ensures the callback returns `void` as expected.
+
+**See also**: [linting-fixes-guide.md](linting-fixes-guide.md#critical-addsetting-callbacks-must-return-void) for detailed explanation and troubleshooting.
+
+**ESLint rule**: `no-floating-promises` / `promise-return-in-void-context` (from `eslint-plugin-obsidianmd`)
 
 ### Disabling TypeScript Rules for `any`
 
