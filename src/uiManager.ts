@@ -83,7 +83,9 @@ export class UIManager {
 		this.applyVisibilityState(body, 'hide-tab-close-button', this.settings.tabCloseButton);
 		
 		body.classList.toggle('hider-status', this.settings.statusBar);
-		body.classList.toggle('hider-scroll', this.settings.scrollBars);
+		
+		// Scrollbars - now support Show/Hide/Reveal
+		this.applyVisibilityState(body, 'hider-scroll', this.settings.scrollBars);
 		
 		// Sidebar toggle buttons - now support Reveal
 		this.applyVisibilityState(body, 'hider-left-sidebar-button', this.settings.leftSidebarToggleButton);

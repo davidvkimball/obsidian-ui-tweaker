@@ -165,8 +165,9 @@ export function registerCommands(context: CommandContext) {
 		refresh();
 	});
 
+	// Scroll bars - now support Show/Hide/Reveal
 	registerToggleCommand(plugin, 'toggle-scroll-bars', 'Toggle scroll bars', async () => {
-		settings.scrollBars = !settings.scrollBars;
+		settings.scrollBars = toggleVisibilityState(settings.scrollBars);
 		await saveSettings();
 		refresh();
 	});

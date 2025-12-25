@@ -30,7 +30,7 @@ export interface UISettings {
 	newTabIcon: UIVisibilityState; // Changed to support Reveal
 	tabCloseButton: UIVisibilityState; // Changed to support Reveal
 	statusBar: boolean;
-	scrollBars: boolean;
+	scrollBars: UIVisibilityState; // Changed to support Reveal
 	leftSidebarToggleButton: UIVisibilityState; // Changed to support Reveal
 	rightSidebarToggleButton: UIVisibilityState; // Changed to support Reveal
 	tooltips: boolean;
@@ -101,7 +101,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 	newTabIcon: 'show',
 	tabCloseButton: 'show',
 	statusBar: false,
-	scrollBars: false,
+	scrollBars: 'show',
 	leftSidebarToggleButton: 'show',
 	rightSidebarToggleButton: 'show',
 	tooltips: false,

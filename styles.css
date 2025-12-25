@@ -457,8 +457,37 @@ body:not(.is-mobile).hider-right-sidebar-button-reveal .sidebar-toggle-button.mo
    Hide scrollbars
    ======================================== */
 
-.hider-scroll ::-webkit-scrollbar {
+/* Hide scrollbars completely when set to "hide" */
+.hider-scroll-hide ::-webkit-scrollbar {
 	display: none;
+}
+
+/* Hide scrollbars by default, show on hover when set to "reveal" */
+/* Use width: 0 to hide while preserving scrolling functionality */
+.hider-scroll-reveal ::-webkit-scrollbar {
+	width: 0;
+	height: 0;
+	transition: width 0.2s ease, height 0.2s ease;
+}
+
+.hider-scroll-reveal ::-webkit-scrollbar-thumb {
+	width: 0;
+	height: 0;
+	transition: width 0.2s ease, height 0.2s ease;
+}
+
+/* Show scrollbars on hover of scrollable containers */
+/* Use unset to restore native scrollbar width */
+.hider-scroll-reveal:hover ::-webkit-scrollbar,
+.hider-scroll-reveal *:hover ::-webkit-scrollbar {
+	width: unset;
+	height: unset;
+}
+
+.hider-scroll-reveal:hover ::-webkit-scrollbar-thumb,
+.hider-scroll-reveal *:hover ::-webkit-scrollbar-thumb {
+	width: unset;
+	height: unset;
 }
 
 /* ========================================

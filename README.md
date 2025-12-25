@@ -46,7 +46,7 @@ UI Tweaker provides extensive control over Obsidian's interface with three visib
 ### Status & UI Elements
 
 - Status bar
-- Scroll bars
+- Scroll bars (Show/Hide/Reveal)
 - Left sidebar toggle button (Show/Hide/Reveal)
 - Right sidebar toggle button (Show/Hide/Reveal)
 - Tooltips

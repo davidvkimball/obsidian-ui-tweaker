@@ -330,7 +330,12 @@ export class UITweakerSettingTab extends PluginSettingTab {
 
 		this.addToggleSetting(statusUIGroup, 'Hide status bar', 'Hides word count, character count and backlink count.', 'statusBar');
 
-		this.addToggleSetting(statusUIGroup, 'Hide scroll bars', 'Hides all scroll bars.', 'scrollBars');
+		this.addVisibilitySetting(
+			statusUIGroup,
+			'Scroll bars',
+			'Control scrollbar visibility. Reveal option hides scrollbars until hover.',
+			'scrollBars'
+		);
 
 		this.addVisibilitySetting(
 			statusUIGroup,
