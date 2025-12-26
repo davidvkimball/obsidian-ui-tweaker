@@ -87,6 +87,13 @@ export class UIManager {
 		// Scrollbars - now support Show/Hide/Reveal
 		this.applyVisibilityState(body, 'hider-scroll', this.settings.scrollBars);
 		
+		// Set up scrollbar reveal hover listeners if needed
+		if (this.settings.scrollBars === 'reveal') {
+			this.setupScrollbarRevealListeners();
+		} else {
+			this.removeScrollbarRevealListeners();
+		}
+		
 		// Sidebar toggle buttons - now support Reveal
 		this.applyVisibilityState(body, 'hider-left-sidebar-button', this.settings.leftSidebarToggleButton);
 		this.applyVisibilityState(body, 'hider-right-sidebar-button', this.settings.rightSidebarToggleButton);
@@ -156,6 +163,87 @@ export class UIManager {
 			body.classList.add(`${className}-hide`);
 		} else if (state === 'reveal') {
 			body.classList.add(`${className}-reveal`);
+		}
+	}
+
+	private setupScrollbarRevealListeners() {
+		// Remove existing listeners first
+		this.removeScrollbarRevealListeners();
+
+		// Helper to check if an element is scrollable
+		const isScrollable = (element: HTMLElement): boolean => {
+			const style = window.getComputedStyle(element);
+			const overflow = style.overflow + style.overflowY + style.overflowX;
+			if (!overflow.includes('scroll') && !overflow.includes('auto')) {
+				return false;
+			}
+			// Check if element actually has scrollable content
+			return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
+		};
+
+		// Track which scrollable elements should have hover class
+		const hoveredElements = new Set<HTMLElement>();
+
+		// Use mousemove to track mouse position and only add hover class when near scrollbar
+		const handleMouseMove = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+			if (!target) return;
+			
+			// Clear all hover classes first
+			hoveredElements.forEach((el) => {
+				el.classList.remove('ui-tweaker-scrollbar-hover');
+			});
+			hoveredElements.clear();
+			
+			// Find scrollable containers and check if mouse is near the scrollbar area
+			let element: HTMLElement | null = target;
+			while (element && element !== document.body && element !== document.documentElement) {
+				if (isScrollable(element)) {
+					const rect = element.getBoundingClientRect();
+					const scrollbarArea = 25; // Width of area near edges where scrollbar would be
+					
+					// Check if mouse is in the scrollbar area (right edge for vertical, bottom edge for horizontal)
+					const isInVerticalScrollbarArea = e.clientX >= rect.right - scrollbarArea && e.clientX <= rect.right;
+					const isInHorizontalScrollbarArea = e.clientY >= rect.bottom - scrollbarArea && e.clientY <= rect.bottom;
+					
+					// Only add hover class if mouse is in the scrollbar area
+					if (isInVerticalScrollbarArea || isInHorizontalScrollbarArea) {
+						element.classList.add('ui-tweaker-scrollbar-hover');
+						hoveredElements.add(element);
+					}
+				}
+				element = element.parentElement;
+			}
+		};
+
+		// Clear hover when mouse leaves document
+		const handleMouseLeave = () => {
+			hoveredElements.forEach((el) => {
+				el.classList.remove('ui-tweaker-scrollbar-hover');
+			});
+			hoveredElements.clear();
+		};
+
+		document.addEventListener('mousemove', handleMouseMove, true);
+		document.addEventListener('mouseleave', handleMouseLeave, true);
+
+		// Store cleanup function
+		this.revealListeners.set('scrollbar-reveal', () => {
+			document.removeEventListener('mousemove', handleMouseMove, true);
+			document.removeEventListener('mouseleave', handleMouseLeave, true);
+			// Remove all hover classes
+			hoveredElements.forEach((el) => {
+				el.classList.remove('ui-tweaker-scrollbar-hover');
+			});
+			hoveredElements.clear();
+		});
+	}
+
+	private removeScrollbarRevealListeners() {
+		const cleanup = this.revealListeners.get('scrollbar-reveal');
+		if (cleanup) {
+			cleanup();
+			this.revealListeners.delete('scrollbar-reveal');
 		}
 	}
 

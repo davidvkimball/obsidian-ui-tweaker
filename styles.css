@@ -463,31 +463,36 @@ body:not(.is-mobile).hider-right-sidebar-button-reveal .sidebar-toggle-button.mo
 }
 
 /* Hide scrollbars by default, show on hover when set to "reveal" */
-/* Use width: 0 to hide while preserving scrolling functionality */
-.hider-scroll-reveal ::-webkit-scrollbar {
-	width: 0;
-	height: 0;
-	transition: width 0.2s ease, height 0.2s ease;
+/* Make scrollbar thumb completely invisible by default - use transparent background */
+/* Don't override scrollbar width - let Obsidian handle it naturally */
+
+body.hider-scroll-reveal ::-webkit-scrollbar-thumb {
+	background-color: transparent !important;
 }
 
-.hider-scroll-reveal ::-webkit-scrollbar-thumb {
-	width: 0;
-	height: 0;
-	transition: width 0.2s ease, height 0.2s ease;
+/* Show scrollbars when hover class is present (added by JavaScript when near scrollbar area) */
+/* Only override background-color - let Obsidian handle all other styling (width, border, hover states, etc.) */
+body.hider-scroll-reveal .ui-tweaker-scrollbar-hover ::-webkit-scrollbar-thumb,
+body.hider-scroll-reveal.ui-tweaker-scrollbar-hover ::-webkit-scrollbar-thumb,
+.hider-scroll-reveal .ui-tweaker-scrollbar-hover::-webkit-scrollbar-thumb {
+	background-color: var(--scrollbar-thumb-bg) !important;
 }
 
-/* Show scrollbars on hover of scrollable containers */
-/* Use unset to restore native scrollbar width */
-.hider-scroll-reveal:hover ::-webkit-scrollbar,
-.hider-scroll-reveal *:hover ::-webkit-scrollbar {
-	width: unset;
-	height: unset;
+
+
+
+body.theme-dark.hider-scroll-reveal .ui-tweaker-scrollbar-hover ::-webkit-scrollbar-thumb {
+	background-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-.hider-scroll-reveal:hover ::-webkit-scrollbar-thumb,
-.hider-scroll-reveal *:hover ::-webkit-scrollbar-thumb {
-	width: unset;
-	height: unset;
+/* Also handle Firefox scrollbars */
+.hider-scroll-reveal {
+	scrollbar-width: none;
+}
+
+.hider-scroll-reveal .ui-tweaker-scrollbar-hover,
+.hider-scroll-reveal.ui-tweaker-scrollbar-hover {
+	scrollbar-width: auto;
 }
 
 /* ========================================
