@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for creating releases
 
     steps:
       - uses: actions/checkout@v4
@@ -34,9 +36,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/main.js
-            dist/manifest.json
-            dist/styles.css
+            main.js
+            manifest.json
+            styles.css
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
