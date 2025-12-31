@@ -89,7 +89,7 @@ Toggle commands cycle between Show and Hide states. If a setting is set to "Reve
 
 ## Installation
 
-Astro Composer is not yet available in the Community plugins section. Install using [BRAT](https://github.com/TfTHacker/obsidian42-brat) or manually:
+Image Manager is not yet available in the Community plugins section. Install using [BRAT](https://github.com/TfTHacker/obsidian42-brat) or manually:
 
 ### BRAT
 
