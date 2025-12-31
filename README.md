@@ -89,6 +89,14 @@ Toggle commands cycle between Show and Hide states. If a setting is set to "Reve
 
 ## Installation
 
+Astro Composer is not yet available in the Community plugins section. Install using [BRAT](https://github.com/TfTHacker/obsidian42-brat) or manually:
+
+### BRAT
+
+1. Download the [Beta Reviewers Auto-update Tester (BRAT)](https://github.com/TfTHacker/obsidian42-brat) plugin from the [Obsidian community plugins directory](https://obsidian.md/plugins?id=obsidian42-brat) and enable it.
+2. In the BRAT plugin settings, select `Add beta plugin`.
+3. Paste the following: `https://github.com/davidvkimball/obsidian-ui-tweaker` and select `Add plugin`.
+
 ### Manual Installation
 
 1. Download the latest release
