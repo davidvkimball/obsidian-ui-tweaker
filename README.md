@@ -100,7 +100,7 @@ Image Manager is not yet available in the Community plugins section. Install usi
 ### Manual Installation
 
 1. Download the latest release
-2. Extract the files to your vault's `.obsidian/plugins/obsidian-ui-tweaker/` folder
+2. Extract the files to your vault's `.obsidian/plugins/ui-tweaker/` folder
 3. Reload Obsidian
 4. Enable the plugin in Settings → Community plugins
 
