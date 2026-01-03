@@ -26,7 +26,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Auto-hide elements
 		// ========================================
-		const generalGroup = createSettingsGroup(containerEl);
+		const generalGroup = createSettingsGroup(containerEl, undefined, 'ui-tweaker');
 
 		this.addVisibilitySetting(
 			generalGroup,
@@ -80,7 +80,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Navigation
 		// ========================================
-		const navigationGroup = createSettingsGroup(containerEl, 'Navigation');
+		const navigationGroup = createSettingsGroup(containerEl, 'Navigation', 'ui-tweaker');
 
 		this.addToggleSetting(navigationGroup, 'Hide tab bar', 'Hides the tab container at the top of the window.', 'tabBar');
 
@@ -103,7 +103,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Vault profile area
 		// ========================================
-		const vaultProfileGroup = createSettingsGroup(containerEl, 'Vault profile area');
+		const vaultProfileGroup = createSettingsGroup(containerEl, 'Vault profile area', 'ui-tweaker');
 
 		this.addVisibilitySetting(
 			vaultProfileGroup,
@@ -300,7 +300,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Tab icons
 		// ========================================
-		const tabIconsGroup = createSettingsGroup(containerEl, 'Tab icons');
+		const tabIconsGroup = createSettingsGroup(containerEl, 'Tab icons', 'ui-tweaker');
 
 		this.addVisibilitySetting(
 			tabIconsGroup,
@@ -326,7 +326,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Status & UI elements
 		// ========================================
-		const statusUIGroup = createSettingsGroup(containerEl, 'Status & UI elements');
+		const statusUIGroup = createSettingsGroup(containerEl, 'Status & UI elements', 'ui-tweaker');
 
 		this.addToggleSetting(statusUIGroup, 'Hide status bar', 'Hides word count, character count and backlink count.', 'statusBar');
 
@@ -358,7 +358,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Search
 		// ========================================
-		const searchGroup = createSettingsGroup(containerEl, 'Search');
+		const searchGroup = createSettingsGroup(containerEl, 'Search', 'ui-tweaker');
 
 		this.addToggleSetting(searchGroup, 'Hide search suggestions', 'Hides suggestions in search pane.', 'searchSuggestions');
 
@@ -367,7 +367,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Properties
 		// ========================================
-		const propertiesGroup = createSettingsGroup(containerEl, 'Properties');
+		const propertiesGroup = createSettingsGroup(containerEl, 'Properties', 'ui-tweaker');
 
 		this.addToggleSetting(propertiesGroup, 'Hide properties in Reading view', 'Hides the properties section in Reading view.', 'propertiesInReadingView');
 
@@ -378,7 +378,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Mobile
 		// ========================================
-		const mobileGroup = createSettingsGroup(containerEl, 'Mobile');
+		const mobileGroup = createSettingsGroup(containerEl, 'Mobile', 'ui-tweaker');
 
 		this.addToggleSetting(mobileGroup, 'Hide "Mobile chevrons" icon', 'Hide "Mobile chevrons" icon (long-press flair) in mobile navbar.', 'mobileChevronsIcon');
 
@@ -558,7 +558,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Mobile navigation menu
 		// ========================================
-		const mobileNavGroup = createSettingsGroup(containerEl, 'Mobile navigation menu');
+		const mobileNavGroup = createSettingsGroup(containerEl, 'Mobile navigation menu', 'ui-tweaker');
 
 		this.addPositionSetting(mobileNavGroup, '"Navigate back" button position', 'Select the position for the "Navigate back" button (default 1).', 'navigateButtonPosition');
 

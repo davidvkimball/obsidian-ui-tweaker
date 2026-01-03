@@ -1,6 +1,6 @@
 {
 	"name": "ui-tweaker",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Hide or hover-to-reveal various interface elements.",
 	"main": "main.js",
 	"type": "module",
