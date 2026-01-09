@@ -45,8 +45,9 @@ export class CommandPickerModal extends FuzzySuggestModal<CommandOption> {
 		return item.name;
 	}
 
-	onChooseItem(item: CommandOption): void {
+	onChooseItem(item: CommandOption, evt: MouseEvent | KeyboardEvent): void {
 		this.onSelect(item.id);
+		// Don't close here - let the callback handle it
 	}
 }
 

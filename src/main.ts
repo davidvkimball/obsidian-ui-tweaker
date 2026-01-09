@@ -6,7 +6,9 @@ import { Plugin, Notice, setIcon, Platform } from 'obsidian';
 import { UISettings, DEFAULT_SETTINGS } from './settings';
 import { UIManager, setCssProps } from './uiManager';
 import { registerCommands } from './commands';
-import { UITweakerSettingTab } from './settingsTab';
+import { UITweakerSettingTab } from './ui/SettingsTab';
+import { TabBarManager } from './manager/TabBarManager';
+import { StatusBarManager } from './manager/StatusBarManager';
 
 export default class UITweakerPlugin extends Plugin {
 	settings: UISettings;
@@ -18,6 +20,8 @@ export default class UITweakerPlugin extends Plugin {
 	private originalSyncButton?: HTMLElement; // Store original to restore later
 	private isUpdatingSyncButton: boolean = false; // Prevent infinite loops
 	private settingTab?: UITweakerSettingTab;
+	public tabBarManager?: TabBarManager;
+	public statusBarManager?: StatusBarManager;
 
 	async onload() {
 		await this.loadSettings();
@@ -25,6 +29,18 @@ export default class UITweakerPlugin extends Plugin {
 		// Initialize UI manager
 		this.uiManager = new UIManager(this.settings);
 		this.uiManager.applyStyles();
+
+		// Initialize Tab Bar Manager
+		if (!this.settings.tabBarCommands) {
+			this.settings.tabBarCommands = [];
+		}
+		this.tabBarManager = new TabBarManager(this);
+
+		// Initialize Status Bar Manager
+		if (!this.settings.statusBarItems) {
+			this.settings.statusBarItems = [];
+		}
+		this.statusBarManager = new StatusBarManager(this);
 
 		// Register commands
 		registerCommands({
@@ -66,7 +82,15 @@ export default class UITweakerPlugin extends Plugin {
 
 	async loadSettings() {
 		try {
-			const data = await this.loadData() as Partial<UISettings>;
+			const data = await this.loadData() as Partial<UISettings> | null;
+			// Handle corrupted or empty data
+			if (!data || typeof data !== 'object' || Array.isArray(data)) {
+				console.warn('[UI Tweaker] Invalid settings data, using defaults');
+				this.settings = Object.assign({}, DEFAULT_SETTINGS);
+				// Save defaults to fix corrupted file
+				await this.saveSettings();
+				return;
+			}
 			this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 			// Ensure helpButtonReplacement structure exists
 			if (!this.settings.helpButtonReplacement) {
@@ -115,7 +139,11 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	async saveSettings() {
+		console.warn('[UITweakerPlugin] saveSettings() called');
+		console.warn('[UITweakerPlugin] Saving statusBarItems:', this.settings.statusBarItems?.length || 0, 'items');
+		console.warn('[UITweakerPlugin] statusBarItems data:', JSON.stringify(this.settings.statusBarItems, null, 2));
 		await this.saveData(this.settings);
+		console.warn('[UITweakerPlugin] saveSettings() completed');
 	}
 
 	refresh() {

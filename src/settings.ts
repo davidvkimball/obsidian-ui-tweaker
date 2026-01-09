@@ -2,7 +2,7 @@
  * Settings interface and defaults
  */
 
-import { UIVisibilityState, MobileNavPosition } from './types';
+import { UIVisibilityState, MobileNavPosition, CommandIconPair, StatusBarItem } from './types';
 
 export interface UISettings {
 	// Auto-hide elements (Show/Hide/Reveal)
@@ -73,6 +73,12 @@ export interface UISettings {
 		commandId: string;
 		iconId: string;
 	};
+
+	// Tab Bar custom commands
+	tabBarCommands: CommandIconPair[];
+
+	// Status Bar items (unified list of existing + custom)
+	statusBarItems: StatusBarItem[];
 }
 
 export const DEFAULT_SETTINGS: UISettings = {
@@ -144,4 +150,10 @@ export const DEFAULT_SETTINGS: UISettings = {
 		commandId: '',
 		iconId: 'wrench',
 	},
+
+	// Tab Bar
+	tabBarCommands: [],
+
+	// Status Bar
+	statusBarItems: [],
 };

@@ -75,6 +75,7 @@ export class IconPickerModal extends FuzzySuggestModal<IconOption> {
 
 	onChooseItem(item: IconOption, evt: MouseEvent | KeyboardEvent): void {
 		this.onSelect(item.id);
+		this.close();
 	}
 
 	// Override to show icon preview
@@ -84,9 +85,10 @@ export class IconPickerModal extends FuzzySuggestModal<IconOption> {
 		const content = el.createDiv({ cls: 'suggestion-content' });
 		content.createDiv({ cls: 'suggestion-title', text: item.name });
 		
-		// Create icon preview using Obsidian's setIcon
+		// Create icon preview using Obsidian's setIcon - no background box
 		const aux = el.createDiv({ cls: 'suggestion-aux' });
-		setIcon(aux.createSpan({ cls: 'suggestion-flair' }), item.id);
+		const iconSpan = aux.createSpan({ cls: 'suggestion-flair ui-tweaker-icon-no-bg' });
+		setIcon(iconSpan, item.id);
 	}
 }
 
