@@ -381,7 +381,7 @@ export class TabBarTab extends TabRenderer {
 							
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-color-reset',
-								attr: { 'aria-label': 'Reset to default color', 'title': 'Reset to default color' }
+								attr: { 'aria-label': 'Reset to default color' }
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
@@ -450,7 +450,8 @@ export class TabBarTab extends TabRenderer {
 			
 			setting
 				.setName('Toggle icon')
-				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle)')
+				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
+				.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
 				.addButton((button) => {
 					const currentToggleIcon = pair.toggleIcon || 'None';
 					button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
@@ -479,7 +480,7 @@ export class TabBarTab extends TabRenderer {
 							
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-toggle-icon-reset',
-								attr: { 'aria-label': 'Reset toggle icon', 'title': 'Reset toggle icon' }
+								attr: { 'aria-label': 'Reset toggle icon' }
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });

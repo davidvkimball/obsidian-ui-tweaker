@@ -70,10 +70,43 @@ UI Tweaker provides extensive control over Obsidian's interface with three visib
 - Properties heading
 - Add property button
 
+### Custom Command Buttons
+
+- **Explorer Tab**: Add custom command buttons to the file explorer navigation area
+  - Customize icon, color, and display name for each command
+  - Toggle icon support (e.g., sun/moon for theme toggle)
+  - "Use active class" option for visual state indication
+  - Color customization for each button
+  - Reorder buttons via drag-and-drop
+  - Filter by device mode (desktop/mobile/any)
+  - Markdown-only mode option
+
+- **Tab Bar Tab**: Add custom command buttons to page headers (tab bar)
+  - Same customization options as Explorer buttons
+  - Automatically filters to markdown/markdownx files when configured
+
+- **Status Bar Tab**: Unified management of existing and custom status bar items
+  - Reorder status bar items via drag-and-drop
+  - Hide/show individual status bar items
+  - Add custom command buttons to status bar
+  - Color customization for status bar items
+  - Markdown-only mode option
+
+### Native Explorer Button Controls
+
+- Customize native explorer buttons (New note, New folder, Sort order, Auto-reveal, Collapse all)
+  - Show/hide individual buttons
+  - Customize button colors
+  - Override button icons
+  - All controls available in Explorer tab settings
+
 ### Advanced Features
 
 - Vault switcher background transparency control
 - Replace help button with custom command and icon
+- Replace sync button with custom command and icon (mobile only)
+- Toggle icon feature with automatic state synchronization
+- Command execution interceptor for real-time button state updates
 
 ## Commands
 
@@ -89,7 +122,7 @@ Toggle commands cycle between Show and Hide states. If a setting is set to "Reve
 
 ## Installation
 
-Image Manager is not yet available in the Community plugins section. Install using [BRAT](https://github.com/TfTHacker/obsidian42-brat) or manually:
+UI Tweaker is not yet available in the Community plugins section. Install using [BRAT](https://github.com/TfTHacker/obsidian42-brat) or manually:
 
 ### BRAT
 
@@ -114,15 +147,65 @@ Image Manager is not yet available in the Community plugins section. Install usi
 ## Usage
 
 1. Open Settings → UI Tweaker
-2. Configure each setting according to your preferences
-3. Use the dropdown menus for elements that support Show/Hide/Reveal
-4. Use toggle switches for simple Show/Hide options
-5. Bind toggle commands to hotkeys in Settings → Hotkeys for quick access
+2. Navigate through the tabs:
+   - **Hider**: Auto-hide and visibility controls for UI elements
+   - **Explorer**: Custom command buttons and native button controls for file explorer
+   - **Tab Bar**: Custom command buttons for page headers
+   - **Status Bar**: Unified management of status bar items
+   - **Mobile**: Mobile-specific UI controls
+3. Configure each setting according to your preferences
+4. Use the dropdown menus for elements that support Show/Hide/Reveal
+5. Use toggle switches for simple Show/Hide options
+6. For custom command buttons:
+   - Click "Add command" to add a new button
+   - Customize icon, color, and display name
+   - Set a toggle icon for commands with on/off states
+   - Reorder buttons by dragging
+7. Bind toggle commands to hotkeys in Settings → Hotkeys for quick access
 
 ## Compatibility
 
 - Works on both desktop and mobile
 - Compatible with Obsidian 0.15.0 and later
+
+### Toggle Icon Feature Compatibility
+
+The toggle icon feature allows command buttons to display different icons based on their toggle state (e.g., sun/moon for theme toggle). For this feature to work automatically with your plugin's commands, your command should implement a `checkCallback` function.
+
+**For Plugin Developers:**
+
+If your command has a toggle state (on/off), add a `checkCallback` to your command registration:
+
+```typescript
+this.addCommand({
+    id: 'my-plugin:toggle-feature',
+    name: 'Toggle Feature',
+    icon: 'lucide-toggle-left', // Icon when off
+    checkCallback: (checking: boolean) => {
+        // Return true if feature is currently enabled/on
+        const isEnabled = this.settings.myFeatureEnabled;
+        if (checking) {
+            return isEnabled;
+        }
+        return false;
+    },
+    callback: () => {
+        this.settings.myFeatureEnabled = !this.settings.myFeatureEnabled;
+        this.saveSettings();
+    }
+});
+```
+
+When a user sets a "toggle icon" for your command in UI Tweaker, the button will automatically:
+- Show the default icon when `checkCallback` returns `false`
+- Show the toggle icon when `checkCallback` returns `true`
+- Update in real-time when the command is executed via keyboard shortcuts, command palette, or button clicks
+
+**Commands without `checkCallback`:**
+
+Commands without `checkCallback` will still work, but the toggle icon may not update correctly when the command is executed outside of UI Tweaker (e.g., via keyboard shortcuts). The button will update when clicked directly, but may become out of sync if the command is executed through other means.
+
+For more information, see the [Obsidian Command API documentation](https://docs.obsidian.md/Plugins/User+interface/Commands#Command%20check%20callbacks).
 
 ## Development
 

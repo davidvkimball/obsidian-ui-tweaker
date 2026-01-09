@@ -91,6 +91,15 @@ export interface UISettings {
 		autoReveal?: string;
 		collapseAll?: string;
 	};
+
+	// Native explorer button icon overrides (optional)
+	nativeExplorerButtonIcons?: {
+		newNote?: string;
+		newFolder?: string;
+		sortOrder?: string;
+		autoReveal?: string;
+		collapseAll?: string;
+	};
 }
 
 export const DEFAULT_SETTINGS: UISettings = {
@@ -174,6 +183,15 @@ export const DEFAULT_SETTINGS: UISettings = {
 
 	// Native explorer button colors
 	nativeExplorerButtonColors: {
+		newNote: undefined,
+		newFolder: undefined,
+		sortOrder: undefined,
+		autoReveal: undefined,
+		collapseAll: undefined,
+	},
+
+	// Native explorer button icon overrides
+	nativeExplorerButtonIcons: {
 		newNote: undefined,
 		newFolder: undefined,
 		sortOrder: undefined,

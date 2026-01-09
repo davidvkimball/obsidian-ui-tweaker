@@ -18,16 +18,15 @@ export class ExplorerManager {
 	}
 
 	private init(): void {
-		console.debug('[ExplorerManager] init() called. Commands:', this.plugin.settings.explorerCommands.length);
-		
 		// Wait for workspace to be ready
 		this.plugin.app.workspace.onLayoutReady(() => {
-			console.debug('[ExplorerManager] Layout ready, setting up buttons');
 			
 			// Set up layout change listener once (like Commander does)
 			this.plugin.registerEvent(
 				this.plugin.app.workspace.on('layout-change', () => {
 					this.addButtonsToAllLeaves();
+					// Apply native icon overrides after layout changes
+					this.applyNativeIconOverrides();
 				})
 			);
 			
@@ -47,11 +46,8 @@ export class ExplorerManager {
 		// Find the nav-buttons-container (like Commander does)
 		const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
 		if (!navButtonsContainer) {
-			console.debug('[ExplorerManager] nav-buttons-container not found');
 			return;
 		}
-
-		console.debug('[ExplorerManager] Found nav-buttons-container, adding buttons. Commands:', this.plugin.settings.explorerCommands.length);
 
 		// Add buttons for each command
 		for (const pair of this.plugin.settings.explorerCommands) {
@@ -60,12 +56,9 @@ export class ExplorerManager {
 	}
 
 	private addExplorerButton(container: HTMLElement, pair: CommandIconPair, leaf: WorkspaceLeaf): void {
-		console.debug('[ExplorerManager] addExplorerButton called for:', pair.name, pair.icon, pair.id);
-		
 		// Check if button already exists (like Commander)
 		const existingButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 		if (existingButton) {
-			console.debug('[ExplorerManager] Button already exists, updating');
 			// Update existing button
 			existingButton.setAttribute('aria-label', pair.name);
 			// Apply color only if custom color is set (not black/default)
@@ -81,12 +74,9 @@ export class ExplorerManager {
 
 		// Check device mode
 		if (!isModeActive(pair.mode, this.plugin)) {
-			console.debug('[ExplorerManager] Skipping - mode not active:', pair.mode);
 			return;
 		}
 
-		console.debug('[ExplorerManager] Creating button...');
-		
 		// Create button with native CSS classes (exactly like Commander)
 		const button = createDiv({
 			cls: 'clickable-icon nav-action-button',
@@ -96,8 +86,6 @@ export class ExplorerManager {
 				'aria-label-position': 'top',
 			},
 		});
-
-		console.debug('[ExplorerManager] Button created, setting icon:', pair.icon);
 
 		// Check toggle state and apply icon/class
 		this.updateButtonToggleState(button, pair);
@@ -121,12 +109,8 @@ export class ExplorerManager {
 
 		this.buttons.set(pair.id, button);
 
-		console.debug('[ExplorerManager] Appending button to container. Container children before:', container.children.length);
-		
 		// Append button to container (exactly like Commander)
 		container.appendChild(button);
-		
-		console.debug('[ExplorerManager] Button appended. Container children after:', container.children.length, 'Button:', button);
 	}
 
 	/**
@@ -153,7 +137,8 @@ export class ExplorerManager {
 	 */
 	private updateButtonToggleState(button: HTMLElement, pair: CommandIconPair): void {
 		// Check if toggle is configured
-		if (!pair.toggleIcon) {
+		// If useActiveClass is true, we still need to check toggle state even without toggleIcon
+		if (!pair.toggleIcon && !pair.useActiveClass) {
 			// No toggle configured - use default icon
 			button.empty();
 			setIcon(button, pair.icon);
@@ -172,15 +157,21 @@ export class ExplorerManager {
 
 		if (pair.useActiveClass) {
 			// Use is-active class instead of icon swap
-			button.empty();
-			setIcon(button, pair.icon);
+			// Only update icon if it's different (to avoid unnecessary DOM manipulation)
+			const currentIcon = button.querySelector('.svg-icon');
+			const iconName = pair.icon.replace('lucide-', '');
+			if (!currentIcon || !currentIcon.classList.contains(iconName)) {
+				button.empty();
+				setIcon(button, pair.icon);
+			}
+			// Always update is-active class based on toggle state
 			if (isChecked) {
 				button.classList.add('is-active');
 			} else {
 				button.classList.remove('is-active');
 			}
-		} else {
-			// Swap icon based on toggle state
+		} else if (pair.toggleIcon) {
+			// Swap icon based on toggle state (only if toggleIcon is set)
 			button.empty();
 			setIcon(button, isChecked ? pair.toggleIcon : pair.icon);
 			button.classList.remove('is-active');
@@ -244,11 +235,78 @@ export class ExplorerManager {
 
 			for (const pair of this.plugin.settings.explorerCommands) {
 				const button = navButtonsContainer.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
-				if (button && pair.toggleIcon) {
+				// Refresh if toggleIcon is set OR if useActiveClass is true (both need state updates)
+				if (button && (pair.toggleIcon || pair.useActiveClass)) {
 					// Always update button state - this will check the actual command state
 					this.updateButtonToggleState(button, pair);
 				}
 			}
+		});
+	}
+
+	/**
+	 * Apply icon overrides to native explorer buttons
+	 */
+	public applyNativeIconOverrides(): void {
+		const explorers = this.plugin.app.workspace.getLeavesOfType('file-explorer');
+		const iconOverrides = this.plugin.settings.nativeExplorerButtonIcons;
+		if (!iconOverrides) return;
+
+		explorers.forEach((leaf) => {
+			const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
+			if (!navButtonsContainer) return;
+
+			// Map of aria-labels to icon keys
+			const buttonMap: Record<string, 'newNote' | 'newFolder' | 'sortOrder' | 'autoReveal' | 'collapseAll'> = {
+				'New note': 'newNote',
+				'New folder': 'newFolder',
+				'Change sort order': 'sortOrder',
+				'Auto-reveal current file': 'autoReveal',
+				'Collapse all': 'collapseAll',
+			};
+
+			// Find all native buttons (those without data-explorer-command-id)
+			const nativeButtons = navButtonsContainer.querySelectorAll('.nav-action-button:not([data-explorer-command-id])');
+			nativeButtons.forEach((button) => {
+				const ariaLabel = button.getAttribute('aria-label');
+				if (!ariaLabel) return;
+
+				const iconKey = buttonMap[ariaLabel];
+				if (!iconKey) return;
+
+				const iconOverride = iconOverrides[iconKey];
+				const colorOverrides = this.plugin.settings.nativeExplorerButtonColors;
+				const color = colorOverrides?.[iconKey];
+				
+				if (iconOverride) {
+					// Apply icon override
+					button.empty();
+					setIcon(button as HTMLElement, iconOverride);
+					// Apply color if set (directly to button since CSS selector won't match custom icon)
+					if (color) {
+						(button as HTMLElement).style.color = color;
+					} else {
+						(button as HTMLElement).style.removeProperty('color');
+					}
+				} else {
+					// Remove override - restore original icon
+					// We need to identify which button this is and restore its original icon
+					const originalIcons: Record<string, string> = {
+						'New note': 'lucide-edit',
+						'New folder': 'lucide-folder-plus',
+						'Change sort order': 'lucide-sort-asc',
+						'Auto-reveal current file': 'lucide-gallery-vertical',
+						'Collapse all': 'lucide-chevrons-up-down', // May vary, but this is the default
+					};
+					const originalIcon = originalIcons[ariaLabel];
+					if (originalIcon) {
+						button.empty();
+						setIcon(button as HTMLElement, originalIcon);
+						// Remove inline color - let CSS handle it for original icons
+						(button as HTMLElement).style.removeProperty('color');
+					}
+				}
+			});
 		});
 	}
 }

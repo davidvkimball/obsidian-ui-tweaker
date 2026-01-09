@@ -24,6 +24,8 @@ export class UIManager {
 	updateSettings(settings: UISettings) {
 		this.settings = settings;
 		this.applyStyles();
+		// Apply native icon overrides after styles are applied
+		// Note: explorerManager is accessed via plugin instance, not stored here
 	}
 
 	private detectOS(): 'windows' | 'macos' | 'neutral' {

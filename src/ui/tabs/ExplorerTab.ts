@@ -41,6 +41,17 @@ export class ExplorerTab extends TabRenderer {
 			};
 		}
 
+		// Ensure nativeExplorerButtonIcons exists
+		if (!settings.nativeExplorerButtonIcons) {
+			settings.nativeExplorerButtonIcons = {
+				newNote: undefined,
+				newFolder: undefined,
+				sortOrder: undefined,
+				autoReveal: undefined,
+				collapseAll: undefined,
+			};
+		}
+
 		// Native explorer button controls (at the top)
 		// Store reference to native buttons container for targeted re-renders
 		const nativeButtonsContainer = container.createDiv({ cls: 'native-explorer-buttons-container' });
@@ -110,6 +121,7 @@ export class ExplorerTab extends TabRenderer {
 		) => {
 			const isHidden = settings[settingKey];
 			const color = settings.nativeExplorerButtonColors?.[colorKey];
+			const iconOverride = settings.nativeExplorerButtonIcons?.[colorKey];
 
 			group.addSetting((setting): void => {
 				setting
@@ -160,7 +172,7 @@ export class ExplorerTab extends TabRenderer {
 							
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-color-reset',
-								attr: { 'aria-label': 'Reset to default color', 'title': 'Reset to default color' }
+								attr: { 'aria-label': 'Reset to default color' }
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
@@ -228,6 +240,83 @@ export class ExplorerTab extends TabRenderer {
 						button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
 					});
 				}
+
+				// Icon override (always show icon picker button)
+				setting.addButton((button) => {
+					const currentIcon = iconOverride || 'Default';
+					button.setButtonText(currentIcon === 'Default' ? 'Set icon...' : currentIcon).onClick(() => {
+						const modal = new IconPickerModal(this.app, (iconId) => {
+							void (async () => {
+								// Prevent scroll jumping
+								const scrollPos = scrollContainer.scrollTop;
+								if (!settings.nativeExplorerButtonIcons) {
+									settings.nativeExplorerButtonIcons = {};
+								}
+								if (iconId) {
+									settings.nativeExplorerButtonIcons[colorKey] = iconId;
+								} else {
+									settings.nativeExplorerButtonIcons[colorKey] = undefined;
+								}
+								await this.saveSettings();
+								// Apply icon override to native buttons
+								this.plugin.explorerManager?.applyNativeIconOverrides();
+								// Re-render just the native buttons section
+								this.renderNativeButtonControls(container, mainContainer);
+								// Restore scroll position after render
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+								});
+							})();
+						});
+						modal.open();
+					});
+					// Prevent collapse on button click
+					button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+					
+					// Add reset button if icon is set
+					if (iconOverride) {
+						setTimeout(() => {
+							const controlEl = setting.controlEl;
+							const buttonEl = controlEl.querySelector('button') || controlEl.lastElementChild;
+							
+							const resetButton = controlEl.createEl('button', {
+								cls: 'clickable-icon ui-tweaker-icon-reset',
+								attr: { 'aria-label': 'Reset to default icon' }
+							});
+							setIcon(resetButton, 'lucide-rotate-cw');
+							setCssProps(resetButton, { marginRight: '0.5rem' });
+							resetButton.addEventListener('click', (e) => {
+								e.stopPropagation();
+								e.stopImmediatePropagation();
+								e.preventDefault();
+								// Prevent scroll jumping
+								const scrollPos = scrollContainer.scrollTop;
+								void (async () => {
+									if (!settings.nativeExplorerButtonIcons) {
+										settings.nativeExplorerButtonIcons = {};
+									}
+									settings.nativeExplorerButtonIcons[colorKey] = undefined;
+									await this.saveSettings();
+									// Apply icon override to native buttons (remove override)
+									this.plugin.explorerManager?.applyNativeIconOverrides();
+									// Re-render just the native buttons section
+									this.renderNativeButtonControls(container, mainContainer);
+									// Restore scroll position after render
+									requestAnimationFrame(() => {
+										scrollContainer.scrollTop = scrollPos;
+									});
+								})();
+							});
+							
+							// Insert reset button before the main button
+							if (buttonEl) {
+								controlEl.insertBefore(resetButton, buttonEl);
+							} else {
+								controlEl.insertBefore(resetButton, controlEl.firstChild);
+							}
+						}, 0);
+					}
+				});
 			});
 		};
 
@@ -555,7 +644,7 @@ export class ExplorerTab extends TabRenderer {
 							
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-color-reset',
-								attr: { 'aria-label': 'Reset to default color', 'title': 'Reset to default color' }
+								attr: { 'aria-label': 'Reset to default color' }
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
@@ -624,7 +713,8 @@ export class ExplorerTab extends TabRenderer {
 			
 			setting
 				.setName('Toggle icon')
-				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle)')
+				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
+				.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
 				.addButton((button) => {
 					const currentToggleIcon = pair.toggleIcon || 'None';
 					button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
@@ -653,7 +743,7 @@ export class ExplorerTab extends TabRenderer {
 							
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-toggle-icon-reset',
-								attr: { 'aria-label': 'Reset toggle icon', 'title': 'Reset toggle icon' }
+								attr: { 'aria-label': 'Reset toggle icon' }
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });

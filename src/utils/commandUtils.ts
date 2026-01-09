@@ -55,9 +55,11 @@ export function getCommandFromId(id: string, plugin: UITweakerPlugin): Command |
 /**
  * Command toggle state tracker
  * Tracks toggle state for commands that don't have checkCallback
+ * Also tracks previous states to detect changes
  */
 class CommandToggleTracker {
 	private toggleStates = new Map<string, boolean>();
+	private previousStates = new Map<string, boolean>();
 	private executionCounts = new Map<string, number>();
 
 	/**
@@ -80,26 +82,52 @@ class CommandToggleTracker {
 	}
 
 	/**
+	 * Get previous toggle state (for change detection)
+	 */
+	getPreviousState(id: string): boolean | null {
+		return this.previousStates.get(id) ?? null;
+	}
+
+	/**
 	 * Reset tracked state for a command
 	 */
 	resetState(id: string): void {
 		this.toggleStates.delete(id);
+		this.previousStates.delete(id);
 		this.executionCounts.delete(id);
 	}
 
 	/**
 	 * Sync tracked state with actual command state
 	 * Used when checkCallback reports a different state than tracked
+	 * Returns true if state changed, false otherwise
 	 */
-	syncState(id: string, actualState: boolean): void {
+	syncState(id: string, actualState: boolean): boolean {
 		const currentTrackedState = this.toggleStates.get(id);
+		
+		// Store current state as previous before updating
+		if (currentTrackedState !== undefined) {
+			this.previousStates.set(id, currentTrackedState);
+		}
+		
 		if (currentTrackedState !== actualState) {
 			// State changed - update tracked state to match
 			// Adjust execution count to reflect the change
 			const currentCount = this.executionCounts.get(id) || 0;
 			this.executionCounts.set(id, currentCount + 1);
 			this.toggleStates.set(id, actualState);
+			return true; // State changed
 		}
+		
+		return false; // No change
+	}
+
+	/**
+	 * Check if state has changed since last check
+	 */
+	hasStateChanged(id: string, currentState: boolean): boolean {
+		const previousState = this.previousStates.get(id);
+		return previousState !== undefined && previousState !== currentState;
 	}
 }
 
@@ -109,15 +137,50 @@ const commandToggleTracker = new CommandToggleTracker();
 /**
  * Check if a command is currently checked/toggled on
  * First tries checkCallback if available, otherwise uses tracked state
+ * For specific commands (like theme toggle), checks actual state directly
+ * 
+ * This function always checks the actual state (via checkCallback or direct detection)
+ * and syncs it with tracked state, ensuring buttons stay in sync even when commands
+ * are executed externally (keyboard shortcuts, command palette, etc.)
  */
 export function isCommandChecked(id: string, plugin: UITweakerPlugin): boolean {
+	// Special handling for commands that need direct state detection
+	// These commands don't have reliable checkCallback, so we check DOM/app state directly
+	
+	// Theme toggle - check DOM class
+	if (id === 'theme:toggle-light-dark') {
+		// Check theme state directly from DOM
+		// Obsidian uses 'theme-dark' class on body for dark mode
+		const isDark = document.body.classList.contains('theme-dark');
+		// Sync tracked state with actual state
+		commandToggleTracker.syncState(id, isDark);
+		return isDark;
+	}
+
+	// Editing Toolbar hide/show - check plugin settings
+	// The command ID is 'hide-show-menu' but it's registered under 'editing-toolbar:hide-show-menu'
+	if (id === 'editing-toolbar:hide-show-menu' || id === 'hide-show-menu') {
+		// Try to access the editing toolbar plugin's settings
+		const plugins = (plugin.app as { plugins?: { plugins?: { [id: string]: { settings?: { cMenuVisibility?: boolean } } } } }).plugins;
+		const editingToolbarPlugin = plugins?.plugins?.['editing-toolbar'];
+		if (editingToolbarPlugin?.settings?.cMenuVisibility !== undefined) {
+			const isVisible = editingToolbarPlugin.settings.cMenuVisibility;
+			// Sync tracked state with actual state
+			commandToggleTracker.syncState(id, isVisible);
+			return isVisible;
+		}
+		// Fallback to tracked state if plugin not found
+		return commandToggleTracker.getTrackedState(id) ?? false;
+	}
+
 	const command = getCommandFromId(id, plugin);
 	if (!command) {
-		// Fallback to tracked state if command not found
+		// Command not found - fallback to tracked state
+		// This can happen with custom plugin commands that haven't registered yet
 		return commandToggleTracker.getTrackedState(id) ?? false;
 	}
 	
-	// Check if command has a checkCallback (preferred method)
+	// Check if command has a checkCallback (preferred method for all commands)
 	if (typeof command.checkCallback === 'function') {
 		try {
 			// Call checkCallback with checking=true to see if it returns true (checked state)
@@ -125,20 +188,23 @@ export function isCommandChecked(id: string, plugin: UITweakerPlugin): boolean {
 			const result = command.checkCallback(true);
 			const isChecked = result === true;
 			
-			// Sync tracked state with checkCallback result to keep them in sync
-			// This helps when commands are executed externally (keyboard shortcuts, etc.)
+			// Always sync tracked state with checkCallback result
+			// This ensures buttons stay in sync even when commands are executed externally
+			// (keyboard shortcuts, command palette, other plugins, etc.)
 			commandToggleTracker.syncState(id, isChecked);
 			
 			// Always trust checkCallback over tracked state when available
 			return isChecked;
-		} catch (error) {
+		} catch {
 			// If checkCallback throws, fall back to tracked state
-			console.debug('[UI Tweaker] checkCallback error for', id, error);
+			// This can happen if the command's checkCallback has bugs or isn't ready yet
 			return commandToggleTracker.getTrackedState(id) ?? false;
 		}
 	}
 	
 	// No checkCallback - use tracked state
+	// This is a fallback for commands that don't provide checkCallback
+	// The periodic refresh will keep trying to detect state changes
 	return commandToggleTracker.getTrackedState(id) ?? false;
 }
 

@@ -64,7 +64,9 @@ export default class UITweakerPlugin extends Plugin {
 		
 		// Set up periodic refresh to catch commands executed outside the interceptor
 		// (e.g., keyboard shortcuts that bypass executeCommandById)
-		// Only refresh if we have toggle commands configured
+		// Periodic refresh to catch commands executed outside the interceptor
+		// This is critical for commands executed via keyboard shortcuts, command palette, etc.
+		// We refresh frequently to ensure buttons stay in sync
 		this.registerInterval(
 			window.setInterval(() => {
 				const hasToggleCommands = 
@@ -72,6 +74,8 @@ export default class UITweakerPlugin extends Plugin {
 					(this.settings.tabBarCommands?.some(p => p.toggleIcon) ?? false);
 				
 				if (hasToggleCommands) {
+					// Always refresh - isCommandChecked will check actual state via checkCallback
+					// or direct detection, ensuring buttons stay in sync
 					if (this.explorerManager) {
 						this.explorerManager.refreshToggleStates();
 					}
@@ -79,8 +83,26 @@ export default class UITweakerPlugin extends Plugin {
 						this.tabBarManager.refreshToggleStates();
 					}
 				}
-			}, 500) as unknown as number // Refresh every 500ms to keep buttons in sync
+			}, 300) as unknown as number // Refresh every 300ms to keep buttons in sync (increased frequency)
 		);
+
+		// Watch for theme changes on body element to immediately update theme toggle buttons
+		// This catches theme changes from any source (keyboard shortcuts, command palette, etc.)
+		const themeObserver = new MutationObserver(() => {
+			// Theme class changed - refresh toggle states immediately
+			if (this.explorerManager) {
+				this.explorerManager.refreshToggleStates();
+			}
+			if (this.tabBarManager) {
+				this.tabBarManager.refreshToggleStates();
+			}
+		});
+
+		// Observe body for class changes (theme changes)
+		themeObserver.observe(document.body, {
+			attributes: true,
+			attributeFilter: ['class']
+		});
 
 		// Register settings tab
 		this.settingTab = new UITweakerSettingTab(this.app, this);
@@ -177,6 +199,7 @@ export default class UITweakerPlugin extends Plugin {
 		if (this.uiManager) {
 			this.uiManager.updateSettings(this.settings);
 		}
+		this.explorerManager?.applyNativeIconOverrides();
 		this.setupHelpButtonReplacement();
 		// Always update sync button CSS to ensure it matches current settings
 		this.updateSyncButtonCSS();
