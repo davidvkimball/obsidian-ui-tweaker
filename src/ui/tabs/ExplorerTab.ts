@@ -46,10 +46,8 @@ export class ExplorerTab extends TabRenderer {
 		const nativeButtonsContainer = container.createDiv({ cls: 'native-explorer-buttons-container' });
 		this.renderNativeButtonControls(nativeButtonsContainer, container);
 
-		// Separator between native buttons and custom commands
-		if (settings.explorerCommands.length > 0) {
-			container.createEl('hr');
-		}
+		// Separator between native buttons and custom commands (always show)
+		container.createEl('hr');
 
 		// List of commands using Setting components (like TabBarTab)
 		settings.explorerCommands.forEach((pair, index) => {

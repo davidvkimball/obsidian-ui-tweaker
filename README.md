@@ -143,6 +143,8 @@ npm run dev
 ## Credits
 
 - [Hider](https://github.com/kepano/obsidian-hider) - most "hide" features in this plugin are based on this plugin.
+- [Commander](https://github.com/phibr0/obsidian-commander) - custom command buttons in explorer and tab bar, command execution interceptor patterns, and color picker UI patterns.
+- [Status Bar Organizer](https://github.com/darlal/obsidian-statusbar-organizer) - status bar item reordering, hiding, and drag-and-drop functionality.
 - [Baseline](https://github.com/aaaaalexis/obsidian-baseline) theme for the animation effects and some feature ideas.
 - [Meridian](https://github.com/mvahaste/meridian) theme for the auto-hide animations for the file explorer icons and nav bar auto-hide reveal.
 - [Adrenaline](https://github.com/Spekulucius/obsidian-adrenaline) theme for the auto-collapsing sidebar treatment.

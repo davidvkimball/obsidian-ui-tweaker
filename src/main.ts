@@ -59,8 +59,28 @@ export default class UITweakerPlugin extends Plugin {
 			refresh: () => this.refresh(),
 		});
 
-		// Set up periodic refresh for button toggle states
+		// Set up command execution interceptor and periodic refresh for button toggle states
 		this.setupToggleStateRefresh();
+		
+		// Set up periodic refresh to catch commands executed outside the interceptor
+		// (e.g., keyboard shortcuts that bypass executeCommandById)
+		// Only refresh if we have toggle commands configured
+		this.registerInterval(
+			window.setInterval(() => {
+				const hasToggleCommands = 
+					(this.settings.explorerCommands?.some(p => p.toggleIcon) ?? false) ||
+					(this.settings.tabBarCommands?.some(p => p.toggleIcon) ?? false);
+				
+				if (hasToggleCommands) {
+					if (this.explorerManager) {
+						this.explorerManager.refreshToggleStates();
+					}
+					if (this.tabBarManager) {
+						this.tabBarManager.refreshToggleStates();
+					}
+				}
+			}, 500) as unknown as number // Refresh every 500ms to keep buttons in sync
+		);
 
 		// Register settings tab
 		this.settingTab = new UITweakerSettingTab(this.app, this);
@@ -809,6 +829,7 @@ export default class UITweakerPlugin extends Plugin {
 				await originalExecute(id);
 
 				// Update button states after a brief delay to allow command to complete
+				// Use multiple timeouts to catch commands that take longer to complete
 				setTimeout(() => {
 					if (this.explorerManager) {
 						this.explorerManager.refreshToggleStates();
@@ -817,6 +838,16 @@ export default class UITweakerPlugin extends Plugin {
 						this.tabBarManager.refreshToggleStates();
 					}
 				}, 50);
+				
+				// Also refresh after a longer delay to catch commands that take more time
+				setTimeout(() => {
+					if (this.explorerManager) {
+						this.explorerManager.refreshToggleStates();
+					}
+					if (this.tabBarManager) {
+						this.tabBarManager.refreshToggleStates();
+					}
+				}, 300);
 			} else {
 				// Not a tracked command, just execute normally
 				await originalExecute(id);

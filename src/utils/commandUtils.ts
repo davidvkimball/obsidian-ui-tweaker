@@ -86,6 +86,21 @@ class CommandToggleTracker {
 		this.toggleStates.delete(id);
 		this.executionCounts.delete(id);
 	}
+
+	/**
+	 * Sync tracked state with actual command state
+	 * Used when checkCallback reports a different state than tracked
+	 */
+	syncState(id: string, actualState: boolean): void {
+		const currentTrackedState = this.toggleStates.get(id);
+		if (currentTrackedState !== actualState) {
+			// State changed - update tracked state to match
+			// Adjust execution count to reflect the change
+			const currentCount = this.executionCounts.get(id) || 0;
+			this.executionCounts.set(id, currentCount + 1);
+			this.toggleStates.set(id, actualState);
+		}
+	}
 }
 
 // Global tracker instance
@@ -106,10 +121,19 @@ export function isCommandChecked(id: string, plugin: UITweakerPlugin): boolean {
 	if (typeof command.checkCallback === 'function') {
 		try {
 			// Call checkCallback with checking=true to see if it returns true (checked state)
+			// Note: checkCallback should return true if checked, false if unchecked
 			const result = command.checkCallback(true);
-			return result === true;
-		} catch {
+			const isChecked = result === true;
+			
+			// Sync tracked state with checkCallback result to keep them in sync
+			// This helps when commands are executed externally (keyboard shortcuts, etc.)
+			commandToggleTracker.syncState(id, isChecked);
+			
+			// Always trust checkCallback over tracked state when available
+			return isChecked;
+		} catch (error) {
 			// If checkCallback throws, fall back to tracked state
+			console.debug('[UI Tweaker] checkCallback error for', id, error);
 			return commandToggleTracker.getTrackedState(id) ?? false;
 		}
 	}

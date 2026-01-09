@@ -245,6 +245,7 @@ export class ExplorerManager {
 			for (const pair of this.plugin.settings.explorerCommands) {
 				const button = navButtonsContainer.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 				if (button && pair.toggleIcon) {
+					// Always update button state - this will check the actual command state
 					this.updateButtonToggleState(button, pair);
 				}
 			}
