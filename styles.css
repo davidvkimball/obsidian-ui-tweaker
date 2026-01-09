@@ -957,12 +957,29 @@ body.ui-tweaker-hide-sync-button .is-mobile .status-bar > .plugin-sync:not(.ui-t
    Tab Navigation - Matching Astro Modular Settings
    ======================================== */
 
+/* Override parent padding to get full width, then apply padding to children */
+.vertical-tab-content:has(.ui-tweaker-settings),
+.vertical-tab-container:has(.ui-tweaker-settings) {
+	padding: 0 !important;
+	margin: 0 !important;
+}
+
 .ui-tweaker-settings {
 	font-family: var(--font-family);
 	height: 100%;
+	width: 100%;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+	margin: 0;
+	padding: 0;
+}
+
+/* Vertical Tab Content (Shell Commands style) - SCOPED to this plugin only */
+.ui-tweaker-settings .vertical-tab-content {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 }
 
 .ui-tweaker-settings .tab-container {
@@ -974,17 +991,24 @@ body.ui-tweaker-hide-sync-button .is-mobile .status-bar > .plugin-sync:not(.ui-t
 }
 
 .ui-tweaker-settings .tab-nav {
+	position: sticky;
+	top: 0;
+	z-index: 0;
 	display: flex;
 	border-bottom: 1px solid var(--background-modifier-border);
 	margin: 0;
-	padding: 0;
+	padding: var(--size-4-8) var(--size-4-12) 0 var(--size-4-12);
 	gap: 0;
-	background: var(--background-primary);
 	overflow-x: auto;
 	overflow-y: hidden;
 	scrollbar-width: thin;
 	scrollbar-color: var(--background-modifier-border) transparent;
 	-webkit-overflow-scrolling: touch;
+	pointer-events: none;
+}
+
+.ui-tweaker-settings .tab-nav .tab-button {
+	pointer-events: auto;
 }
 
 .ui-tweaker-settings .tab-nav::-webkit-scrollbar {
@@ -1034,10 +1058,11 @@ body.ui-tweaker-hide-sync-button .is-mobile .status-bar > .plugin-sync:not(.ui-t
 
 .ui-tweaker-settings .tab-content {
 	flex: 1;
-	padding: 20px;
+	padding: var(--size-4-12) var(--size-4-12) var(--size-4-16) var(--size-4-12);
 	margin: 0;
 	overflow-y: auto;
 	min-height: 0;
+	height: 100%;
 }
 
 /* ========================================
@@ -1295,7 +1320,7 @@ div.ui-tweaker-status-bar-row {
 	color: var(--text-normal);
 	border-radius: 0.25em;
 	display: grid;
-	grid-template-columns: 1.25em 0.5fr 0.75fr 2em 2em 2em 2em 2em;
+	grid-template-columns: 1.25em 0.5fr 0.8fr 2em 2em 2em 2em 2em 2em;
 	padding: 0.5em 1em;
 	width: 100%;
 	align-items: center;
@@ -1340,8 +1365,36 @@ div.ui-tweaker-status-bar-row[data-ui-tweaker-id^="custom-"] span.ui-tweaker-sta
 	justify-content: flex-start;
 }
 
+span.ui-tweaker-status-bar-row-reset-color {
+	cursor: default;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+span.ui-tweaker-status-bar-row-reset-color button {
+	opacity: 0.6;
+	transition: opacity 0.2s;
+	background: transparent !important;
+}
+
+span.ui-tweaker-status-bar-row-reset-color button:hover {
+	opacity: 1;
+	background: transparent !important;
+}
+
+span.ui-tweaker-status-bar-row-color-picker {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+span.ui-tweaker-status-bar-row-color-picker > div {
+	display: flex;
+	align-items: center;
+}
+
 span.ui-tweaker-status-bar-row-device-mode,
-span.ui-tweaker-status-bar-row-color,
 span.ui-tweaker-status-bar-row-md-only {
 	cursor: default;
 	display: flex;
@@ -1352,13 +1405,11 @@ span.ui-tweaker-status-bar-row-md-only {
 }
 
 span.ui-tweaker-status-bar-row-device-mode:hover,
-span.ui-tweaker-status-bar-row-color:hover,
 span.ui-tweaker-status-bar-row-md-only:hover {
 	opacity: 1;
 }
 
 span.ui-tweaker-status-bar-row-device-mode.ui-tweaker-active,
-span.ui-tweaker-status-bar-row-color.ui-tweaker-active,
 span.ui-tweaker-status-bar-row-md-only.ui-tweaker-active {
 	opacity: 1;
 	color: var(--interactive-accent);
@@ -1399,6 +1450,7 @@ div.ui-tweaker-status-bar-row-drag {
 	position: absolute;
 	background: var(--background-modifier-active-hover);
 	z-index: 1000;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 div.ui-tweaker-status-bar-row-drag > span.ui-tweaker-status-bar-row-preview {
@@ -1408,6 +1460,10 @@ div.ui-tweaker-status-bar-row-drag > span.ui-tweaker-status-bar-row-preview {
 div.ui-tweaker-status-bar-row-drag.ui-tweaker-status-bar-row-disabled {
 	color: var(--text-normal);
 	opacity: 0.5;
+}
+
+div.ui-tweaker-status-bar-row-drag.ui-tweaker-status-bar-row-disabled * {
+	color: var(--text-normal) !important;
 }
 
 div.ui-tweaker-status-bar-row-clone {

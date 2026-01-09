@@ -70,6 +70,15 @@ export class TabBarTab extends TabRenderer {
 		// Command name with editable name (like Vault CMS) and icon preview with color
 		const displayName = pair.displayName || pair.name;
 		group.addSetting((setting): void => {
+			// Prevent default click behavior on the setting item itself
+			setting.settingEl.addEventListener('click', (e) => {
+				// Only allow collapse if clicking directly on the chevron
+				const target = e.target as HTMLElement;
+				if (!target.closest('.ui-tweaker-collapse-icon')) {
+					e.stopPropagation();
+				}
+			});
+			
 			// Make nameEl a flex container so chevron can be positioned to the left
 			const nameEl = setting.nameEl;
 			setCssProps(nameEl, { display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' });
@@ -92,7 +101,8 @@ export class TabBarTab extends TabRenderer {
 			setIcon(chevronContainer, 'chevrons-up-down');
 			
 			// Toggle on chevron click - will be set up after all settings are added
-			chevronContainer.addEventListener('click', () => {
+			chevronContainer.addEventListener('click', (e) => {
+				e.stopPropagation();
 				isExpanded = !isExpanded;
 				// Swap icon: chevrons-up-down (collapsed) <-> chevrons-down-up (expanded)
 				setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');

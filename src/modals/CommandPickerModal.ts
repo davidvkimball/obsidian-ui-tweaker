@@ -33,8 +33,8 @@ export class CommandPickerModal extends FuzzySuggestModal<CommandOption> {
 						});
 					}
 				}
-			} catch (e) {
-				console.warn('[UI Tweaker] Error getting commands:', e);
+			} catch {
+				// Error getting commands - fall back to empty list
 			}
 		}
 

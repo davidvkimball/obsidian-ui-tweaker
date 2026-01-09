@@ -41,14 +41,14 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				renderer: new HiderTab(this.app, this.plugin)
 			},
 			{
-				id: 'tab-bar',
-				name: 'Tab bar',
-				renderer: new TabBarTab(this.app, this.plugin)
-			},
-			{
 				id: 'status-bar',
 				name: 'Status bar',
 				renderer: new StatusBarTab(this.app, this.plugin)
+			},
+			{
+				id: 'tab-bar',
+				name: 'Tab bar',
+				renderer: new TabBarTab(this.app, this.plugin)
 			},
 			{
 				id: 'explorer',

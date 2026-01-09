@@ -3,7 +3,7 @@
  * EXACTLY matches Status Bar Organizer's design 1:1
  */
 
-import { setIcon } from 'obsidian';
+import { setIcon, ColorComponent } from 'obsidian';
 import { TabRenderer } from '../common/TabRenderer';
 import { StatusBarItem } from '../../types';
 import { UISettings } from '../../settings';
@@ -21,9 +21,12 @@ function arrayMoveMutable<T>(array: T[], from: number, to: number): void {
 let dragging = false;
 
 export class StatusBarTab extends TabRenderer {
+	private container?: HTMLElement;
 	render(container: HTMLElement): void {
 		container.empty();
 		const settings = this.getSettings();
+		// Store container reference for re-renders
+		this.container = container;
 		
 		// Ensure statusBarItems exists
 		if (!settings.statusBarItems) {
@@ -117,56 +120,16 @@ export class StatusBarTab extends TabRenderer {
 			previewSpan.appendChild(cloned);
 		}
 
-		// Device mode icon (for custom items only)
-		if (item.type === 'custom') {
-			const deviceModeSpan = entry.createSpan('ui-tweaker-status-bar-row-device-mode');
-			deviceModeSpan.addEventListener('click', (e) => {
-				e.stopPropagation();
-				this.toggleDeviceMode(item);
-			});
-			setIcon(deviceModeSpan, this.getDeviceModeIcon(item.mode || 'any'));
-			if (item.mode && item.mode !== 'any') {
-				deviceModeSpan.addClass('ui-tweaker-active');
-			}
-		}
-		
-		// Color picker icon (for custom items only)
-		if (item.type === 'custom') {
-			const colorSpan = entry.createSpan('ui-tweaker-status-bar-row-color');
-			colorSpan.addEventListener('click', (e) => {
-				e.stopPropagation();
-				this.showColorPicker(item);
-			});
-			setIcon(colorSpan, item.color ? 'palette' : 'palette');
-			if (item.color) {
-				colorSpan.addClass('ui-tweaker-active');
-				setCssProps(colorSpan, { color: item.color });
-			}
-		}
-		
-		// MD-only icon (for custom items only)
-		if (item.type === 'custom') {
-			const mdOnlySpan = entry.createSpan('ui-tweaker-status-bar-row-md-only');
-			mdOnlySpan.addEventListener('click', (e) => {
-				e.stopPropagation();
-				item.mdOnly = !item.mdOnly;
-				setIcon(mdOnlySpan, item.mdOnly ? 'file-check' : 'file-x');
-				if (item.mdOnly) {
-					mdOnlySpan.addClass('ui-tweaker-active');
-				} else {
-					mdOnlySpan.removeClass('ui-tweaker-active');
-				}
-				this.plugin.statusBarManager?.reorder();
-				void this.saveSettings();
-			});
-			setIcon(mdOnlySpan, item.mdOnly ? 'file-check' : 'file-x');
-			if (item.mdOnly) {
-				mdOnlySpan.addClass('ui-tweaker-active');
-			}
-		}
+		// Empty spans for custom item options (existing items don't have these)
+		entry.createSpan('ui-tweaker-status-bar-row-reset-color'); // Empty
+		entry.createSpan('ui-tweaker-status-bar-row-color-picker'); // Empty
+		entry.createSpan('ui-tweaker-status-bar-row-device-mode'); // Empty
+		entry.createSpan('ui-tweaker-status-bar-row-md-only'); // Empty
 
 		// Lock icon (new feature)
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
+		lockSpan.setAttribute('aria-label', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
+		lockSpan.setAttribute('title', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
 		lockSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
@@ -178,6 +141,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Visibility icon
 		const visibilitySpan = entry.createSpan('ui-tweaker-status-bar-row-visibility');
+		visibilitySpan.setAttribute('title', exists ? (item.hidden ? 'Hidden - click to show' : 'Visible - click to hide') : 'Delete item');
 		visibilitySpan.addEventListener('click', () => {
 			if (exists) {
 				this.toggleVisibility(item, visibilitySpan, entry);
@@ -255,8 +219,62 @@ export class StatusBarTab extends TabRenderer {
 			}
 		}
 
+		// Reset color button (only show if color is set)
+		const resetColorContainer = entry.createSpan('ui-tweaker-status-bar-row-reset-color');
+		if (item.color) {
+			const resetButton = resetColorContainer.createEl('button', {
+				cls: 'clickable-icon ui-tweaker-color-reset',
+				attr: { 'aria-label': 'Reset to default color', 'title': 'Reset to default color' }
+			});
+			setIcon(resetButton, 'rotate-cw');
+			resetButton.addEventListener('click', (e) => {
+				e.stopPropagation();
+				item.color = undefined;
+				// Update preview icon
+				const previewIcon = previewSpan.querySelector('.clickable-icon') as HTMLElement;
+				if (previewIcon) {
+					previewIcon.style.removeProperty('color');
+				}
+				this.plugin.statusBarManager?.reorder();
+				void this.saveSettings();
+				// Re-render to update UI
+				if (this.container) {
+					this.render(this.container);
+				}
+			});
+		}
+		
+		// Color picker (Obsidian's native component)
+		const colorPickerContainer = entry.createSpan('ui-tweaker-status-bar-row-color-picker');
+		const colorPickerEl = colorPickerContainer.createDiv();
+		const colorPicker = new ColorComponent(colorPickerEl);
+		colorPicker.setValue(item.color || '#000000');
+		colorPicker.onChange((value) => {
+			if (value === '#000000') {
+				item.color = undefined;
+			} else {
+				item.color = value;
+			}
+			// Update preview icon color in real-time
+			const previewIcon = previewSpan.querySelector('.clickable-icon') as HTMLElement;
+			if (previewIcon) {
+				if (item.color && item.color !== '#000000') {
+					setCssProps(previewIcon, { color: item.color });
+				} else {
+					previewIcon.style.removeProperty('color');
+				}
+			}
+			this.plugin.statusBarManager?.reorder();
+			void this.saveSettings();
+			// Re-render to show/hide reset button
+			if (this.container) {
+				this.render(this.container);
+			}
+		});
+		
 		// Device mode icon
 		const deviceModeSpan = entry.createSpan('ui-tweaker-status-bar-row-device-mode');
+		deviceModeSpan.setAttribute('title', this.getDeviceModeTooltip(item.mode || 'any'));
 		deviceModeSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleDeviceMode(item);
@@ -266,24 +284,14 @@ export class StatusBarTab extends TabRenderer {
 			deviceModeSpan.addClass('ui-tweaker-active');
 		}
 		
-		// Color picker icon
-		const colorSpan = entry.createSpan('ui-tweaker-status-bar-row-color');
-		colorSpan.addEventListener('click', (e) => {
-			e.stopPropagation();
-			this.showColorPicker(item);
-		});
-		setIcon(colorSpan, 'palette');
-		if (item.color) {
-			colorSpan.addClass('ui-tweaker-active');
-			setCssProps(colorSpan, { color: item.color });
-		}
-		
 		// MD-only icon
 		const mdOnlySpan = entry.createSpan('ui-tweaker-status-bar-row-md-only');
+		mdOnlySpan.setAttribute('title', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
 		mdOnlySpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			item.mdOnly = !item.mdOnly;
 			setIcon(mdOnlySpan, item.mdOnly ? 'file-check' : 'file-x');
+			mdOnlySpan.setAttribute('title', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
 			if (item.mdOnly) {
 				mdOnlySpan.addClass('ui-tweaker-active');
 			} else {
@@ -299,6 +307,8 @@ export class StatusBarTab extends TabRenderer {
 
 		// Lock icon (new feature)
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
+		lockSpan.setAttribute('aria-label', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
+		lockSpan.setAttribute('title', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
 		lockSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
@@ -310,6 +320,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Visibility icon
 		const visibilitySpan = entry.createSpan('ui-tweaker-status-bar-row-visibility');
+		visibilitySpan.setAttribute('title', item.hidden ? 'Hidden - click to show' : 'Visible - click to hide');
 		visibilitySpan.addEventListener('click', () => {
 			this.toggleVisibility(item, visibilitySpan, entry);
 			// toggleVisibility already calls saveSettings()
@@ -333,6 +344,7 @@ export class StatusBarTab extends TabRenderer {
 			item.sticky = false;
 			setIcon(lockSpan, 'unlock');
 			lockSpan.removeClass('ui-tweaker-locked');
+			lockSpan.setAttribute('title', 'Unlocked - click to lock position');
 		} else {
 			// Determine lock position based on current index
 			// Position 0 or 1 -> lock left
@@ -349,6 +361,7 @@ export class StatusBarTab extends TabRenderer {
 			}
 			setIcon(lockSpan, 'lock');
 			lockSpan.addClass('ui-tweaker-locked');
+			lockSpan.setAttribute('title', `Locked to ${item.sticky}`);
 		}
 		
 		// Update status bar order
@@ -365,9 +378,11 @@ export class StatusBarTab extends TabRenderer {
 		if (item.hidden) {
 			entry.addClass('ui-tweaker-status-bar-row-hidden');
 			setIcon(visibilitySpan, 'eye-off');
+			visibilitySpan.setAttribute('title', 'Hidden - click to show');
 		} else {
 			entry.removeClass('ui-tweaker-status-bar-row-hidden');
 			setIcon(visibilitySpan, 'eye');
+			visibilitySpan.setAttribute('title', 'Visible - click to hide');
 		}
 		
 		this.plugin.statusBarManager?.reorder();
@@ -392,10 +407,12 @@ export class StatusBarTab extends TabRenderer {
 			item.mode = 'any';
 		}
 		
-		// Update icon
+		// Update icon and tooltip
 		const deviceModeSpan = document.querySelector(`[data-ui-tweaker-id="${item.id}"] .ui-tweaker-status-bar-row-device-mode`) as HTMLElement;
 		if (deviceModeSpan) {
 			setIcon(deviceModeSpan, this.getDeviceModeIcon(item.mode));
+			const tooltip = this.getDeviceModeTooltip(item.mode);
+			deviceModeSpan.setAttribute('title', tooltip);
 			if (item.mode && item.mode !== 'any') {
 				deviceModeSpan.addClass('ui-tweaker-active');
 			} else {
@@ -418,46 +435,13 @@ export class StatusBarTab extends TabRenderer {
 	}
 	
 	/**
-	 * Show color picker for item
+	 * Get device mode tooltip
 	 */
-	private showColorPicker(statusBarItem: StatusBarItem): void {
-		// Create a simple color input
-		const input = document.createElement('input');
-		input.type = 'color';
-		input.value = statusBarItem.color || '#000000';
-		setCssProps(input, {
-			position: 'fixed',
-			opacity: '0',
-			pointerEvents: 'none'
-		});
-		document.body.appendChild(input);
-		
-		input.addEventListener('change', () => {
-			const value = input.value;
-			if (value === '#000000') {
-				statusBarItem.color = undefined;
-			} else {
-				statusBarItem.color = value;
-			}
-			
-			// Update color icon
-			const colorSpan = document.querySelector(`[data-ui-tweaker-id="${statusBarItem.id}"] .ui-tweaker-status-bar-row-color`) as HTMLElement;
-			if (colorSpan) {
-				if (statusBarItem.color) {
-					colorSpan.addClass('ui-tweaker-active');
-					setCssProps(colorSpan, { color: statusBarItem.color });
-				} else {
-					colorSpan.removeClass('ui-tweaker-active');
-					colorSpan.style.removeProperty('color');
-				}
-			}
-			
-			this.plugin.statusBarManager?.reorder();
-			void this.saveSettings();
-			document.body.removeChild(input);
-		});
-		
-		input.click();
+	private getDeviceModeTooltip(mode: string): string {
+		if (mode === 'desktop') return 'Device mode: Desktop only';
+		if (mode === 'mobile') return 'Device mode: Mobile only';
+		if (mode === 'any' || !mode) return 'Device mode: All devices';
+		return 'Device mode: This device';
 	}
 
 	/**
@@ -498,6 +482,11 @@ export class StatusBarTab extends TabRenderer {
 		const movableRow = document.createElement('div');
 		movableRow.addClass('ui-tweaker-status-bar-row');
 		movableRow.addClass('ui-tweaker-status-bar-row-drag');
+		// Ensure grid structure is maintained
+		setCssProps(movableRow, {
+			display: 'grid',
+			gridTemplateColumns: '1.25em 0.5fr 0.8fr 2em 2em 2em 2em 2em 2em'
+		});
 		if (item.hidden) movableRow.addClass('ui-tweaker-status-bar-row-hidden');
 		if (item.type === 'existing') {
 			const statusBarContainer = (this.plugin.app as { statusBar?: { containerEl?: HTMLElement } }).statusBar?.containerEl;
@@ -524,19 +513,47 @@ export class StatusBarTab extends TabRenderer {
 			width: stationaryRow.offsetWidth + 'px'
 		});
 
-		// Copy children (but skip the handle to avoid duplication)
-		for (const child of Array.from(stationaryRow.children)) {
-			if (child.classList.contains('ui-tweaker-status-bar-row-handle')) {
-				// Skip the handle - we don't want it duplicated
-				continue;
+		// Create simplified drag preview (don't clone complex elements to avoid breaking)
+		// Just show title and preview, skip interactive elements
+		movableRow.createSpan('ui-tweaker-status-bar-row-handle');
+		const dragTitle = movableRow.createSpan('ui-tweaker-status-bar-row-title');
+		dragTitle.textContent = item.name;
+		const dragPreview = movableRow.createSpan('ui-tweaker-status-bar-row-preview');
+		// For existing items, try to clone preview if available
+		if (item.type === 'existing') {
+			const statusBarContainer = (this.plugin.app as { statusBar?: { containerEl?: HTMLElement } }).statusBar?.containerEl;
+			const actualElement = statusBarContainer?.querySelector(`[data-ui-tweaker-status-bar-id="${item.id}"]`) as HTMLElement;
+			if (actualElement) {
+				const cloned = actualElement.cloneNode(true) as HTMLElement;
+				// Remove tooltip attributes from cloned element
+				cloned.removeAttribute('aria-label');
+				cloned.removeAttribute('title');
+				// Also remove from any children
+				cloned.querySelectorAll('[aria-label], [title]').forEach(el => {
+					el.removeAttribute('aria-label');
+					el.removeAttribute('title');
+				});
+				dragPreview.appendChild(cloned);
 			}
-			const fauxSpan = document.createElement('span');
-			fauxSpan.className = child.className;
-			// Clone instead of using innerHTML
-			const cloned = (child as HTMLElement).cloneNode(true) as HTMLElement;
-			fauxSpan.appendChild(cloned);
-			movableRow.appendChild(fauxSpan);
+		} else if (item.icon) {
+			const previewIcon = dragPreview.createSpan('status-bar-item clickable-icon');
+			setIcon(previewIcon, item.icon);
+			// Remove any tooltip attributes from drag preview
+			previewIcon.removeAttribute('aria-label');
+			previewIcon.removeAttribute('title');
+			if (item.color && item.color !== '#000000') {
+				setCssProps(previewIcon, { color: item.color });
+			}
 		}
+		// Add empty spans for the icon columns to maintain grid structure
+		movableRow.createSpan('ui-tweaker-status-bar-row-reset-color');
+		movableRow.createSpan('ui-tweaker-status-bar-row-color-picker');
+		movableRow.createSpan('ui-tweaker-status-bar-row-device-mode');
+		movableRow.createSpan('ui-tweaker-status-bar-row-md-only');
+		const dragLock = movableRow.createSpan('ui-tweaker-status-bar-row-lock');
+		setIcon(dragLock, item.sticky ? 'lock' : 'unlock');
+		const dragVisibility = movableRow.createSpan('ui-tweaker-status-bar-row-visibility');
+		setIcon(dragVisibility, item.hidden ? 'eye-off' : 'eye');
 
 		// Calculate offsets (exactly like Status Bar Organizer)
 		// First get the position relative to the movableRow

@@ -29,25 +29,19 @@ export class StatusBarManager {
 
 	private init(): void {
 		this.plugin.app.workspace.onLayoutReady(() => {
-			console.warn('[StatusBarManager] init() START');
-		console.warn('[StatusBarManager] Current settings.statusBarItems:', JSON.stringify(this.plugin.settings.statusBarItems, null, 2));
-		this.container = (this.plugin.app as { statusBar?: { containerEl?: HTMLElement } }).statusBar?.containerEl ?? null;
-		if (!this.container) {
-			console.warn('[StatusBarManager] No container found, aborting init');
-			return;
-		}
+			this.container = (this.plugin.app as { statusBar?: { containerEl?: HTMLElement } }).statusBar?.containerEl ?? null;
+			if (!this.container) {
+				return;
+			}
 
-		// Initialize items array if needed
-		if (!this.plugin.settings.statusBarItems) {
-			console.warn('[StatusBarManager] Initializing empty statusBarItems array');
-			this.plugin.settings.statusBarItems = [];
-		}
+			// Initialize items array if needed
+			if (!this.plugin.settings.statusBarItems) {
+				this.plugin.settings.statusBarItems = [];
+			}
 
-		console.warn('[StatusBarManager] BEFORE consolidate - settings.statusBarItems.length:', this.plugin.settings.statusBarItems.length);
-		// Consolidate settings and elements (like Status Bar Organizer)
-		// This merges saved items with current DOM elements and saves immediately
-		this.consolidateSettingsAndElements();
-		console.warn('[StatusBarManager] AFTER consolidate - settings.statusBarItems.length:', this.plugin.settings.statusBarItems.length);
+			// Consolidate settings and elements (like Status Bar Organizer)
+			// This merges saved items with current DOM elements and saves immediately
+			this.consolidateSettingsAndElements();
 
 			// Apply ordering and visibility
 			this.reorder();
@@ -58,11 +52,9 @@ export class StatusBarManager {
 			this.observer = new MutationObserver(() => {
 				// Don't trigger if we're currently reordering (prevents infinite loops)
 				if (this.isReordering) {
-					console.warn('[StatusBarManager] MutationObserver: isReordering=true, skipping');
 					return;
 				}
 				
-				console.warn('[StatusBarManager] MutationObserver: status bar changed');
 				// Debounce observer callbacks to prevent excessive updates
 				if (observerTimeout) {
 					clearTimeout(observerTimeout);
@@ -70,7 +62,6 @@ export class StatusBarManager {
 				observerTimeout = setTimeout(() => {
 					// Only detect and reorder if we're not in the middle of a reorder operation
 					if (!this.isReordering) {
-						console.warn('[StatusBarManager] MutationObserver: calling consolidateSettingsAndElements');
 						this.consolidateSettingsAndElements();
 						this.reorder();
 					}
@@ -150,7 +141,6 @@ export class StatusBarManager {
 					// Match this element to the saved item - use the saved item's ID
 					element.setAttribute('data-ui-tweaker-status-bar-id', savedItem.id);
 					matchedSavedIds.add(savedItem.id);
-					console.warn(`[StatusBarManager] Matched element to saved item ${savedItem.id} by class pattern:`, name);
 					return; // Matched, done with this element
 				}
 			}
@@ -170,7 +160,6 @@ export class StatusBarManager {
 			const indexNum = maxIndex + 1;
 			const id = `${name};${indexNum}`;
 			element.setAttribute('data-ui-tweaker-status-bar-id', id);
-			console.warn(`[StatusBarManager] Generated new ID for element:`, id);
 
 			// Get element name for display
 			const elementName = element.getAttribute('aria-label') || 
@@ -179,7 +168,6 @@ export class StatusBarManager {
 				id.split(';')[0] || 'Status bar item';
 
 			// Truly new item - create default entry
-			console.warn(`[StatusBarManager] Adding NEW item:`, { id, name: elementName });
 			newItems.push({
 				id: id,
 				name: elementName,
@@ -333,7 +321,6 @@ export class StatusBarManager {
 			cls: 'ui-tweaker-status-bar-item status-bar-item clickable-icon',
 			attr: { 
 				'data-tooltip-position': 'top', 
-				'aria-label': item.name,
 				'title': item.name,
 				'data-ui-tweaker-status-bar-id': item.id,
 			},
@@ -447,7 +434,6 @@ export class StatusBarManager {
 	 */
 	public updateButtonNames(): void {
 		this.customActions.forEach((button, item) => {
-			button.setAttribute('aria-label', item.name);
 			button.setAttribute('title', item.name);
 			// Update color if needed
 			if (item.color && item.color !== '#000000') {

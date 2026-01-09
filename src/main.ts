@@ -9,6 +9,7 @@ import { registerCommands } from './commands';
 import { UITweakerSettingTab } from './ui/SettingsTab';
 import { TabBarManager } from './manager/TabBarManager';
 import { StatusBarManager } from './manager/StatusBarManager';
+import { ExplorerManager } from './manager/ExplorerManager';
 
 export default class UITweakerPlugin extends Plugin {
 	settings: UISettings;
@@ -22,6 +23,7 @@ export default class UITweakerPlugin extends Plugin {
 	private settingTab?: UITweakerSettingTab;
 	public tabBarManager?: TabBarManager;
 	public statusBarManager?: StatusBarManager;
+	public explorerManager?: ExplorerManager;
 
 	async onload() {
 		await this.loadSettings();
@@ -41,6 +43,12 @@ export default class UITweakerPlugin extends Plugin {
 			this.settings.statusBarItems = [];
 		}
 		this.statusBarManager = new StatusBarManager(this);
+
+		// Initialize Explorer Manager
+		if (!this.settings.explorerCommands) {
+			this.settings.explorerCommands = [];
+		}
+		this.explorerManager = new ExplorerManager(this);
 
 		// Register commands
 		registerCommands({
@@ -85,7 +93,6 @@ export default class UITweakerPlugin extends Plugin {
 			const data = await this.loadData() as Partial<UISettings> | null;
 			// Handle corrupted or empty data
 			if (!data || typeof data !== 'object' || Array.isArray(data)) {
-				console.warn('[UI Tweaker] Invalid settings data, using defaults');
 				this.settings = Object.assign({}, DEFAULT_SETTINGS);
 				// Save defaults to fix corrupted file
 				await this.saveSettings();
@@ -139,11 +146,7 @@ export default class UITweakerPlugin extends Plugin {
 	}
 
 	async saveSettings() {
-		console.warn('[UITweakerPlugin] saveSettings() called');
-		console.warn('[UITweakerPlugin] Saving statusBarItems:', this.settings.statusBarItems?.length || 0, 'items');
-		console.warn('[UITweakerPlugin] statusBarItems data:', JSON.stringify(this.settings.statusBarItems, null, 2));
 		await this.saveData(this.settings);
-		console.warn('[UITweakerPlugin] saveSettings() completed');
 	}
 
 	refresh() {
@@ -283,15 +286,14 @@ export default class UITweakerPlugin extends Plugin {
 			if (iconId) {
 				try {
 					setIcon(iconContainer, iconId);
-				} catch (error) {
-					console.warn('[UI Tweaker] Error setting icon:', error);
+				} catch {
+					// Error setting icon
 				}
 			} else {
-				console.warn('[UI Tweaker] Icon ID is undefined, using default "wrench"');
 				try {
 					setIcon(iconContainer, 'wrench');
-				} catch (error) {
-					console.warn('[UI Tweaker] Error setting default icon:', error);
+				} catch {
+					// Error setting default icon
 				}
 			}
 
@@ -312,8 +314,7 @@ export default class UITweakerPlugin extends Plugin {
 							} else {
 								throw new Error('Command execution not available');
 							}
-						} catch (error) {
-							console.warn('[UI Tweaker] Error executing command:', error);
+						} catch {
 							new Notice(`Failed to execute command: ${commandId}`);
 						}
 					})();
@@ -573,15 +574,14 @@ export default class UITweakerPlugin extends Plugin {
 			if (iconId) {
 				try {
 					setIcon(iconContainer, iconId);
-				} catch (error) {
-					console.warn('[UI Tweaker] Error setting icon:', error);
+				} catch {
+					// Error setting icon
 				}
 			} else {
-				console.warn('[UI Tweaker] Icon ID is undefined, using default "wrench"');
 				try {
 					setIcon(iconContainer, 'wrench');
-				} catch (error) {
-					console.warn('[UI Tweaker] Error setting default icon:', error);
+				} catch {
+					// Error setting default icon
 				}
 			}
 

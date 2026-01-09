@@ -79,6 +79,9 @@ export interface UISettings {
 
 	// Status Bar items (unified list of existing + custom)
 	statusBarItems: StatusBarItem[];
+
+	// Explorer custom commands
+	explorerCommands: CommandIconPair[];
 }
 
 export const DEFAULT_SETTINGS: UISettings = {
@@ -156,4 +159,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 
 	// Status Bar
 	statusBarItems: [],
+
+	// Explorer
+	explorerCommands: [],
 };

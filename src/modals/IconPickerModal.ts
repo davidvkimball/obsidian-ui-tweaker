@@ -15,8 +15,8 @@ const getIconList = (): string[] => {
 	if (requireApiVersion && requireApiVersion('1.7.3') && getIconIds) {
 		try {
 			return getIconIds();
-		} catch (e) {
-			console.warn('[UI Tweaker] Error getting icon IDs from Obsidian:', e);
+		} catch {
+			// Error getting icon IDs - fall back to basic list
 		}
 	}
 	// Fallback to a basic list if API is not available

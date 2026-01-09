@@ -287,8 +287,8 @@ export class HiderTab extends TabRenderer {
 							return command.name;
 						}
 					}
-				} catch (e) {
-					console.warn('[UI Tweaker] Error getting command name:', e);
+				} catch {
+					// Error getting command name
 				}
 				return 'Select command...';
 			};
