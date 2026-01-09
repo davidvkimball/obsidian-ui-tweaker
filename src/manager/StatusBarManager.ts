@@ -347,7 +347,7 @@ export class StatusBarManager {
 			new Menu()
 				.addItem((menuItem) => {
 					menuItem.setTitle('Change icon')
-						.setIcon('box')
+						.setIcon('lucide-image-plus')
 						.onClick(() => {
 							const modal = new IconPickerModal(this.plugin.app, (iconId) => {
 								if (iconId && iconId !== item.icon) {
@@ -365,6 +365,20 @@ export class StatusBarManager {
 						.onClick(() => {
 							void this.removeItem(item);
 						});
+					// Add warning class to make text and icon red
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+					const dom = (menuItem as any).dom;
+					if (dom) {
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+						dom.classList.add('mod-warning');
+						// Also make the icon red
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+						const iconEl = dom.querySelector('.menu-item-icon svg');
+						if (iconEl) {
+							// Use setCssProps to set color (already imported from uiManager)
+							setCssProps(iconEl as HTMLElement, { color: 'var(--text-error)' });
+						}
+					}
 				})
 				.showAtMouseEvent(event);
 		});
@@ -380,6 +394,12 @@ export class StatusBarManager {
 			this.plugin.settings.statusBarItems = [];
 		}
 
+		// Convert showOnFileTypes to mdOnly for StatusBarItem (StatusBarItem still uses mdOnly)
+		// If showOnFileTypes includes "md" or "mdx", set mdOnly to true
+		const hasMarkdownFilter = pair.showOnFileTypes && 
+			(pair.showOnFileTypes.includes('md') || pair.showOnFileTypes.includes('mdx'));
+		const mdOnly = hasMarkdownFilter ? true : false;
+
 		const item: StatusBarItem = {
 			id: `custom-${pair.id}`,
 			name: pair.name,
@@ -387,7 +407,7 @@ export class StatusBarManager {
 			icon: pair.icon,
 			type: 'custom',
 			hidden: false,
-			mdOnly: pair.mdOnly ?? false,
+			mdOnly: mdOnly,
 			commandId: pair.id,
 			color: pair.color,
 			mode: pair.mode,

@@ -46,7 +46,6 @@ export async function chooseNewCommand(plugin: UITweakerPlugin): Promise<Command
 							name: customName,
 							displayName: displayName,
 							mode: 'any',
-							mdOnly: false,
 						});
 					});
 					

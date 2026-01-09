@@ -77,6 +77,11 @@ export class ExplorerTab extends TabRenderer {
 				.setName('Add command')
 				.setDesc('Add a new command button to the file explorer navigation area')
 				.addButton((button) => {
+					// Add icon to the button
+					const buttonEl = button.buttonEl;
+					const iconContainer = buttonEl.createSpan({ cls: 'ui-tweaker-add-icon' });
+					setIcon(iconContainer, 'lucide-image-plus');
+					buttonEl.insertBefore(iconContainer, buttonEl.firstChild);
 					button.setButtonText('Add command').setCta().onClick(() => {
 						void (async () => {
 							try {
@@ -343,9 +348,11 @@ export class ExplorerTab extends TabRenderer {
 			setting.settingEl.addEventListener('click', (e) => {
 				const target = e.target as HTMLElement;
 				// Allow collapse if clicking on chevron icon OR on extra buttons (delete, move up/down, etc.)
+				// OR on name display/pencil icon for renaming
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
-				if (!isChevronClick && !isExtraButton) {
+				const isNameEdit = target.closest('.ui-tweaker-name-display') !== null || target.closest('.ui-tweaker-edit-icon') !== null || target.closest('.ui-tweaker-editable-name') !== null;
+				if (!isChevronClick && !isExtraButton && !isNameEdit) {
 					// Block ALL other clicks from affecting collapse
 					e.stopPropagation();
 					e.stopImmediatePropagation();
@@ -359,7 +366,8 @@ export class ExplorerTab extends TabRenderer {
 				const target = e.target as HTMLElement;
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
-				if (!isChevronClick && !isExtraButton) {
+				const isNameEdit = target.closest('.ui-tweaker-name-display') !== null || target.closest('.ui-tweaker-edit-icon') !== null || target.closest('.ui-tweaker-editable-name') !== null;
+				if (!isChevronClick && !isExtraButton && !isNameEdit) {
 					e.stopPropagation();
 					e.stopImmediatePropagation();
 					e.preventDefault();
@@ -537,6 +545,8 @@ export class ExplorerTab extends TabRenderer {
 					} else {
 						button.setTooltip('Already at top');
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
+						// Prevent hover effects on disabled buttons
+						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
 					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
@@ -557,14 +567,19 @@ export class ExplorerTab extends TabRenderer {
 					} else {
 						button.setTooltip('Already at bottom');
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
+						// Prevent hover effects on disabled buttons
+						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
 					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
-					// Delete
+					// Delete - red/warning style
 					button.setIcon('trash');
 					button.setTooltip('Delete');
+					button.extraSettingsEl.addClass('mod-warning');
+					// Make icon red
+					setCssProps(button.extraSettingsEl, { color: 'var(--text-error)' });
 					button.onClick(() => {
 						void (async () => {
 							const idx = settings.explorerCommands.indexOf(pair);
@@ -751,6 +766,12 @@ export class ExplorerTab extends TabRenderer {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
+								// Preserve scroll position to prevent jumping
+								const scrollContainer = container.closest('.vertical-tab-content') || 
+									container.closest('.settings-content') || 
+									container.closest('.vertical-tab-content-container') ||
+									container;
+								const scrollPos = scrollContainer.scrollTop;
 								void (async () => {
 									// Remove toggle icon
 									pair.toggleIcon = undefined;
@@ -758,6 +779,14 @@ export class ExplorerTab extends TabRenderer {
 									await this.saveSettings();
 									this.plugin.explorerManager?.reorder();
 									this.render(container);
+									// Restore scroll position after render with multiple attempts
+									requestAnimationFrame(() => {
+										scrollContainer.scrollTop = scrollPos;
+										// Also try after a short delay in case DOM isn't ready
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 0);
+									});
 								})();
 							});
 							

@@ -21,7 +21,7 @@ export default class UITweakerPlugin extends Plugin {
 	private syncButtonObserver?: MutationObserver;
 	private originalSyncButton?: HTMLElement; // Store original to restore later
 	private isUpdatingSyncButton: boolean = false; // Prevent infinite loops
-	private settingTab?: UITweakerSettingTab;
+	public settingTab?: UITweakerSettingTab;
 	public tabBarManager?: TabBarManager;
 	public statusBarManager?: StatusBarManager;
 	public explorerManager?: ExplorerManager;
@@ -181,6 +181,63 @@ export default class UITweakerPlugin extends Plugin {
 				if (this.settings.syncButtonReplacement.commandId?.startsWith('ui-tweaker:')) {
 					this.settings.syncButtonReplacement.commandId = this.settings.syncButtonReplacement.commandId.replace(/^ui-tweaker:+/g, '');
 					// Save migrated settings
+					await this.saveSettings();
+				}
+			}
+			
+			// Migrate mdOnly or fileTypeFilter to showOnFileTypes/hideOnFileTypes for tabBarCommands
+			if (this.settings.tabBarCommands) {
+				let needsSave = false;
+				for (const pair of this.settings.tabBarCommands) {
+					// Check if old properties exist in the loaded data (for backward compatibility)
+					const pairWithOldProps = pair as { 
+						mdOnly?: boolean; 
+						fileTypeFilter?: string;
+						showOnFileTypes?: string;
+						hideOnFileTypes?: string;
+					};
+					
+					// Skip if already migrated
+					if (pair.showOnFileTypes !== undefined || pair.hideOnFileTypes !== undefined) {
+						continue;
+					}
+					
+					// Migrate from mdOnly: true
+					if (pairWithOldProps.mdOnly === true && !pair.showOnFileTypes) {
+						pair.showOnFileTypes = 'md,mdx';
+						delete pairWithOldProps.mdOnly;
+						needsSave = true;
+					}
+					
+					// Migrate from fileTypeFilter (old mixed syntax)
+					if (pairWithOldProps.fileTypeFilter && !pair.showOnFileTypes && !pair.hideOnFileTypes) {
+						const filter = pairWithOldProps.fileTypeFilter;
+						const parts = filter.split(',').map(p => p.trim()).filter(p => p);
+						const showTypes: string[] = [];
+						const hideTypes: string[] = [];
+						
+						for (const part of parts) {
+							if (part.startsWith('-')) {
+								const ext = part.slice(1).replace(/^\./, '').toLowerCase();
+								if (ext) hideTypes.push(ext);
+							} else {
+								const ext = part.replace(/^\./, '').toLowerCase();
+								if (ext) showTypes.push(ext);
+							}
+						}
+						
+						if (showTypes.length > 0) {
+							pair.showOnFileTypes = showTypes.join(',');
+						}
+						if (hideTypes.length > 0) {
+							pair.hideOnFileTypes = hideTypes.join(',');
+						}
+						
+						delete pairWithOldProps.fileTypeFilter;
+						needsSave = true;
+					}
+				}
+				if (needsSave) {
 					await this.saveSettings();
 				}
 			}

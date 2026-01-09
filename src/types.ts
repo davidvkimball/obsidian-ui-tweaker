@@ -16,7 +16,8 @@ export interface CommandIconPair {
 	displayName: string; // Original command display name (for reference)
 	mode: Mode;
 	color?: string;
-	mdOnly?: boolean; // Only show on markdown/markdownx files
+	showOnFileTypes?: string; // Show only on these file types (e.g., "md,mdx")
+	hideOnFileTypes?: string; // Never show on these file types (e.g., "jpg,png")
 	toggleIcon?: string; // Icon to show when command is toggled on
 	useActiveClass?: boolean; // For explorer only: use is-active class instead of icon swap
 }

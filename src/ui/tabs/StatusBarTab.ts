@@ -59,6 +59,11 @@ export class StatusBarTab extends TabRenderer {
 				.setName('Add command')
 				.setDesc('Add a new command button to the status bar')
 				.addButton((button) => {
+					// Add icon to the button
+					const buttonEl = button.buttonEl;
+					const iconContainer = buttonEl.createSpan({ cls: 'ui-tweaker-add-icon' });
+					setIcon(iconContainer, 'lucide-image-plus');
+					buttonEl.insertBefore(iconContainer, buttonEl.firstChild);
 					button.setButtonText('Add command').setCta().onClick(() => {
 						void (async () => {
 							try {
@@ -138,18 +143,26 @@ export class StatusBarTab extends TabRenderer {
 			lockSpan.addClass('ui-tweaker-locked');
 		}
 
-		// Visibility icon
+		// Delete icon for custom items, visibility icon for existing items
 		const visibilitySpan = entry.createSpan('ui-tweaker-status-bar-row-visibility');
-		visibilitySpan.setAttribute('aria-label', exists ? (item.hidden ? 'Hidden - click to show' : 'Visible - click to hide') : 'Delete item');
-		visibilitySpan.addEventListener('click', () => {
-			if (exists) {
+		if (item.type === 'custom') {
+			// Custom items: show trash icon (red/warning)
+			visibilitySpan.setAttribute('aria-label', 'Delete item');
+			visibilitySpan.addClass('mod-warning');
+			setCssProps(visibilitySpan, { color: 'var(--text-error)' });
+			visibilitySpan.addEventListener('click', () => {
+				void this.removeItem(rowsContainer, item, settings);
+			});
+			setIcon(visibilitySpan, 'trash-2');
+		} else {
+			// Existing items: show visibility toggle
+			visibilitySpan.setAttribute('aria-label', item.hidden ? 'Hidden - click to show' : 'Visible - click to hide');
+			visibilitySpan.addEventListener('click', () => {
 				this.toggleVisibility(item, visibilitySpan, entry);
 				// toggleVisibility already calls saveSettings()
-			} else {
-				void this.removeItem(rowsContainer, item, settings);
-			}
-		});
-		setIcon(visibilitySpan, exists ? (item.hidden ? 'eye-off' : 'eye') : 'trash-2');
+			});
+			setIcon(visibilitySpan, item.hidden ? 'eye-off' : 'eye');
+		}
 	}
 
 	/**
@@ -316,14 +329,26 @@ export class StatusBarTab extends TabRenderer {
 			lockSpan.addClass('ui-tweaker-locked');
 		}
 
-		// Visibility icon
+		// Delete icon for custom items, visibility icon for existing items
 		const visibilitySpan = entry.createSpan('ui-tweaker-status-bar-row-visibility');
-		visibilitySpan.setAttribute('aria-label', item.hidden ? 'Hidden - click to show' : 'Visible - click to hide');
-		visibilitySpan.addEventListener('click', () => {
-			this.toggleVisibility(item, visibilitySpan, entry);
-			// toggleVisibility already calls saveSettings()
-		});
-		setIcon(visibilitySpan, item.hidden ? 'eye-off' : 'eye');
+		if (item.type === 'custom') {
+			// Custom items: show trash icon (red/warning)
+			visibilitySpan.setAttribute('aria-label', 'Delete item');
+			visibilitySpan.addClass('mod-warning');
+			setCssProps(visibilitySpan, { color: 'var(--text-error)' });
+			visibilitySpan.addEventListener('click', () => {
+				void this.removeItem(rowsContainer, item, settings);
+			});
+			setIcon(visibilitySpan, 'trash-2');
+		} else {
+			// Existing items: show visibility toggle
+			visibilitySpan.setAttribute('aria-label', item.hidden ? 'Hidden - click to show' : 'Visible - click to hide');
+			visibilitySpan.addEventListener('click', () => {
+				this.toggleVisibility(item, visibilitySpan, entry);
+				// toggleVisibility already calls saveSettings()
+			});
+			setIcon(visibilitySpan, item.hidden ? 'eye-off' : 'eye');
+		}
 	}
 
 	/**

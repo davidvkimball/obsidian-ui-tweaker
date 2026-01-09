@@ -3,10 +3,12 @@
  * Based on Commander's ExplorerManager, but with native CSS classes
  */
 
-import { WorkspaceLeaf, setIcon } from 'obsidian';
+import { WorkspaceLeaf, setIcon, Menu } from 'obsidian';
 import UITweakerPlugin from '../main';
 import { CommandIconPair } from '../types';
 import { isModeActive, isCommandChecked } from '../utils/commandUtils';
+import { IconPickerModal } from '../modals/IconPickerModal';
+import { setCssProps } from '../uiManager';
 
 export class ExplorerManager {
 	private plugin: UITweakerPlugin;
@@ -108,6 +110,48 @@ export class ExplorerManager {
 		};
 
 		this.buttons.set(pair.id, button);
+
+		// Add context menu (right-click)
+		button.addEventListener('contextmenu', (event) => {
+			event.stopImmediatePropagation();
+			new Menu()
+				.addItem((item) => {
+					item.setTitle('Change icon')
+						.setIcon('lucide-image-plus')
+						.onClick(() => {
+							const modal = new IconPickerModal(this.plugin.app, (iconId) => {
+								if (iconId && iconId !== pair.icon) {
+									pair.icon = iconId;
+									void this.plugin.saveSettings();
+									this.reorder();
+								}
+							});
+							modal.open();
+						});
+				})
+				.addItem((item) => {
+					item.setTitle('Delete')
+						.setIcon('lucide-trash')
+						.onClick(() => {
+							void this.removeCommand(pair);
+						});
+					// Add warning class to make text and icon red
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+					const dom = (item as any).dom;
+					if (dom) {
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+						dom.classList.add('mod-warning');
+						// Also make the icon red
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+						const iconEl = dom.querySelector('.menu-item-icon svg');
+						if (iconEl) {
+							// Use setCssProps to set color (already imported from uiManager)
+							setCssProps(iconEl as HTMLElement, { color: 'var(--text-error)' });
+						}
+					}
+				})
+				.showAtMouseEvent(event);
+		});
 
 		// Append button to container (exactly like Commander)
 		container.appendChild(button);
@@ -308,5 +352,18 @@ export class ExplorerManager {
 				}
 			});
 		});
+	}
+
+	/**
+	 * Remove a command from explorer
+	 */
+	public async removeCommand(pair: CommandIconPair): Promise<void> {
+		if (!this.plugin.settings.explorerCommands) return;
+		const index = this.plugin.settings.explorerCommands.indexOf(pair);
+		if (index > -1) {
+			this.plugin.settings.explorerCommands.splice(index, 1);
+		}
+		this.reorder();
+		await this.plugin.saveSettings();
 	}
 }

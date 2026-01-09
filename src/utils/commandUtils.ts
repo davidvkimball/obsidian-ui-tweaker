@@ -2,7 +2,7 @@
  * Utility functions for command management
  */
 
-import { Command, MarkdownView, WorkspaceLeaf } from 'obsidian';
+import { Command, MarkdownView, WorkspaceLeaf, TFile } from 'obsidian';
 import UITweakerPlugin from '../main';
 import { Mode } from '../types';
 
@@ -22,6 +22,63 @@ export function isMarkdownView(leaf: WorkspaceLeaf | null): boolean {
 	}
 	
 	return false;
+}
+
+/**
+ * Get file extension from a workspace leaf
+ */
+function getFileExtension(leaf: WorkspaceLeaf | null): string | null {
+	if (!leaf?.view) return null;
+	
+	// Try to get file from view (works for ItemView and MarkdownView)
+	const view = leaf.view as { file?: TFile | null };
+	const file = view.file;
+	if (!file) return null;
+	
+	return file.extension.toLowerCase();
+}
+
+/**
+ * Parse comma-separated file extensions into an array
+ */
+function parseFileTypes(types: string | undefined): string[] {
+	if (!types || !types.trim()) return [];
+	return types
+		.split(',')
+		.map(p => p.trim().replace(/^\./, '').toLowerCase())
+		.filter(p => p);
+}
+
+/**
+ * Check if a file matches the file type filters
+ * showOnFileTypes: Show only on these file types (e.g., "md,mdx")
+ * hideOnFileTypes: Never show on these file types (e.g., "jpg,png")
+ */
+export function matchesFileTypeFilter(
+	leaf: WorkspaceLeaf | null,
+	showOnFileTypes: string | undefined,
+	hideOnFileTypes: string | undefined
+): boolean {
+	// Get file extension from leaf
+	const fileExt = getFileExtension(leaf);
+	if (!fileExt) return false; // No file = don't show
+	
+	// Parse the filter strings
+	const showTypes = parseFileTypes(showOnFileTypes);
+	const hideTypes = parseFileTypes(hideOnFileTypes);
+	
+	// If hide list exists and file matches, don't show
+	if (hideTypes.length > 0 && hideTypes.includes(fileExt)) {
+		return false;
+	}
+	
+	// If show list exists, must match one of them
+	if (showTypes.length > 0) {
+		return showTypes.includes(fileExt);
+	}
+	
+	// No filters = show on all files (unless hidden)
+	return true;
 }
 
 /**

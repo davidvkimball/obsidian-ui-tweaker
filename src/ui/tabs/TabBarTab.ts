@@ -46,6 +46,11 @@ export class TabBarTab extends TabRenderer {
 				.setName('Add command')
 				.setDesc('Add a new command button to the tab bar')
 				.addButton((button) => {
+					// Add icon to the button
+					const buttonEl = button.buttonEl;
+					const iconContainer = buttonEl.createSpan({ cls: 'ui-tweaker-add-icon' });
+					setIcon(iconContainer, 'lucide-image-plus');
+					buttonEl.insertBefore(iconContainer, buttonEl.firstChild);
 					button.setButtonText('Add command').setCta().onClick(() => {
 						void (async () => {
 							try {
@@ -77,9 +82,11 @@ export class TabBarTab extends TabRenderer {
 			setting.settingEl.addEventListener('click', (e) => {
 				const target = e.target as HTMLElement;
 				// Allow collapse if clicking on chevron icon OR on extra buttons (delete, move up/down, etc.)
+				// OR on name display/pencil icon for renaming
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
-				if (!isChevronClick && !isExtraButton) {
+				const isNameEdit = target.closest('.ui-tweaker-name-display') !== null || target.closest('.ui-tweaker-edit-icon') !== null || target.closest('.ui-tweaker-editable-name') !== null;
+				if (!isChevronClick && !isExtraButton && !isNameEdit) {
 					// Block ALL other clicks from affecting collapse
 					e.stopPropagation();
 					e.stopImmediatePropagation();
@@ -93,7 +100,8 @@ export class TabBarTab extends TabRenderer {
 				const target = e.target as HTMLElement;
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
-				if (!isChevronClick && !isExtraButton) {
+				const isNameEdit = target.closest('.ui-tweaker-name-display') !== null || target.closest('.ui-tweaker-edit-icon') !== null || target.closest('.ui-tweaker-editable-name') !== null;
+				if (!isChevronClick && !isExtraButton && !isNameEdit) {
 					e.stopPropagation();
 					e.stopImmediatePropagation();
 					e.preventDefault();
@@ -261,16 +269,32 @@ export class TabBarTab extends TabRenderer {
 					if (index > 0) {
 						button.setTooltip('Move up');
 						button.onClick(() => {
+							// Preserve scroll position to prevent flickering
+							const scrollContainer = container.closest('.vertical-tab-content') || 
+								container.closest('.settings-content') || 
+								container.closest('.vertical-tab-content-container') ||
+								container;
+							const scrollPos = scrollContainer.scrollTop;
 							void (async () => {
 								arrayMoveMutable(settings.tabBarCommands, index, index - 1);
 								await this.saveSettings();
 								this.plugin.tabBarManager?.reorder();
 								this.render(container);
+								// Restore scroll position after render with multiple attempts
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+									// Also try after a short delay in case DOM isn't ready
+									setTimeout(() => {
+										scrollContainer.scrollTop = scrollPos;
+									}, 0);
+								});
 							})();
 						});
 					} else {
 						button.setTooltip('Already at top');
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
+						// Prevent hover effects on disabled buttons
+						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
 					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
@@ -281,24 +305,43 @@ export class TabBarTab extends TabRenderer {
 					if (index < settings.tabBarCommands.length - 1) {
 						button.setTooltip('Move down');
 						button.onClick(() => {
+							// Preserve scroll position to prevent flickering
+							const scrollContainer = container.closest('.vertical-tab-content') || 
+								container.closest('.settings-content') || 
+								container.closest('.vertical-tab-content-container') ||
+								container;
+							const scrollPos = scrollContainer.scrollTop;
 							void (async () => {
 								arrayMoveMutable(settings.tabBarCommands, index, index + 1);
 								await this.saveSettings();
 								this.plugin.tabBarManager?.reorder();
 								this.render(container);
+								// Restore scroll position after render with multiple attempts
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+									// Also try after a short delay in case DOM isn't ready
+									setTimeout(() => {
+										scrollContainer.scrollTop = scrollPos;
+									}, 0);
+								});
 							})();
 						});
 					} else {
 						button.setTooltip('Already at bottom');
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
+						// Prevent hover effects on disabled buttons
+						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
 					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
-					// Delete
+					// Delete - red/warning style
 					button.setIcon('trash');
 					button.setTooltip('Delete');
+					button.extraSettingsEl.addClass('mod-warning');
+					// Make icon red
+					setCssProps(button.extraSettingsEl, { color: 'var(--text-error)' });
 					button.onClick(() => {
 						void (async () => {
 							settings.tabBarCommands.splice(index, 1);
@@ -488,6 +531,12 @@ export class TabBarTab extends TabRenderer {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
+								// Preserve scroll position to prevent jumping
+								const scrollContainer = container.closest('.vertical-tab-content') || 
+									container.closest('.settings-content') || 
+									container.closest('.vertical-tab-content-container') ||
+									container;
+								const scrollPos = scrollContainer.scrollTop;
 								void (async () => {
 									// Remove toggle icon
 									pair.toggleIcon = undefined;
@@ -495,6 +544,14 @@ export class TabBarTab extends TabRenderer {
 									await this.saveSettings();
 									this.plugin.tabBarManager?.reorder();
 									this.render(container);
+									// Restore scroll position after render with multiple attempts
+									requestAnimationFrame(() => {
+										scrollContainer.scrollTop = scrollPos;
+										// Also try after a short delay in case DOM isn't ready
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 0);
+									});
 								})();
 							});
 							
@@ -509,23 +566,47 @@ export class TabBarTab extends TabRenderer {
 				});
 		});
 
-		// MD/MDX only toggle
+		// Show only on these file types
 		group.addSetting((setting): void => {
 			otherSettings.push(setting.settingEl);
 			setting
-				.setName('Only show on Markdown files')
-				.setDesc('Hide this button on non-Markdown views')
-				.addToggle((toggle) => {
-					toggle.setValue(pair.mdOnly ?? false);
-					toggle.onChange((value) => {
+				.setName('Show only on these file types')
+				.setDesc('Show button only on specified file types. Enter comma-separated file extensions. Leave empty to show on all file types.')
+				.addText((text) => {
+					text.setPlaceholder('md');
+					text.setValue(pair.showOnFileTypes ?? '');
+					text.onChange((value) => {
 						void (async () => {
-							pair.mdOnly = value;
+							pair.showOnFileTypes = value.trim() || undefined;
 							await this.saveSettings();
 							this.plugin.tabBarManager?.reorder();
 						})();
 					});
-					// Prevent collapse on click
-					toggle.toggleEl.addEventListener('click', (e) => e.stopPropagation());
+					// Prevent collapse on click/focus
+					text.inputEl.addEventListener('click', (e) => e.stopPropagation());
+					text.inputEl.addEventListener('focus', (e) => e.stopPropagation());
+				});
+		});
+
+		// Never show on these file types
+		group.addSetting((setting): void => {
+			otherSettings.push(setting.settingEl);
+			setting
+				.setName('Never show on these file types')
+				.setDesc('Hide button on specified file types. Enter comma-separated file extensions. Leave empty to allow all file types.')
+				.addText((text) => {
+					text.setPlaceholder('jpg');
+					text.setValue(pair.hideOnFileTypes ?? '');
+					text.onChange((value) => {
+						void (async () => {
+							pair.hideOnFileTypes = value.trim() || undefined;
+							await this.saveSettings();
+							this.plugin.tabBarManager?.reorder();
+						})();
+					});
+					// Prevent collapse on click/focus
+					text.inputEl.addEventListener('click', (e) => e.stopPropagation());
+					text.inputEl.addEventListener('focus', (e) => e.stopPropagation());
 				});
 		});
 
