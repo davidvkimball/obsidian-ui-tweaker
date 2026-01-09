@@ -39,45 +39,104 @@ function getFileExtension(leaf: WorkspaceLeaf | null): string | null {
 }
 
 /**
- * Parse comma-separated file extensions into an array
+ * Get view type from a workspace leaf
+ * Returns the view type (e.g., "markdown", "canvas", "graph", "empty") or null
  */
-function parseFileTypes(types: string | undefined): string[] {
-	if (!types || !types.trim()) return [];
-	return types
-		.split(',')
-		.map(p => p.trim().replace(/^\./, '').toLowerCase())
-		.filter(p => p);
+function getViewType(leaf: WorkspaceLeaf | null): string | null {
+	if (!leaf?.view) return null;
+	
+	// Try to get view type from view (ItemView has getViewType method)
+	const view = leaf.view as { getViewType?: () => string };
+	if (view.getViewType && typeof view.getViewType === 'function') {
+		return view.getViewType().toLowerCase();
+	}
+	
+	// Fallback: check if it's a markdown view
+	if (leaf.view instanceof MarkdownView) {
+		return 'markdown';
+	}
+	
+	// If no file and no view type, it's likely an empty tab
+	const fileExt = getFileExtension(leaf);
+	if (!fileExt) {
+		return 'empty'; // Empty tab (new tab)
+	}
+	
+	return null;
 }
 
 /**
- * Check if a file matches the file type filters
- * showOnFileTypes: Show only on these file types (e.g., "md,mdx")
- * hideOnFileTypes: Never show on these file types (e.g., "jpg,png")
+ * Parse comma-separated file extensions and view types into arrays
+ * Supports both file extensions (e.g., "md,mdx") and view types (e.g., "{{graph}},{{canvas}}")
+ * Returns an object with fileTypes and viewTypes arrays
+ */
+function parseFileAndViewTypes(types: string | undefined): { fileTypes: string[]; viewTypes: string[] } {
+	const result = { fileTypes: [] as string[], viewTypes: [] as string[] };
+	
+	if (!types || !types.trim()) return result;
+	
+	const parts = types.split(',').map(p => p.trim()).filter(p => p);
+	
+	for (const part of parts) {
+		// Check if it's a view type (wrapped in {{}})
+		const viewTypeMatch = part.match(/^\{\{(\w+)\}\}$/);
+		if (viewTypeMatch) {
+			result.viewTypes.push(viewTypeMatch[1].toLowerCase());
+		} else {
+			// It's a file extension
+			const ext = part.replace(/^\./, '').toLowerCase();
+			if (ext) {
+				result.fileTypes.push(ext);
+			}
+		}
+	}
+	
+	return result;
+}
+
+/**
+ * Check if a file or view matches the file type and view type filters
+ * showOnFileTypes: Show only on these file types (e.g., "md,canvas") or view types for views without files (e.g., "{{graph}},{{tab}}")
+ * hideOnFileTypes: Never show on these file types (e.g., "jpg,png") or view types for views without files (e.g., "{{graph}}")
+ * 
+ * View types (for views without files):
+ * - {{graph}} - Graph view (no file)
+ * - {{empty}} - Empty tab / new tab (no file)
+ * 
+ * Note: File-based views (canvas, markdown, etc.) should use their file extensions (canvas, md, mdx) instead of view type identifiers.
  */
 export function matchesFileTypeFilter(
 	leaf: WorkspaceLeaf | null,
 	showOnFileTypes: string | undefined,
 	hideOnFileTypes: string | undefined
 ): boolean {
-	// Get file extension from leaf
+	if (!leaf?.view) return false;
+	
+	// Parse the filter strings (supports both file types and view types)
+	const showFilters = parseFileAndViewTypes(showOnFileTypes);
+	const hideFilters = parseFileAndViewTypes(hideOnFileTypes);
+	
+	// Get current file extension and view type
 	const fileExt = getFileExtension(leaf);
-	if (!fileExt) return false; // No file = don't show
+	const viewType = getViewType(leaf);
 	
-	// Parse the filter strings
-	const showTypes = parseFileTypes(showOnFileTypes);
-	const hideTypes = parseFileTypes(hideOnFileTypes);
-	
-	// If hide list exists and file matches, don't show
-	if (hideTypes.length > 0 && hideTypes.includes(fileExt)) {
+	// Check hide filters first
+	if (hideFilters.fileTypes.length > 0 && fileExt && hideFilters.fileTypes.includes(fileExt)) {
+		return false;
+	}
+	if (hideFilters.viewTypes.length > 0 && viewType && hideFilters.viewTypes.includes(viewType)) {
 		return false;
 	}
 	
-	// If show list exists, must match one of them
-	if (showTypes.length > 0) {
-		return showTypes.includes(fileExt);
+	// Check show filters
+	if (showFilters.fileTypes.length > 0 || showFilters.viewTypes.length > 0) {
+		// Must match either a file type or a view type
+		const matchesFileType = fileExt ? showFilters.fileTypes.includes(fileExt) : false;
+		const matchesViewType = viewType ? showFilters.viewTypes.includes(viewType) : false;
+		return matchesFileType || matchesViewType;
 	}
 	
-	// No filters = show on all files (unless hidden)
+	// No filters = show on all files/views (unless hidden)
 	return true;
 }
 

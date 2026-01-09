@@ -634,31 +634,15 @@ body:not(.is-mobile).hide-tab-close-button-reveal .workspace-tab-header-inner-cl
    Native explorer button colors
    ======================================== */
 
-/* New note button color */
-body .nav-action-button:has(.svg-icon.lucide-edit) {
-	color: var(--native-button-color-new-note, currentColor);
-}
+/* Colors are applied via inline styles in uiManager.ts when custom colors are set */
+/* No CSS rules here to avoid interfering with default icon styling */
 
-/* New folder button color */
-body .nav-action-button:has(.svg-icon.lucide-folder-plus) {
-	color: var(--native-button-color-new-folder, currentColor);
-}
+/* ========================================
+   Plugin-created explorer button colors
+   ======================================== */
 
-/* Sort order button color */
-body .nav-action-button:has(.svg-icon.lucide-sort-asc) {
-	color: var(--native-button-color-sort-order, currentColor);
-}
-
-/* Auto-reveal button color */
-body .nav-action-button:has(.svg-icon.lucide-gallery-vertical) {
-	color: var(--native-button-color-auto-reveal, currentColor);
-}
-
-/* Collapse all button color */
-body .nav-action-button:has(.svg-icon.lucide-chevrons-down-up),
-body .nav-action-button:has(.svg-icon.lucide-chevrons-up-down) {
-	color: var(--native-button-color-collapse-all, currentColor);
-}
+/* Colors are applied via inline styles in ExplorerManager.ts when custom colors are set */
+/* No CSS rules here to avoid interfering with default icon styling */
 
 .hide-button-reading-mode .view-header .clickable-icon.view-action:has(.svg-icon.lucide-book-open),
 .hide-button-reading-mode .view-header .clickable-icon.view-action:has(.svg-icon.lucide-edit-3) {
@@ -1096,6 +1080,120 @@ body.ui-tweaker-hide-sync-button .is-mobile .status-bar > .plugin-sync:not(.ui-t
 }
 
 /* ========================================
+   Mobile-Specific Settings UI Improvements
+   ======================================== */
+
+/* Mobile Tab Navigation */
+body.is-mobile .ui-tweaker-settings .tab-nav {
+	padding: var(--size-4-8) var(--size-4-8) 0 var(--size-4-8);
+	gap: var(--size-4-4);
+	scrollbar-width: none; /* Hide scrollbar on mobile */
+	-ms-overflow-style: none; /* Hide scrollbar on IE/Edge */
+}
+
+body.is-mobile .ui-tweaker-settings .tab-nav::-webkit-scrollbar {
+	display: none; /* Hide scrollbar on Chrome/Safari */
+}
+
+/* Mobile Tab Buttons - Larger touch targets (minimum 44px) */
+body.is-mobile .ui-tweaker-settings .tab-button {
+	padding: 12px 16px;
+	min-height: 44px;
+	font-size: 15px;
+	font-weight: 500;
+	border-radius: 6px;
+	margin: 0;
+	transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+body.is-mobile .ui-tweaker-settings .tab-button:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+body.is-mobile .ui-tweaker-settings .tab-button.active {
+	color: var(--text-normal);
+	background: var(--background-modifier-active);
+	border-bottom: 2px solid var(--interactive-accent);
+	font-weight: 600;
+}
+
+/* Mobile Tab Content - Reduced padding */
+body.is-mobile .ui-tweaker-settings .tab-content {
+	padding: var(--size-4-8) var(--size-4-8) var(--size-4-12) var(--size-4-8);
+}
+
+/* Mobile Settings Groups and Items */
+body.is-mobile .ui-tweaker-settings .setting-item {
+	padding: var(--size-4-3) 0;
+	margin: 0;
+}
+
+body.is-mobile .ui-tweaker-settings .setting-item-name {
+	font-size: 14px;
+	line-height: 1.4;
+	margin-bottom: var(--size-4-2);
+}
+
+body.is-mobile .ui-tweaker-settings .setting-item-description {
+	font-size: 13px;
+	line-height: 1.5;
+	margin-top: var(--size-4-2);
+	margin-bottom: var(--size-4-3);
+}
+
+body.is-mobile .ui-tweaker-settings .setting-item-control {
+	margin-top: var(--size-4-2);
+}
+
+/* Mobile Settings Group Headings */
+body.is-mobile .ui-tweaker-settings-compat .setting-group-heading h3 {
+	margin: var(--size-4-4) 0 var(--size-4-3) 0;
+	padding: var(--size-4-3) 0;
+	font-size: 15px;
+}
+
+/* Mobile Settings Group Spacing */
+body.is-mobile .ui-tweaker-settings .setting-group {
+	margin-bottom: var(--size-4-6);
+}
+
+body.is-mobile .ui-tweaker-settings .setting-group:last-child {
+	margin-bottom: var(--size-4-4);
+}
+
+/* Mobile Button Controls - Better touch targets */
+body.is-mobile .ui-tweaker-settings .setting-item-control button {
+	min-height: 44px;
+	padding: 10px 16px;
+	font-size: 14px;
+}
+
+/* Mobile Dropdown Controls - Better touch targets */
+body.is-mobile .ui-tweaker-settings .setting-item-control .dropdown-component {
+	min-height: 44px;
+	padding: 10px 16px;
+	font-size: 14px;
+}
+
+/* Mobile Toggle Controls - Better touch targets */
+body.is-mobile .ui-tweaker-settings .setting-item-control .checkbox-container {
+	min-height: 44px;
+	padding: 10px 0;
+}
+
+body.is-mobile .ui-tweaker-settings .setting-item-control .checkbox-container .checkbox {
+	width: 20px;
+	height: 20px;
+}
+
+/* Mobile Slider Controls - Better touch targets */
+body.is-mobile .ui-tweaker-settings .setting-item-control .slider {
+	min-height: 44px;
+	padding: 12px 0;
+}
+
+/* ========================================
    Tab Bar Commands List
    ======================================== */
 
@@ -1350,7 +1448,7 @@ div.ui-tweaker-status-bar-row {
 	color: var(--text-normal);
 	border-radius: 0.25em;
 	display: grid;
-	grid-template-columns: 1.25em 0.5fr 0.8fr 2em 2em 2em 2em 2em 2em;
+	grid-template-columns: 1.25em 1fr 0.7fr 2.5em 2em 2em 2em 2em;
 	padding: 0.5em 1em;
 	width: 100%;
 	align-items: center;
@@ -1382,12 +1480,25 @@ span.ui-tweaker-status-bar-row-preview {
 	padding: 0.5em !important;
 	font-size: 0.8rem;
 	background: var(--background-secondary-alt);
-	overflow: hidden;
+	overflow: visible;
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
 	min-height: 2.5em;
-	height: 2.5em;
+	height: auto;
+}
+
+/* Ensure cloned status bar items and their children are visible */
+span.ui-tweaker-status-bar-row-preview > * {
+	display: flex !important;
+	visibility: visible !important;
+	opacity: 1 !important;
+}
+
+span.ui-tweaker-status-bar-row-preview > * > * {
+	display: inline-flex !important;
+	visibility: visible !important;
+	opacity: 1 !important;
 }
 
 /* For custom items, left-align the icon */
@@ -1424,6 +1535,21 @@ span.ui-tweaker-status-bar-row-color-picker > div {
 	align-items: center;
 }
 
+/* Fix color picker on mobile - make it square/circular instead of long tube */
+body.is-mobile span.ui-tweaker-status-bar-row-color-picker input[type="color"],
+body.is-mobile .ui-tweaker-settings .setting-item-control input[type="color"] {
+	width: 44px !important;
+	height: 44px !important;
+	min-width: 44px !important;
+	min-height: 44px !important;
+	max-width: 44px !important;
+	max-height: 44px !important;
+	border-radius: 6px;
+	padding: 0;
+	border: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+}
+
 span.ui-tweaker-status-bar-row-device-mode,
 span.ui-tweaker-status-bar-row-md-only {
 	cursor: default;
@@ -1449,9 +1575,10 @@ span.ui-tweaker-status-bar-row-lock {
 	cursor: default;
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-end;
 	opacity: 0.6;
 	transition: opacity 0.2s;
+	padding-right: 0.5em;
 }
 
 span.ui-tweaker-status-bar-row-lock:hover {
@@ -1467,9 +1594,10 @@ span.ui-tweaker-status-bar-row-visibility {
 	cursor: default;
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-end;
 	opacity: 0.6;
 	transition: opacity 0.2s;
+	padding-right: 0.5em;
 }
 
 span.ui-tweaker-status-bar-row-visibility:hover {

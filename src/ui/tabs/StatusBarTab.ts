@@ -122,13 +122,19 @@ export class StatusBarTab extends TabRenderer {
 		if (exists && actualElement) {
 			// Clone the element instead of using innerHTML
 			const cloned = actualElement.cloneNode(true) as HTMLElement;
+			// Ensure cloned element and all children are visible
+			setCssProps(cloned, { display: '', visibility: '', opacity: '' });
+			// Make sure all child elements are visible
+			cloned.querySelectorAll('*').forEach((child) => {
+				setCssProps(child as HTMLElement, { display: '', visibility: '', opacity: '' });
+			});
 			previewSpan.appendChild(cloned);
 		}
 
 		// Empty spans for custom item options (existing items don't have these)
 		entry.createSpan('ui-tweaker-status-bar-row-reset-color'); // Empty
 		entry.createSpan('ui-tweaker-status-bar-row-color-picker'); // Empty
-		entry.createSpan('ui-tweaker-status-bar-row-device-mode'); // Empty
+		// Device mode icon removed - status bar not visible on mobile, so no need for device indicators
 		entry.createSpan('ui-tweaker-status-bar-row-md-only'); // Empty
 
 		// Lock icon (new feature)
@@ -284,17 +290,7 @@ export class StatusBarTab extends TabRenderer {
 			}
 		});
 		
-		// Device mode icon
-		const deviceModeSpan = entry.createSpan('ui-tweaker-status-bar-row-device-mode');
-		deviceModeSpan.setAttribute('aria-label', this.getDeviceModeTooltip(item.mode || 'any'));
-		deviceModeSpan.addEventListener('click', (e) => {
-			e.stopPropagation();
-			this.toggleDeviceMode(item);
-		});
-		setIcon(deviceModeSpan, this.getDeviceModeIcon(item.mode || 'any'));
-		if (item.mode && item.mode !== 'any') {
-			deviceModeSpan.addClass('ui-tweaker-active');
-		}
+		// Device mode icon - removed (status bar not visible on mobile, so no need for device indicators)
 		
 		// MD-only icon
 		const mdOnlySpan = entry.createSpan('ui-tweaker-status-bar-row-md-only');
@@ -412,60 +408,6 @@ export class StatusBarTab extends TabRenderer {
 		void this.saveSettings(); // Save the hidden state
 	}
 
-	/**
-	 * Toggle device mode (cycles through: any -> desktop -> mobile -> this device -> any)
-	 */
-	private toggleDeviceMode(item: StatusBarItem): void {
-		const appId = (this.app as { appId?: string }).appId || 'this-device';
-		const currentMode = item.mode || 'any';
-		
-		// Cycle through modes
-		if (currentMode === 'any') {
-			item.mode = 'desktop';
-		} else if (currentMode === 'desktop') {
-			item.mode = 'mobile';
-		} else if (currentMode === 'mobile') {
-			item.mode = appId;
-		} else {
-			item.mode = 'any';
-		}
-		
-		// Update icon and tooltip
-		const deviceModeSpan = document.querySelector(`[data-ui-tweaker-id="${item.id}"] .ui-tweaker-status-bar-row-device-mode`) as HTMLElement;
-		if (deviceModeSpan) {
-			setIcon(deviceModeSpan, this.getDeviceModeIcon(item.mode));
-			const tooltip = this.getDeviceModeTooltip(item.mode);
-			deviceModeSpan.setAttribute('aria-label', tooltip);
-			if (item.mode && item.mode !== 'any') {
-				deviceModeSpan.addClass('ui-tweaker-active');
-			} else {
-				deviceModeSpan.removeClass('ui-tweaker-active');
-			}
-		}
-		
-		this.plugin.statusBarManager?.reorder();
-		void this.saveSettings();
-	}
-	
-	/**
-	 * Get device mode icon
-	 */
-	private getDeviceModeIcon(mode: string): string {
-		if (mode === 'desktop') return 'monitor';
-		if (mode === 'mobile') return 'smartphone';
-		if (mode === 'any' || !mode) return 'monitor-smartphone';
-		return 'monitor-check'; // "this device"
-	}
-	
-	/**
-	 * Get device mode tooltip
-	 */
-	private getDeviceModeTooltip(mode: string): string {
-		if (mode === 'desktop') return 'Device mode: Desktop only';
-		if (mode === 'mobile') return 'Device mode: Mobile only';
-		if (mode === 'any' || !mode) return 'Device mode: All devices';
-		return 'Device mode: This device';
-	}
 
 	/**
 	 * Remove item (exactly like Status Bar Organizer)
@@ -571,7 +513,7 @@ export class StatusBarTab extends TabRenderer {
 		// Add empty spans for the icon columns to maintain grid structure
 		movableRow.createSpan('ui-tweaker-status-bar-row-reset-color');
 		movableRow.createSpan('ui-tweaker-status-bar-row-color-picker');
-		movableRow.createSpan('ui-tweaker-status-bar-row-device-mode');
+		// Device mode icon removed - status bar not visible on mobile, so no need for device indicators
 		movableRow.createSpan('ui-tweaker-status-bar-row-md-only');
 		const dragLock = movableRow.createSpan('ui-tweaker-status-bar-row-lock');
 		setIcon(dragLock, item.sticky ? 'lock' : 'unlock');

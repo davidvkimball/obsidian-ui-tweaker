@@ -193,6 +193,8 @@ export class ExplorerTab extends TabRenderer {
 									}
 									settings.nativeExplorerButtonColors[colorKey] = undefined;
 									await this.saveSettings();
+									// Apply colors to native buttons (remove color)
+									this.plugin.explorerManager?.applyNativeIconOverrides();
 									// Re-render just the native buttons section
 									this.renderNativeButtonControls(container, mainContainer);
 									// Restore scroll position after render
@@ -216,7 +218,8 @@ export class ExplorerTab extends TabRenderer {
 								}
 								settings.nativeExplorerButtonColors[colorKey] = value;
 								await this.saveSettings();
-								// No re-render needed - color picker already updates visually
+								// Apply colors to native buttons
+								this.plugin.explorerManager?.applyNativeIconOverrides();
 							})();
 						});
 					});
@@ -233,6 +236,8 @@ export class ExplorerTab extends TabRenderer {
 							settings.nativeExplorerButtonColors[colorKey] = '#000000';
 							void (async () => {
 								await this.saveSettings();
+								// Apply colors to native buttons
+								this.plugin.explorerManager?.applyNativeIconOverrides();
 								// Re-render just the native buttons section
 								this.renderNativeButtonControls(container, mainContainer);
 								// Restore scroll position after render

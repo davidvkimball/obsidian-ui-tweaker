@@ -88,9 +88,18 @@ export class StatusBarManager {
 	private consolidateSettingsAndElements(): void {
 		if (!this.container) return;
 
+		// Match Status Bar Organizer's ignored classes exactly
+		// But preserve classes that look like plugin identifiers
 		const ignoredClasses = ['mod-clickable', 'status-bar-item', 'ui-tweaker-status-bar-item', 'ui-tweaker-status-bar-hidden'];
 		
-		// Get all existing status bar elements from DOM
+		// Helper to check if a class looks like a plugin identifier
+		const isPluginIdentifier = (cls: string): boolean => {
+			return cls.includes('plugin-') || 
+				cls.includes('obsidian-git') ||
+				(cls.includes('-git') && !cls.includes('git-changes-status-bar'));
+		};
+		
+		// Get all existing status bar elements from DOM (in DOM order)
 		const existingElements = Array.from(this.container.children).filter(
 			el => el.classList.contains('status-bar-item') && !el.classList.contains('ui-tweaker-status-bar-item')
 		) as HTMLElement[];
@@ -101,80 +110,180 @@ export class StatusBarManager {
 		// Create a map of saved items by ID for quick lookup
 		const savedItemsMap = new Map(savedItems.map(item => [item.id, item]));
 
+		// Track element counts per name pattern (like Status Bar Organizer does)
+		const pluginElementCount: { [key: string]: number } = {};
+		
 		// Track which saved items we've matched to DOM elements
 		const matchedSavedIds = new Set<string>();
 		const newItems: StatusBarItem[] = [];
 
-		// FIRST PASS: Match elements that already have IDs
+		// Process elements in DOM order (single pass, like Status Bar Organizer)
 		existingElements.forEach((element) => {
-			const existingId = element.getAttribute('data-ui-tweaker-status-bar-id');
-			if (existingId && savedItemsMap.has(existingId)) {
-				// Element has ID and it's in saved items - matched!
-				matchedSavedIds.add(existingId);
-				return;
-			}
-		});
+			// Check if element already has an ID
+			let id = element.getAttribute('data-ui-tweaker-status-bar-id');
+			let name: string;
+			let index: number;
 
-		// SECOND PASS: For elements without IDs, generate ID from class names FIRST
-		// Then check if that ID (or similar) exists in saved items
-		existingElements.forEach((element) => {
-			// Skip if already matched
-			const existingId = element.getAttribute('data-ui-tweaker-status-bar-id');
-			if (existingId && matchedSavedIds.has(existingId)) {
-				return;
-			}
-
-			// Generate ID from class names (like Status Bar Organizer does FIRST)
-			const name = Array.from(element.classList)
-				.filter(cls => !ignoredClasses.includes(cls))
-				.join('-') || 'status-bar-item';
-			
-			// Find all saved items with this name pattern
-			const matchingSavedItems = savedItems.filter(item => item.id.startsWith(name + ';'));
-			
-			// If we have saved items with this name pattern, try to match
-			if (matchingSavedItems.length > 0) {
-				// Find the first unmatched saved item with this name pattern
-				for (const savedItem of matchingSavedItems) {
-					if (matchedSavedIds.has(savedItem.id)) continue;
-					
-					// Match this element to the saved item - use the saved item's ID
-					element.setAttribute('data-ui-tweaker-status-bar-id', savedItem.id);
-					matchedSavedIds.add(savedItem.id);
-					return; // Matched, done with this element
+			if (id && savedItemsMap.has(id)) {
+				// Element has ID and it's in saved items - already matched!
+				matchedSavedIds.add(id);
+				// Parse the ID to update element count tracking
+				const parts = id.split(';');
+				const indexStr = parts.pop();
+				if (indexStr) {
+					index = parseInt(indexStr, 10);
+					name = parts.join(';');
+					// Update element count tracking
+					pluginElementCount[name] = Math.max(
+						index,
+						name in pluginElementCount ? pluginElementCount[name] : 0
+					);
 				}
+				return;
 			}
 
-			// No match found - this is a truly new element
-			// Generate new ID with next available index
-			let maxIndex = 0;
-			for (const savedItem of savedItems) {
-				if (savedItem.id.startsWith(name + ';')) {
-					const match = savedItem.id.match(/;(\d+)$/);
-					if (match) {
-						maxIndex = Math.max(maxIndex, parseInt(match[1], 10));
+			// Element doesn't have a valid saved ID - generate one
+			// Generate name from class names (like Status Bar Organizer does)
+			// First, get ALL classes (before filtering) to check for plugin identifiers
+			const allClasses = Array.from(element.classList);
+			
+			// Check if element has any classes that look like plugin identifiers
+			// (e.g., "plugin-obsidian-git", "obsidian-git", etc.)
+			const pluginClass = allClasses.find(cls => 
+				cls.includes('plugin-') || 
+				cls.includes('obsidian-git') ||
+				cls.includes('-git') ||
+				(cls.startsWith('git-') && cls !== 'git-changes-status-bar')
+			);
+			
+			// Generate name from class names (filter out ignored classes, but preserve plugin identifiers)
+			let classBasedName = allClasses
+				.filter(cls => !ignoredClasses.includes(cls) || isPluginIdentifier(cls))
+				.join('-');
+			
+			// If we found a plugin class, ensure it's included
+			if (pluginClass && !classBasedName.includes(pluginClass)) {
+				// Use the plugin class as the base name
+				classBasedName = pluginClass + (classBasedName ? '-' + classBasedName : '');
+			}
+			
+			// If we still have no distinguishing classes, use a fallback
+			if (!classBasedName || classBasedName === '') {
+				// Check for text content that might help identify the element
+				const textContent = element.textContent?.trim();
+				if (textContent && textContent.length > 0 && textContent.length < 50 && !textContent.includes(':')) {
+					// Simple text without colons - could be a branch name or other identifier
+					// If it looks like a git branch (short, alphanumeric with dashes/underscores, no spaces)
+					const looksLikeBranch = /^[a-z0-9][a-z0-9_-]*$/i.test(textContent) && textContent.length < 30;
+					if (looksLikeBranch) {
+						// Use plugin-obsidian-git as base name (matches Status Bar Organizer behavior)
+						// Sequential numbering will distinguish multiple git items
+						name = 'plugin-obsidian-git';
+					} else {
+						// Other simple text - use as identifier
+						const sanitized = textContent
+							.toLowerCase()
+							.replace(/[^a-z0-9]+/g, '-')
+							.replace(/^-+|-+$/g, '');
+						if (sanitized) {
+							name = `status-bar-item-${sanitized}`;
+						} else {
+							name = 'status-bar-item';
+						}
+					}
+				} else {
+					// No useful text content, use generic name
+					name = 'status-bar-item';
+				}
+			} else {
+				name = classBasedName;
+			}
+
+			// Check if we can match to an existing saved item with this name pattern
+			const matchingSavedItems = savedItems.filter(item => {
+				if (matchedSavedIds.has(item.id)) return false;
+				const parts = item.id.split(';');
+				parts.pop(); // Remove index
+				const itemName = parts.join(';');
+				return itemName === name;
+			});
+
+			if (matchingSavedItems.length > 0) {
+				// Match to the first unmatched saved item with this name pattern
+				// Use the saved item's ID to preserve its index and all properties (sticky, hidden, etc.)
+				const savedItem = matchingSavedItems[0];
+				id = savedItem.id;
+				matchedSavedIds.add(id);
+				
+				// Update the saved item's name from DOM if it has changed (but preserve all other properties like sticky)
+				// Get element name for display (use text content or aria-label for better names)
+				let elementName = element.getAttribute('aria-label') || 
+					element.getAttribute('title') ||
+					element.textContent?.trim() || 
+					null;
+
+				// If we have a meaningful name from content, update saved item's name
+				if (elementName && elementName.length > 0 && elementName.length < 100) {
+					// Use the content as the name (e.g., "master" for branch display)
+					// Update saved item's name but preserve all other properties (sticky, hidden, mdOnly, etc.)
+					savedItem.name = elementName;
+				} else {
+					// Fall back to ID-based name if no meaningful content
+					const fallbackName = id.split(';')[0] || 'Status bar item';
+					if (!savedItem.name || savedItem.name === fallbackName) {
+						savedItem.name = fallbackName;
 					}
 				}
+				
+				// Parse the ID to update element count tracking
+				const parts = id.split(';');
+				const indexStr = parts.pop();
+				if (indexStr) {
+					index = parseInt(indexStr, 10);
+					// Update element count tracking
+					pluginElementCount[name] = Math.max(
+						index,
+						name in pluginElementCount ? pluginElementCount[name] : 0
+					);
+				}
+			} else {
+				// No match found - this is a truly new element
+				// Assign sequential index based on element count (like Status Bar Organizer)
+				index = (name in pluginElementCount) ? pluginElementCount[name] + 1 : 1;
+				id = `${name};${index}`;
+				
+				// Update element count tracking
+				pluginElementCount[name] = index;
 			}
-			
-			const indexNum = maxIndex + 1;
-			const id = `${name};${indexNum}`;
+
+			// Set the ID on the element
 			element.setAttribute('data-ui-tweaker-status-bar-id', id);
 
-			// Get element name for display
-			const elementName = element.getAttribute('aria-label') || 
+			// Get element name for display (use text content or aria-label for better names)
+			let elementName = element.getAttribute('aria-label') || 
 				element.getAttribute('title') ||
 				element.textContent?.trim() || 
-				id.split(';')[0] || 'Status bar item';
+				null;
 
-			// Truly new item - create default entry
-			newItems.push({
-				id: id,
-				name: elementName,
-				type: 'existing',
-				hidden: false,
-				mdOnly: false,
-			});
+			// If we have a meaningful name from content, enhance it
+			if (elementName && elementName.length > 0 && elementName.length < 100) {
+				// Use the content as the name (e.g., "master" for branch display)
+				// Don't override if it's too long (might be dynamic content)
+			} else {
+				// Fall back to ID-based name
+				elementName = id.split(';')[0] || 'Status bar item';
+			}
+
+			// If this is a new item (not in saved items), add it to settings
+			if (!savedItemsMap.has(id)) {
+				newItems.push({
+					id: id,
+					name: elementName,
+					type: 'existing',
+					hidden: false,
+					mdOnly: false,
+				});
+			}
 		});
 
 		// Add new items to settings (preserve existing items that aren't currently visible)

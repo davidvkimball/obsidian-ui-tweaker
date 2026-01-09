@@ -318,7 +318,7 @@ export class ExplorerManager {
 				const iconKey = buttonMap[ariaLabel];
 				if (!iconKey) return;
 
-				const iconOverride = iconOverrides[iconKey];
+				const iconOverride = iconOverrides?.[iconKey];
 				const colorOverrides = this.plugin.settings.nativeExplorerButtonColors;
 				const color = colorOverrides?.[iconKey];
 				
@@ -333,20 +333,11 @@ export class ExplorerManager {
 						(button as HTMLElement).style.removeProperty('color');
 					}
 				} else {
-					// Remove override - restore original icon
-					// We need to identify which button this is and restore its original icon
-					const originalIcons: Record<string, string> = {
-						'New note': 'lucide-edit',
-						'New folder': 'lucide-folder-plus',
-						'Change sort order': 'lucide-sort-asc',
-						'Auto-reveal current file': 'lucide-gallery-vertical',
-						'Collapse all': 'lucide-chevrons-up-down', // May vary, but this is the default
-					};
-					const originalIcon = originalIcons[ariaLabel];
-					if (originalIcon) {
-						button.empty();
-						setIcon(button as HTMLElement, originalIcon);
-						// Remove inline color - let CSS handle it for original icons
+					// No icon override - just apply color if set
+					if (color) {
+						(button as HTMLElement).style.color = color;
+					} else {
+						// Remove inline color - let default CSS handle it
 						(button as HTMLElement).style.removeProperty('color');
 					}
 				}

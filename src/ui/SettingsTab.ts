@@ -2,7 +2,7 @@
  * Main Settings Tab with tab navigation
  */
 
-import { App, PluginSettingTab } from 'obsidian';
+import { App, PluginSettingTab, Platform } from 'obsidian';
 import UITweakerPlugin from '../main';
 import { TabRenderer } from './common/TabRenderer';
 import { HiderTab } from './tabs/HiderTab';
@@ -34,17 +34,18 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		const tabContent = tabContainer.createDiv('tab-content');
 
 		// Tab definitions
+		// Filter out status bar tab on mobile (status bar isn't visible on mobile)
 		const tabs: Array<{ id: string; name: string; renderer: TabRenderer }> = [
 			{
 				id: 'hider',
 				name: 'Hider',
 				renderer: new HiderTab(this.app, this.plugin)
 			},
-			{
+			...(Platform.isMobile ? [] : [{
 				id: 'status-bar',
 				name: 'Status bar',
 				renderer: new StatusBarTab(this.app, this.plugin)
-			},
+			}]),
 			{
 				id: 'tab-bar',
 				name: 'Tab bar',

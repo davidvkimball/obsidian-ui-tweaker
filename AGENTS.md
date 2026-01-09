@@ -91,6 +91,8 @@ If this project references specific plugins or themes that are relevant to its d
 **Current project-specific references**:
 - `.ref/plugins/obsidian-oxygen-settings/` - Primary source for feature implementation patterns, especially the HiderSettings.ts file
 - `.ref/plugins/obsidian-hider/` - Reference for CSS class injection patterns and similar functionality
+- `.ref/plugins/obsidian-statusbar-organizer/` - Reference for status bar item identification and management patterns (see Status Bar Item Identification section)
+- `.ref/plugins/obsidian-git/` - Reference for understanding how plugins create multiple status bar items with minimal classes
 - `.ref/themes/obsidian-oxygen/` - Reference for CSS patterns and theme structure
 - `.ref/obsidian-dev/app.css` - Obsidian's main CSS file for accurate DOM selectors and class names (especially for mobile UI elements). Located at `C:\Users\david\Development\.ref\obsidian-dev\app.css`
 
@@ -107,6 +109,7 @@ None currently. This project follows the general `.agents` guidance.
 - `commands.ts` - Registers all toggle commands, handles toggle logic
 - `settingsTab.ts` - Implements settings UI with flat list organization and headers
 - `types.ts` - TypeScript type definitions (`UIVisibilityState`, `MobileNavPosition`)
+- `manager/StatusBarManager.ts` - Manages status bar item identification, ordering, and visibility (see Status Bar Item Identification section)
 - `modals/CommandPickerModal.ts` - Modal for selecting Obsidian commands (used for help button replacement)
 
 #### Root Files
@@ -148,6 +151,31 @@ None currently. This project follows the general `.agents` guidance.
 - Test mobile-specific features on mobile devices
 - Verify CSS doesn't conflict with themes
 - Test help button replacement functionality
+
+#### Status Bar Item Identification
+
+The status bar item identification system (`src/manager/StatusBarManager.ts`) handles detection and management of status bar items from various plugins. Key implementation details:
+
+**Reference Implementation**: The system closely follows the approach used by Status Bar Organizer (`.ref/plugins/obsidian-statusbar-organizer`), which processes elements in DOM order and uses class names to generate unique identifiers.
+
+**ID Generation Strategy**:
+1. **Plugin Identifier Detection**: Before filtering classes, the system checks for plugin-related classes (e.g., `plugin-obsidian-git`, `obsidian-git`, classes containing `-git`). These are preserved even if they might match ignored patterns.
+2. **Class-Based Naming**: Elements are identified primarily by their class names, with ignored classes filtered out: `['mod-clickable', 'status-bar-item', 'ui-tweaker-status-bar-item', 'ui-tweaker-status-bar-hidden']`
+3. **Fallback for Minimal Classes**: Some plugins (like obsidian-git's branch display) create elements with only `mod-clickable` class. For these cases:
+   - The system checks text content
+   - If text looks like a git branch name (short, alphanumeric with dashes/underscores, no colons, < 30 chars), it uses `plugin-obsidian-git` as the base identifier
+   - This matches Status Bar Organizer's behavior where multiple git items get `plugin-obsidian-git;1`, `plugin-obsidian-git;2`, etc.
+4. **Sequential Numbering**: Multiple items with the same base name are distinguished by sequential indices (`plugin-obsidian-git;1`, `plugin-obsidian-git;2`), tracked via `pluginElementCount` object
+5. **Display Names**: Element names for the UI are generated from `aria-label`, `title`, or `textContent` when available, providing more user-friendly labels (e.g., "master" for branch display)
+
+**Key Files**:
+- `src/manager/StatusBarManager.ts` - Main implementation in `consolidateSettingsAndElements()` method
+- Reference: `.ref/plugins/obsidian-statusbar-organizer/src/parser.ts` - Shows the original approach
+
+**Common Issues**:
+- If a plugin's status bar items aren't appearing, check if they have distinguishing classes or if the fallback logic needs adjustment
+- Elements with only `mod-clickable` class require the text content fallback to be properly identified
+- Dynamic class changes (like obsidian-git's status bar that adds/removes classes) are handled by matching saved items by ID first, then by name pattern
 
 #### Future Enhancements
 - Consider adding preset support for common configurations

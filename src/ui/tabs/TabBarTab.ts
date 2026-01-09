@@ -571,9 +571,9 @@ export class TabBarTab extends TabRenderer {
 			otherSettings.push(setting.settingEl);
 			setting
 				.setName('Show only on these file types')
-				.setDesc('Show button only on specified file types. Enter comma-separated file extensions. Leave empty to show on all file types.')
+				.setDesc('Show button only on specified file types or views. Enter comma-separated file extensions (like "md,mdx") or view types for views without files (like "{{graph}}"). Leave empty to show on all. Use {{graph}} for graph view and {{empty}} for blank/new tabs.')
 				.addText((text) => {
-					text.setPlaceholder('md');
+					text.setPlaceholder('md, mdx');
 					text.setValue(pair.showOnFileTypes ?? '');
 					text.onChange((value) => {
 						void (async () => {
@@ -593,9 +593,9 @@ export class TabBarTab extends TabRenderer {
 			otherSettings.push(setting.settingEl);
 			setting
 				.setName('Never show on these file types')
-				.setDesc('Hide button on specified file types. Enter comma-separated file extensions. Leave empty to allow all file types.')
+				.setDesc('Hide button on specified file types or views. Enter comma-separated file extensions (like "jpg,png") or view types for views without files (like "{{graph}}"). Leave empty to allow all. Use {{graph}} for graph view and {{empty}} for blank/new tabs.')
 				.addText((text) => {
-					text.setPlaceholder('jpg');
+					text.setPlaceholder('{{graph}},{{empty}}');
 					text.setValue(pair.hideOnFileTypes ?? '');
 					text.onChange((value) => {
 						void (async () => {
