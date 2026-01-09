@@ -129,7 +129,6 @@ export class StatusBarTab extends TabRenderer {
 		// Lock icon (new feature)
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
 		lockSpan.setAttribute('aria-label', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
-		lockSpan.setAttribute('title', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
 		lockSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
@@ -141,7 +140,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Visibility icon
 		const visibilitySpan = entry.createSpan('ui-tweaker-status-bar-row-visibility');
-		visibilitySpan.setAttribute('title', exists ? (item.hidden ? 'Hidden - click to show' : 'Visible - click to hide') : 'Delete item');
+		visibilitySpan.setAttribute('aria-label', exists ? (item.hidden ? 'Hidden - click to show' : 'Visible - click to hide') : 'Delete item');
 		visibilitySpan.addEventListener('click', () => {
 			if (exists) {
 				this.toggleVisibility(item, visibilitySpan, entry);
@@ -224,7 +223,7 @@ export class StatusBarTab extends TabRenderer {
 		if (item.color) {
 			const resetButton = resetColorContainer.createEl('button', {
 				cls: 'clickable-icon ui-tweaker-color-reset',
-				attr: { 'aria-label': 'Reset to default color', 'title': 'Reset to default color' }
+				attr: { 'aria-label': 'Reset to default color' }
 			});
 			setIcon(resetButton, 'rotate-cw');
 			resetButton.addEventListener('click', (e) => {
@@ -274,7 +273,7 @@ export class StatusBarTab extends TabRenderer {
 		
 		// Device mode icon
 		const deviceModeSpan = entry.createSpan('ui-tweaker-status-bar-row-device-mode');
-		deviceModeSpan.setAttribute('title', this.getDeviceModeTooltip(item.mode || 'any'));
+		deviceModeSpan.setAttribute('aria-label', this.getDeviceModeTooltip(item.mode || 'any'));
 		deviceModeSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleDeviceMode(item);
@@ -286,12 +285,12 @@ export class StatusBarTab extends TabRenderer {
 		
 		// MD-only icon
 		const mdOnlySpan = entry.createSpan('ui-tweaker-status-bar-row-md-only');
-		mdOnlySpan.setAttribute('title', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
+		mdOnlySpan.setAttribute('aria-label', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
 		mdOnlySpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			item.mdOnly = !item.mdOnly;
 			setIcon(mdOnlySpan, item.mdOnly ? 'file-check' : 'file-x');
-			mdOnlySpan.setAttribute('title', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
+			mdOnlySpan.setAttribute('aria-label', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
 			if (item.mdOnly) {
 				mdOnlySpan.addClass('ui-tweaker-active');
 			} else {
@@ -308,7 +307,6 @@ export class StatusBarTab extends TabRenderer {
 		// Lock icon (new feature)
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
 		lockSpan.setAttribute('aria-label', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
-		lockSpan.setAttribute('title', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
 		lockSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
@@ -320,7 +318,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Visibility icon
 		const visibilitySpan = entry.createSpan('ui-tweaker-status-bar-row-visibility');
-		visibilitySpan.setAttribute('title', item.hidden ? 'Hidden - click to show' : 'Visible - click to hide');
+		visibilitySpan.setAttribute('aria-label', item.hidden ? 'Hidden - click to show' : 'Visible - click to hide');
 		visibilitySpan.addEventListener('click', () => {
 			this.toggleVisibility(item, visibilitySpan, entry);
 			// toggleVisibility already calls saveSettings()
@@ -344,7 +342,7 @@ export class StatusBarTab extends TabRenderer {
 			item.sticky = false;
 			setIcon(lockSpan, 'unlock');
 			lockSpan.removeClass('ui-tweaker-locked');
-			lockSpan.setAttribute('title', 'Unlocked - click to lock position');
+			lockSpan.setAttribute('aria-label', 'Unlocked - click to lock position');
 		} else {
 			// Determine lock position based on current index
 			// Position 0 or 1 -> lock left
@@ -361,7 +359,7 @@ export class StatusBarTab extends TabRenderer {
 			}
 			setIcon(lockSpan, 'lock');
 			lockSpan.addClass('ui-tweaker-locked');
-			lockSpan.setAttribute('title', `Locked to ${item.sticky}`);
+			lockSpan.setAttribute('aria-label', `Locked to ${item.sticky}`);
 		}
 		
 		// Update status bar order
@@ -378,11 +376,11 @@ export class StatusBarTab extends TabRenderer {
 		if (item.hidden) {
 			entry.addClass('ui-tweaker-status-bar-row-hidden');
 			setIcon(visibilitySpan, 'eye-off');
-			visibilitySpan.setAttribute('title', 'Hidden - click to show');
+			visibilitySpan.setAttribute('aria-label', 'Hidden - click to show');
 		} else {
 			entry.removeClass('ui-tweaker-status-bar-row-hidden');
 			setIcon(visibilitySpan, 'eye');
-			visibilitySpan.setAttribute('title', 'Visible - click to hide');
+			visibilitySpan.setAttribute('aria-label', 'Visible - click to hide');
 		}
 		
 		this.plugin.statusBarManager?.reorder();
@@ -412,7 +410,7 @@ export class StatusBarTab extends TabRenderer {
 		if (deviceModeSpan) {
 			setIcon(deviceModeSpan, this.getDeviceModeIcon(item.mode));
 			const tooltip = this.getDeviceModeTooltip(item.mode);
-			deviceModeSpan.setAttribute('title', tooltip);
+			deviceModeSpan.setAttribute('aria-label', tooltip);
 			if (item.mode && item.mode !== 'any') {
 				deviceModeSpan.addClass('ui-tweaker-active');
 			} else {

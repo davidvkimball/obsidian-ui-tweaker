@@ -17,6 +17,8 @@ export interface CommandIconPair {
 	mode: Mode;
 	color?: string;
 	mdOnly?: boolean; // Only show on markdown/markdownx files
+	toggleIcon?: string; // Icon to show when command is toggled on
+	useActiveClass?: boolean; // For explorer only: use is-active class instead of icon swap
 }
 
 export interface StatusBarItem {

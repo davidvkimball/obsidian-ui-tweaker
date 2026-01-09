@@ -70,14 +70,32 @@ export class TabBarTab extends TabRenderer {
 		// Command name with editable name (like Vault CMS) and icon preview with color
 		const displayName = pair.displayName || pair.name;
 		group.addSetting((setting): void => {
-			// Prevent default click behavior on the setting item itself
+			// Completely prevent collapse on setting element - ONLY chevron can toggle
+			// Use capture phase to intercept ALL clicks before they reach Obsidian's handlers
 			setting.settingEl.addEventListener('click', (e) => {
-				// Only allow collapse if clicking directly on the chevron
 				const target = e.target as HTMLElement;
-				if (!target.closest('.ui-tweaker-collapse-icon')) {
+				// ONLY allow collapse if clicking directly on the chevron icon itself
+				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
+				if (!isChevronClick) {
+					// Block ALL other clicks from affecting collapse
 					e.stopPropagation();
+					e.stopImmediatePropagation();
+					e.preventDefault();
+					return false;
 				}
-			});
+			}, true); // Capture phase - runs before other handlers
+			
+			// Also prevent on bubble phase as backup
+			setting.settingEl.addEventListener('click', (e) => {
+				const target = e.target as HTMLElement;
+				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
+				if (!isChevronClick) {
+					e.stopPropagation();
+					e.stopImmediatePropagation();
+					e.preventDefault();
+					return false;
+				}
+			}, false); // Bubble phase - backup
 			
 			// Make nameEl a flex container so chevron can be positioned to the left
 			const nameEl = setting.nameEl;
@@ -100,9 +118,11 @@ export class TabBarTab extends TabRenderer {
 			let isExpanded = false;
 			setIcon(chevronContainer, 'chevrons-up-down');
 			
-			// Toggle on chevron click - will be set up after all settings are added
+			// Toggle on chevron click - ONLY way to change collapse state
 			chevronContainer.addEventListener('click', (e) => {
 				e.stopPropagation();
+				e.stopImmediatePropagation();
+				e.preventDefault();
 				isExpanded = !isExpanded;
 				// Swap icon: chevrons-up-down (collapsed) <-> chevrons-down-up (expanded)
 				setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
@@ -225,6 +245,8 @@ export class TabBarTab extends TabRenderer {
 						});
 						modal.open();
 					});
+					// Prevent collapse on click
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move up - always show, but disable when at top
@@ -243,6 +265,8 @@ export class TabBarTab extends TabRenderer {
 						button.setTooltip('Already at top');
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
 					}
+					// Prevent collapse on click
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move down - always show, but disable when at bottom
@@ -261,6 +285,8 @@ export class TabBarTab extends TabRenderer {
 						button.setTooltip('Already at bottom');
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
 					}
+					// Prevent collapse on click
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Delete
@@ -274,6 +300,8 @@ export class TabBarTab extends TabRenderer {
 							this.render(container);
 						})();
 					});
+					// Prevent collapse on click
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
 				});
 		});
 
@@ -305,6 +333,8 @@ export class TabBarTab extends TabRenderer {
 							this.render(container);
 						})();
 					});
+					// Prevent collapse on click
+					dropdown.selectEl.addEventListener('click', (e) => e.stopPropagation());
 				});
 		});
 
@@ -337,7 +367,10 @@ export class TabBarTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', () => {
+							resetButton.addEventListener('click', (e) => {
+								e.stopPropagation();
+								e.stopImmediatePropagation();
+								e.preventDefault();
 								void (async () => {
 									// Remove color entirely
 									pair.color = undefined;
@@ -392,17 +425,74 @@ export class TabBarTab extends TabRenderer {
 				});
 		});
 
+		// Toggle icon configuration
+		group.addSetting((setting): void => {
+			otherSettings.push(setting.settingEl);
+			const hasToggleIcon = pair.toggleIcon !== undefined;
+			
+			setting
+				.setName('Toggle icon')
+				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle)')
+				.addButton((button) => {
+					const currentToggleIcon = pair.toggleIcon || 'None';
+					button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
+						const modal = new IconPickerModal(this.app, (iconId) => {
+							void (async () => {
+								if (iconId) {
+									pair.toggleIcon = iconId;
+								} else {
+									pair.toggleIcon = undefined;
+								}
+								await this.saveSettings();
+								this.plugin.tabBarManager?.reorder();
+								this.render(container);
+							})();
+						});
+						modal.open();
+					});
+					// Prevent collapse on click
+					button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+					
+					// Add reset button if toggle icon is set
+					if (hasToggleIcon) {
+						setTimeout(() => {
+							const controlEl = setting.controlEl;
+							const buttonEl = controlEl.querySelector('button') || controlEl.lastElementChild;
+							
+							const resetButton = controlEl.createEl('button', {
+								cls: 'clickable-icon ui-tweaker-toggle-icon-reset',
+								attr: { 'aria-label': 'Reset toggle icon', 'title': 'Reset toggle icon' }
+							});
+							setIcon(resetButton, 'lucide-rotate-cw');
+							setCssProps(resetButton, { marginRight: '0.5rem' });
+							resetButton.addEventListener('click', (e) => {
+								e.stopPropagation();
+								e.stopImmediatePropagation();
+								e.preventDefault();
+								void (async () => {
+									// Remove toggle icon
+									pair.toggleIcon = undefined;
+									
+									await this.saveSettings();
+									this.plugin.tabBarManager?.reorder();
+									this.render(container);
+								})();
+							});
+							
+							// Insert reset button before the main button
+							if (buttonEl) {
+								controlEl.insertBefore(resetButton, buttonEl);
+							} else {
+								controlEl.insertBefore(resetButton, controlEl.firstChild);
+							}
+						}, 0);
+					}
+				});
+		});
+
 		// MD/MDX only toggle
 		group.addSetting((setting): void => {
 			otherSettings.push(setting.settingEl);
-			
-			// After all settings are added, collapse by default
-			setTimeout(() => {
-				otherSettings.forEach(settingEl => {
-					setCssProps(settingEl, { display: 'none' });
-				});
-			}, 0);
-			
 			setting
 				.setName('Only show on Markdown files')
 				.setDesc('Hide this button on non-Markdown views')
@@ -415,7 +505,16 @@ export class TabBarTab extends TabRenderer {
 							this.plugin.tabBarManager?.reorder();
 						})();
 					});
+					// Prevent collapse on click
+					toggle.toggleEl.addEventListener('click', (e) => e.stopPropagation());
 				});
 		});
+
+		// After all settings are added, collapse by default
+		setTimeout(() => {
+			otherSettings.forEach(settingEl => {
+				setCssProps(settingEl, { display: 'none' });
+			});
+		}, 0);
 	}
 }

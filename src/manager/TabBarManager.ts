@@ -3,10 +3,10 @@
  * Based on Commander's PageHeaderManager with md/mdx-only filtering
  */
 
-import { ItemView, Menu, WorkspaceLeaf } from 'obsidian';
+import { ItemView, Menu, WorkspaceLeaf, setIcon } from 'obsidian';
 import UITweakerPlugin from '../main';
 import { CommandIconPair } from '../types';
-import { isMarkdownView, isModeActive } from '../utils/commandUtils';
+import { isMarkdownView, isModeActive, isCommandChecked } from '../utils/commandUtils';
 import { IconPickerModal } from '../modals/IconPickerModal';
 import { setCssProps } from '../uiManager';
 
@@ -41,7 +41,7 @@ export class TabBarManager {
 	}
 
 	private addPageHeaderButton(leaf: WorkspaceLeaf, pair: CommandIconPair): void {
-		const { id, icon } = pair;
+		const { id } = pair;
 		// Use user-set name for the button tooltip
 		const name = pair.name;
 		const { view } = leaf;
@@ -67,6 +67,8 @@ export class TabBarManager {
 				} else {
 					existingButton.style.removeProperty('color');
 				}
+				// Update toggle state
+				this.updateButtonToggleState(existingButton, pair);
 				return;
 			}
 		}
@@ -76,11 +78,18 @@ export class TabBarManager {
 			return;
 		}
 
-		const buttonIcon = view.addAction(icon, name, () => {
+		// Determine initial icon based on toggle state
+		const initialIcon = this.getIconForToggleState(pair);
+		
+		const buttonIcon = view.addAction(initialIcon, name, () => {
 			this.plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
 			const commands = (this.plugin.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
 			if (commands?.executeCommandById) {
 				void commands.executeCommandById(id);
+				// Update toggle state after command execution
+				setTimeout(() => {
+					this.updateButtonToggleState(buttonIcon, pair);
+				}, 100);
 			}
 		});
 		buttons.set(id, buttonIcon);
@@ -90,6 +99,9 @@ export class TabBarManager {
 		if (pair.color && pair.color !== '#000000') {
 			setCssProps(buttonIcon, { color: pair.color });
 		}
+		
+		// Update toggle state after creation
+		this.updateButtonToggleState(buttonIcon, pair);
 
 		buttonIcon.addEventListener('contextmenu', (event) => {
 			event.stopImmediatePropagation();
@@ -193,9 +205,39 @@ export class TabBarManager {
 					} else {
 						button.style.removeProperty('color');
 					}
+					// Update toggle state
+					this.updateButtonToggleState(button, pair);
 				}
 			}
 		});
+	}
+
+	/**
+	 * Get icon for current toggle state
+	 */
+	private getIconForToggleState(pair: CommandIconPair): string {
+		if (!pair.toggleIcon) {
+			return pair.icon;
+		}
+		const isChecked = isCommandChecked(pair.id, this.plugin);
+		return isChecked ? pair.toggleIcon : pair.icon;
+	}
+
+	/**
+	 * Update button toggle state (icon swap only for tab bar)
+	 */
+	private updateButtonToggleState(button: HTMLElement, pair: CommandIconPair): void {
+		if (!pair.toggleIcon) {
+			// No toggle configured - use default icon
+			setIcon(button, pair.icon);
+			return;
+		}
+
+		// Check if command is currently toggled on
+		const isChecked = isCommandChecked(pair.id, this.plugin);
+		
+		// Swap icon based on toggle state
+		setIcon(button, isChecked ? pair.toggleIcon : pair.icon);
 	}
 
 	public async addCommand(pair: CommandIconPair): Promise<void> {

@@ -51,3 +51,26 @@ export function getCommandFromId(id: string, plugin: UITweakerPlugin): Command |
 	const commands = (plugin.app as { commands?: { commands?: { [id: string]: Command } } }).commands;
 	return commands?.commands?.[id] ?? null;
 }
+
+/**
+ * Check if a command is currently checked/toggled on
+ * Returns true if command has checkCallback and it returns true
+ */
+export function isCommandChecked(id: string, plugin: UITweakerPlugin): boolean {
+	const command = getCommandFromId(id, plugin);
+	if (!command) return false;
+	
+	// Check if command has a checkCallback
+	if (typeof command.checkCallback === 'function') {
+		try {
+			// Call checkCallback with checking=true to see if it returns true (checked state)
+			const result = command.checkCallback(true);
+			return result === true;
+		} catch {
+			// If checkCallback throws, assume not checked
+			return false;
+		}
+	}
+	
+	return false;
+}

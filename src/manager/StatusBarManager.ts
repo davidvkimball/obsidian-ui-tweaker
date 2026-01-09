@@ -320,8 +320,8 @@ export class StatusBarManager {
 		const btn = this.container.createDiv({
 			cls: 'ui-tweaker-status-bar-item status-bar-item clickable-icon',
 			attr: { 
-				'data-tooltip-position': 'top', 
-				'title': item.name,
+				'aria-label': item.name,
+				'data-tooltip-position': 'top',
 				'data-ui-tweaker-status-bar-id': item.id,
 			},
 		});
@@ -434,7 +434,7 @@ export class StatusBarManager {
 	 */
 	public updateButtonNames(): void {
 		this.customActions.forEach((button, item) => {
-			button.setAttribute('title', item.name);
+			button.setAttribute('aria-label', item.name);
 			// Update color if needed
 			if (item.color && item.color !== '#000000') {
 				setCssProps(button, { color: item.color });
