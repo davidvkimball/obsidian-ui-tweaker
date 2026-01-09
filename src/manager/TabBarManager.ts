@@ -85,10 +85,15 @@ export class TabBarManager {
 			this.plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
 			const commands = (this.plugin.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
 			if (commands?.executeCommandById) {
+				// Command execution is tracked by the interceptor in main.ts
+				// Just execute the command - the interceptor will handle toggle tracking
 				void commands.executeCommandById(id);
 				// Update toggle state after command execution
+				// The interceptor will also refresh, but we update this button immediately for responsiveness
 				setTimeout(() => {
 					this.updateButtonToggleState(buttonIcon, pair);
+					// Also update all other buttons for this command
+					this.updateAllButtonsForCommand(id);
 				}, 100);
 			}
 		});
@@ -238,6 +243,43 @@ export class TabBarManager {
 		
 		// Swap icon based on toggle state
 		setIcon(button, isChecked ? pair.toggleIcon : pair.icon);
+	}
+
+	/**
+	 * Update all buttons for a specific command ID across all leaves
+	 */
+	private updateAllButtonsForCommand(commandId: string): void {
+		const pair = this.pairs.find(p => p.id === commandId);
+		if (!pair) return;
+
+		this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+			if (!(leaf.view instanceof ItemView)) return;
+			const buttons = this.buttonsFor(leaf);
+			if (!buttons) return;
+
+			const button = buttons.get(commandId);
+			if (button) {
+				this.updateButtonToggleState(button, pair);
+			}
+		});
+	}
+
+	/**
+	 * Refresh toggle states for all buttons
+	 */
+	public refreshToggleStates(): void {
+		this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+			if (!(leaf.view instanceof ItemView)) return;
+			const buttons = this.buttonsFor(leaf);
+			if (!buttons) return;
+
+			for (const [id, button] of buttons.entries()) {
+				const pair = this.pairs.find(p => p.id === id);
+				if (pair && pair.toggleIcon) {
+					this.updateButtonToggleState(button, pair);
+				}
+			}
+		});
 	}
 
 	public async addCommand(pair: CommandIconPair): Promise<void> {

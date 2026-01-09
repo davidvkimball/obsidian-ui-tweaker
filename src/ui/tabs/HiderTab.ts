@@ -73,8 +73,7 @@ export class HiderTab extends TabRenderer {
 
 		this.addToggleSetting(navigationGroup, 'Make top of window draggable without tab bar', 'Enables window dragging from the top of the window when the tab bar is hidden. Only works when "Hide tab bar" is enabled.', 'enableWindowDragging');
 
-		// Note: Explorer button toggles (newNoteButton, newFolderButton, etc.) moved to Explorer tab
-		// View header buttons stay here
+		// View header buttons
 		this.addToggleSetting(navigationGroup, 'Hide "Reading mode" button', 'Hide "Reading mode" button in view headers.', 'readingModeButton');
 
 		this.addToggleSetting(navigationGroup, 'Hide "Search settings" button', 'Hide "Search settings" button in search pane.', 'searchSettingsButton');

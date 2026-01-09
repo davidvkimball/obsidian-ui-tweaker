@@ -630,6 +630,36 @@ body:not(.is-mobile).hide-tab-close-button-reveal .workspace-tab-header-inner-cl
 	display: none;
 }
 
+/* ========================================
+   Native explorer button colors
+   ======================================== */
+
+/* New note button color */
+body .nav-action-button:has(.svg-icon.lucide-edit) {
+	color: var(--native-button-color-new-note, currentColor);
+}
+
+/* New folder button color */
+body .nav-action-button:has(.svg-icon.lucide-folder-plus) {
+	color: var(--native-button-color-new-folder, currentColor);
+}
+
+/* Sort order button color */
+body .nav-action-button:has(.svg-icon.lucide-sort-asc) {
+	color: var(--native-button-color-sort-order, currentColor);
+}
+
+/* Auto-reveal button color */
+body .nav-action-button:has(.svg-icon.lucide-gallery-vertical) {
+	color: var(--native-button-color-auto-reveal, currentColor);
+}
+
+/* Collapse all button color */
+body .nav-action-button:has(.svg-icon.lucide-chevrons-down-up),
+body .nav-action-button:has(.svg-icon.lucide-chevrons-up-down) {
+	color: var(--native-button-color-collapse-all, currentColor);
+}
+
 .hide-button-reading-mode .view-header .clickable-icon.view-action:has(.svg-icon.lucide-book-open),
 .hide-button-reading-mode .view-header .clickable-icon.view-action:has(.svg-icon.lucide-edit-3) {
 	display: none;

@@ -18,6 +18,8 @@ function arrayMoveMutable<T>(array: T[], from: number, to: number): void {
 }
 
 export class TabBarTab extends TabRenderer {
+	private expandedStates = new Map<string, boolean>();
+
 	render(container: HTMLElement): void {
 		container.empty();
 		const settings = this.getSettings();
@@ -74,9 +76,10 @@ export class TabBarTab extends TabRenderer {
 			// Use capture phase to intercept ALL clicks before they reach Obsidian's handlers
 			setting.settingEl.addEventListener('click', (e) => {
 				const target = e.target as HTMLElement;
-				// ONLY allow collapse if clicking directly on the chevron icon itself
+				// Allow collapse if clicking on chevron icon OR on extra buttons (delete, move up/down, etc.)
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
-				if (!isChevronClick) {
+				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+				if (!isChevronClick && !isExtraButton) {
 					// Block ALL other clicks from affecting collapse
 					e.stopPropagation();
 					e.stopImmediatePropagation();
@@ -89,7 +92,8 @@ export class TabBarTab extends TabRenderer {
 			setting.settingEl.addEventListener('click', (e) => {
 				const target = e.target as HTMLElement;
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
-				if (!isChevronClick) {
+				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+				if (!isChevronClick && !isExtraButton) {
 					e.stopPropagation();
 					e.stopImmediatePropagation();
 					e.preventDefault();
@@ -115,8 +119,9 @@ export class TabBarTab extends TabRenderer {
 			});
 			// Insert as first child to ensure it's on the left
 			nameEl.insertBefore(chevronContainer, nameEl.firstChild);
-			let isExpanded = false;
-			setIcon(chevronContainer, 'chevrons-up-down');
+			// Restore collapse state from Map, default to false if not set
+			let isExpanded = this.expandedStates.get(pair.id) ?? false;
+			setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
 			
 			// Toggle on chevron click - ONLY way to change collapse state
 			chevronContainer.addEventListener('click', (e) => {
@@ -124,6 +129,8 @@ export class TabBarTab extends TabRenderer {
 				e.stopImmediatePropagation();
 				e.preventDefault();
 				isExpanded = !isExpanded;
+				// Store state in Map for persistence across re-renders
+				this.expandedStates.set(pair.id, isExpanded);
 				// Swap icon: chevrons-up-down (collapsed) <-> chevrons-down-up (expanded)
 				setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
 				otherSettings.forEach(settingEl => {
@@ -354,6 +361,17 @@ export class TabBarTab extends TabRenderer {
 					// Get the control element - color picker is added to it
 					const controlEl = setting.controlEl;
 					
+					// Prevent collapse on color picker clicks
+					controlEl.addEventListener('click', (e) => e.stopPropagation());
+					
+					// Add event handler to the actual color input element
+					setTimeout(() => {
+						const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
+						if (colorInput) {
+							colorInput.addEventListener('click', (e) => e.stopPropagation());
+						}
+					}, 0);
+					
 					// Add reset button to the left of color picker if color has been set
 					// Use setTimeout to ensure color picker is added first, then insert reset button before it
 					if (hasColor) {
@@ -510,10 +528,11 @@ export class TabBarTab extends TabRenderer {
 				});
 		});
 
-		// After all settings are added, collapse by default
+			// After all settings are added, apply collapse state from Map
 		setTimeout(() => {
+			const savedExpanded = this.expandedStates.get(pair.id) ?? false;
 			otherSettings.forEach(settingEl => {
-				setCssProps(settingEl, { display: 'none' });
+				setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
 			});
 		}, 0);
 	}

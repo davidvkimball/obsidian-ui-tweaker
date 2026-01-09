@@ -53,24 +53,81 @@ export function getCommandFromId(id: string, plugin: UITweakerPlugin): Command |
 }
 
 /**
+ * Command toggle state tracker
+ * Tracks toggle state for commands that don't have checkCallback
+ */
+class CommandToggleTracker {
+	private toggleStates = new Map<string, boolean>();
+	private executionCounts = new Map<string, number>();
+
+	/**
+	 * Record that a command was executed
+	 */
+	recordExecution(id: string): void {
+		const currentCount = this.executionCounts.get(id) || 0;
+		this.executionCounts.set(id, currentCount + 1);
+		
+		// Toggle state based on execution count (odd = on, even = off)
+		// This is a fallback for commands without checkCallback
+		this.toggleStates.set(id, (currentCount + 1) % 2 === 1);
+	}
+
+	/**
+	 * Get tracked toggle state (for commands without checkCallback)
+	 */
+	getTrackedState(id: string): boolean | null {
+		return this.toggleStates.get(id) ?? null;
+	}
+
+	/**
+	 * Reset tracked state for a command
+	 */
+	resetState(id: string): void {
+		this.toggleStates.delete(id);
+		this.executionCounts.delete(id);
+	}
+}
+
+// Global tracker instance
+const commandToggleTracker = new CommandToggleTracker();
+
+/**
  * Check if a command is currently checked/toggled on
- * Returns true if command has checkCallback and it returns true
+ * First tries checkCallback if available, otherwise uses tracked state
  */
 export function isCommandChecked(id: string, plugin: UITweakerPlugin): boolean {
 	const command = getCommandFromId(id, plugin);
-	if (!command) return false;
+	if (!command) {
+		// Fallback to tracked state if command not found
+		return commandToggleTracker.getTrackedState(id) ?? false;
+	}
 	
-	// Check if command has a checkCallback
+	// Check if command has a checkCallback (preferred method)
 	if (typeof command.checkCallback === 'function') {
 		try {
 			// Call checkCallback with checking=true to see if it returns true (checked state)
 			const result = command.checkCallback(true);
 			return result === true;
 		} catch {
-			// If checkCallback throws, assume not checked
-			return false;
+			// If checkCallback throws, fall back to tracked state
+			return commandToggleTracker.getTrackedState(id) ?? false;
 		}
 	}
 	
-	return false;
+	// No checkCallback - use tracked state
+	return commandToggleTracker.getTrackedState(id) ?? false;
+}
+
+/**
+ * Record that a command was executed (for toggle tracking)
+ */
+export function recordCommandExecution(id: string): void {
+	commandToggleTracker.recordExecution(id);
+}
+
+/**
+ * Reset tracked state for a command
+ */
+export function resetCommandState(id: string): void {
+	commandToggleTracker.resetState(id);
 }

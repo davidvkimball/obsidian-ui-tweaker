@@ -10,6 +10,7 @@ import { UITweakerSettingTab } from './ui/SettingsTab';
 import { TabBarManager } from './manager/TabBarManager';
 import { StatusBarManager } from './manager/StatusBarManager';
 import { ExplorerManager } from './manager/ExplorerManager';
+import { recordCommandExecution } from './utils/commandUtils';
 
 export default class UITweakerPlugin extends Plugin {
 	settings: UISettings;
@@ -57,6 +58,9 @@ export default class UITweakerPlugin extends Plugin {
 			saveSettings: () => this.saveSettings(),
 			refresh: () => this.refresh(),
 		});
+
+		// Set up periodic refresh for button toggle states
+		this.setupToggleStateRefresh();
 
 		// Register settings tab
 		this.settingTab = new UITweakerSettingTab(this.app, this);
@@ -776,6 +780,48 @@ export default class UITweakerPlugin extends Plugin {
 				});
 			}
 		}
+	}
+
+	/**
+	 * Set up command execution interceptor to update button toggle states
+	 * This intercepts command execution globally to update buttons when commands are run
+	 * from anywhere (command palette, hotkeys, etc.)
+	 */
+	private setupToggleStateRefresh(): void {
+		const commands = (this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
+		if (!commands?.executeCommandById) return;
+
+		// Store original function
+		const originalExecute = commands.executeCommandById.bind(commands) as (id: string) => Promise<void>;
+
+		// Wrap executeCommandById to intercept command execution
+		// Type assertion needed because we're modifying Obsidian's internal API
+		(commands as { executeCommandById: (id: string) => Promise<void> }).executeCommandById = async (id: string): Promise<void> => {
+			// Check if this is a command we're tracking
+			const isTracked = this.settings.explorerCommands?.some(p => p.id === id && p.toggleIcon) ||
+				this.settings.tabBarCommands?.some(p => p.id === id && p.toggleIcon);
+
+			if (isTracked) {
+				// Record execution for toggle tracking
+				recordCommandExecution(id);
+
+				// Execute the command
+				await originalExecute(id);
+
+				// Update button states after a brief delay to allow command to complete
+				setTimeout(() => {
+					if (this.explorerManager) {
+						this.explorerManager.refreshToggleStates();
+					}
+					if (this.tabBarManager) {
+						this.tabBarManager.refreshToggleStates();
+					}
+				}, 50);
+			} else {
+				// Not a tracked command, just execute normally
+				await originalExecute(id);
+			}
+		};
 	}
 
 	private restoreSyncButton() {

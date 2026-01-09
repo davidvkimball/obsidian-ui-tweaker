@@ -19,6 +19,8 @@ function arrayMoveMutable<T>(array: T[], from: number, to: number): void {
 }
 
 export class ExplorerTab extends TabRenderer {
+	private expandedStates = new Map<string, boolean>();
+
 	render(container: HTMLElement): void {
 		container.empty();
 		const settings = this.getSettings();
@@ -26,6 +28,27 @@ export class ExplorerTab extends TabRenderer {
 		// Ensure explorerCommands exists
 		if (!settings.explorerCommands) {
 			settings.explorerCommands = [];
+		}
+
+		// Ensure nativeExplorerButtonColors exists
+		if (!settings.nativeExplorerButtonColors) {
+			settings.nativeExplorerButtonColors = {
+				newNote: undefined,
+				newFolder: undefined,
+				sortOrder: undefined,
+				autoReveal: undefined,
+				collapseAll: undefined,
+			};
+		}
+
+		// Native explorer button controls (at the top)
+		// Store reference to native buttons container for targeted re-renders
+		const nativeButtonsContainer = container.createDiv({ cls: 'native-explorer-buttons-container' });
+		this.renderNativeButtonControls(nativeButtonsContainer, container);
+
+		// Separator between native buttons and custom commands
+		if (settings.explorerCommands.length > 0) {
+			container.createEl('hr');
 		}
 
 		// List of commands using Setting components (like TabBarTab)
@@ -72,6 +95,152 @@ export class ExplorerTab extends TabRenderer {
 		});
 	}
 
+	private renderNativeButtonControls(container: HTMLElement, mainContainer?: HTMLElement): void {
+		// Clear container if re-rendering
+		container.empty();
+		const settings = this.getSettings();
+		const group = createSettingsGroup(container, 'Native explorer buttons', 'ui-tweaker');
+		
+		// Use mainContainer for scroll position if provided, otherwise use container
+		const scrollContainer = mainContainer || container;
+
+		// Helper to render a native button control
+		const renderNativeButton = (
+			name: string,
+			settingKey: 'newNoteButton' | 'newFolderButton' | 'sortOrderButton' | 'autoRevealButton' | 'collapseAllButton',
+			colorKey: 'newNote' | 'newFolder' | 'sortOrder' | 'autoReveal' | 'collapseAll'
+		) => {
+			const isHidden = settings[settingKey];
+			const color = settings.nativeExplorerButtonColors?.[colorKey];
+
+			group.addSetting((setting): void => {
+				setting
+					.setName(name)
+					.setDesc('')
+					.addExtraButton((button) => {
+						// Eyeball toggle - eye when visible, eye-off when hidden
+						const iconEl = button.extraSettingsEl;
+						setIcon(iconEl, isHidden ? 'eye-off' : 'eye');
+						button.setTooltip(isHidden ? 'Show button' : 'Hide button');
+						button.onClick(() => {
+							void (async () => {
+								// Read current value from settings instead of using captured isHidden
+								const currentValue = settings[settingKey];
+								settings[settingKey] = !currentValue;
+								await this.saveSettings();
+								// Update icon and tooltip in place instead of full re-render
+								const newIsHidden = settings[settingKey];
+								setIcon(iconEl, newIsHidden ? 'eye-off' : 'eye');
+								button.setTooltip(newIsHidden ? 'Show button' : 'Hide button');
+							})();
+						});
+						// Prevent collapse on click
+						button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					});
+
+				// Color picker (only show if color is set, with reset button)
+				if (color) {
+					setting.addColorPicker((colorPicker) => {
+						colorPicker.setValue(color);
+						
+						const controlEl = setting.controlEl;
+						
+						// Prevent collapse and scroll jumping on color picker clicks
+						controlEl.addEventListener('click', (e) => e.stopPropagation());
+						
+						// Add event handler to the actual color input element
+						setTimeout(() => {
+							const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
+							if (colorInput) {
+								colorInput.addEventListener('click', (e) => e.stopPropagation());
+							}
+						}, 0);
+						
+						// Add reset button
+						setTimeout(() => {
+							const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
+							
+							const resetButton = controlEl.createEl('button', {
+								cls: 'clickable-icon ui-tweaker-color-reset',
+								attr: { 'aria-label': 'Reset to default color', 'title': 'Reset to default color' }
+							});
+							setIcon(resetButton, 'lucide-rotate-cw');
+							setCssProps(resetButton, { marginRight: '0.5rem' });
+							resetButton.addEventListener('click', (e) => {
+								e.stopPropagation();
+								e.stopImmediatePropagation();
+								e.preventDefault();
+								// Prevent scroll jumping
+								const scrollPos = scrollContainer.scrollTop;
+								void (async () => {
+									if (!settings.nativeExplorerButtonColors) {
+										settings.nativeExplorerButtonColors = {};
+									}
+									settings.nativeExplorerButtonColors[colorKey] = undefined;
+									await this.saveSettings();
+									// Re-render just the native buttons section
+									this.renderNativeButtonControls(container, mainContainer);
+									// Restore scroll position after render
+									requestAnimationFrame(() => {
+										scrollContainer.scrollTop = scrollPos;
+									});
+								})();
+							});
+							
+							if (colorPickerEl) {
+								controlEl.insertBefore(resetButton, colorPickerEl);
+							} else {
+								controlEl.insertBefore(resetButton, controlEl.firstChild);
+							}
+						}, 0);
+						
+						colorPicker.onChange((value) => {
+							void (async () => {
+								if (!settings.nativeExplorerButtonColors) {
+									settings.nativeExplorerButtonColors = {};
+								}
+								settings.nativeExplorerButtonColors[colorKey] = value;
+								await this.saveSettings();
+								// No re-render needed - color picker already updates visually
+							})();
+						});
+					});
+				} else {
+					// Show button to add color picker
+					setting.addButton((button) => {
+						button.setButtonText('Set color...').onClick(() => {
+							// Prevent scroll jumping
+							const scrollPos = scrollContainer.scrollTop;
+							// Initialize color to black to show picker
+							if (!settings.nativeExplorerButtonColors) {
+								settings.nativeExplorerButtonColors = {};
+							}
+							settings.nativeExplorerButtonColors[colorKey] = '#000000';
+							void (async () => {
+								await this.saveSettings();
+								// Re-render just the native buttons section
+								this.renderNativeButtonControls(container, mainContainer);
+								// Restore scroll position after render
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+								});
+							})();
+						});
+						// Prevent collapse on button click
+						button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+					});
+				}
+			});
+		};
+
+		// Render all 5 native buttons
+		renderNativeButton('New note', 'newNoteButton', 'newNote');
+		renderNativeButton('New folder', 'newFolderButton', 'newFolder');
+		renderNativeButton('Sort order', 'sortOrderButton', 'sortOrder');
+		renderNativeButton('Auto-reveal', 'autoRevealButton', 'autoReveal');
+		renderNativeButton('Collapse all', 'collapseAllButton', 'collapseAll');
+	}
+
 	private renderCommandItem(container: HTMLElement, pair: CommandIconPair, index: number): void {
 		const settings = this.getSettings();
 		const group = createSettingsGroup(container, undefined, 'ui-tweaker');
@@ -86,9 +255,10 @@ export class ExplorerTab extends TabRenderer {
 			// Use capture phase to intercept ALL clicks before they reach Obsidian's handlers
 			setting.settingEl.addEventListener('click', (e) => {
 				const target = e.target as HTMLElement;
-				// ONLY allow collapse if clicking directly on the chevron icon itself
+				// Allow collapse if clicking on chevron icon OR on extra buttons (delete, move up/down, etc.)
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
-				if (!isChevronClick) {
+				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+				if (!isChevronClick && !isExtraButton) {
 					// Block ALL other clicks from affecting collapse
 					e.stopPropagation();
 					e.stopImmediatePropagation();
@@ -101,7 +271,8 @@ export class ExplorerTab extends TabRenderer {
 			setting.settingEl.addEventListener('click', (e) => {
 				const target = e.target as HTMLElement;
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
-				if (!isChevronClick) {
+				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+				if (!isChevronClick && !isExtraButton) {
 					e.stopPropagation();
 					e.stopImmediatePropagation();
 					e.preventDefault();
@@ -127,8 +298,9 @@ export class ExplorerTab extends TabRenderer {
 			});
 			// Insert as first child to ensure it's on the left
 			nameEl.insertBefore(chevronContainer, nameEl.firstChild);
-			let isExpanded = false;
-			setIcon(chevronContainer, 'chevrons-up-down');
+			// Restore collapse state from Map, default to false if not set
+			let isExpanded = this.expandedStates.get(pair.id) ?? false;
+			setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
 			
 			// Toggle on chevron click - ONLY way to change collapse state
 			chevronContainer.addEventListener('click', (e) => {
@@ -136,6 +308,8 @@ export class ExplorerTab extends TabRenderer {
 				e.stopImmediatePropagation();
 				e.preventDefault();
 				isExpanded = !isExpanded;
+				// Store state in Map for persistence across re-renders
+				this.expandedStates.set(pair.id, isExpanded);
 				// Swap icon: chevrons-up-down (collapsed) <-> chevrons-down-up (expanded)
 				setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
 				otherSettings.forEach(settingEl => {
@@ -363,6 +537,17 @@ export class ExplorerTab extends TabRenderer {
 					// Get the control element - color picker is added to it
 					const controlEl = setting.controlEl;
 					
+					// Prevent collapse on color picker clicks
+					controlEl.addEventListener('click', (e) => e.stopPropagation());
+					
+					// Add event handler to the actual color input element
+					setTimeout(() => {
+						const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
+						if (colorInput) {
+							colorInput.addEventListener('click', (e) => e.stopPropagation());
+						}
+					}, 0);
+					
 					// Add reset button to the left of color picker if color has been set
 					// Use setTimeout to ensure color picker is added first, then insert reset button before it
 					if (hasColor) {
@@ -520,10 +705,11 @@ export class ExplorerTab extends TabRenderer {
 				});
 		});
 
-		// After all settings are added, collapse by default
+			// After all settings are added, apply collapse state from Map
 		setTimeout(() => {
+			const savedExpanded = this.expandedStates.get(pair.id) ?? false;
 			otherSettings.forEach(settingEl => {
-				setCssProps(settingEl, { display: 'none' });
+				setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
 			});
 		}, 0);
 	}

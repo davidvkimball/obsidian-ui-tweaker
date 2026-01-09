@@ -143,6 +143,43 @@ export class UIManager {
 			'--auto-hide-vault-switcher-bg-transparency': String(this.settings.vaultSwitcherBackgroundTransparency),
 			'--auto-hide-vault-switcher-mask': maskValue,
 		});
+
+		// Native explorer button colors
+		const colors = this.settings.nativeExplorerButtonColors;
+		if (colors) {
+			if (colors.newNote) {
+				setCssProps(body, { '--native-button-color-new-note': colors.newNote });
+			} else {
+				body.style.removeProperty('--native-button-color-new-note');
+			}
+			if (colors.newFolder) {
+				setCssProps(body, { '--native-button-color-new-folder': colors.newFolder });
+			} else {
+				body.style.removeProperty('--native-button-color-new-folder');
+			}
+			if (colors.sortOrder) {
+				setCssProps(body, { '--native-button-color-sort-order': colors.sortOrder });
+			} else {
+				body.style.removeProperty('--native-button-color-sort-order');
+			}
+			if (colors.autoReveal) {
+				setCssProps(body, { '--native-button-color-auto-reveal': colors.autoReveal });
+			} else {
+				body.style.removeProperty('--native-button-color-auto-reveal');
+			}
+			if (colors.collapseAll) {
+				setCssProps(body, { '--native-button-color-collapse-all': colors.collapseAll });
+			} else {
+				body.style.removeProperty('--native-button-color-collapse-all');
+			}
+		} else {
+			// Remove all color variables if colors object doesn't exist
+			body.style.removeProperty('--native-button-color-new-note');
+			body.style.removeProperty('--native-button-color-new-folder');
+			body.style.removeProperty('--native-button-color-sort-order');
+			body.style.removeProperty('--native-button-color-auto-reveal');
+			body.style.removeProperty('--native-button-color-collapse-all');
+		}
 	}
 
 	private applyVisibilityState(body: HTMLElement, className: string, state: UIVisibilityState, useAlwaysShow: boolean = false) {
@@ -274,5 +311,10 @@ export class UIManager {
 		// Remove CSS variables
 		body.style.removeProperty('--auto-hide-vault-switcher-bg-transparency');
 		body.style.removeProperty('--auto-hide-vault-switcher-mask');
+		body.style.removeProperty('--native-button-color-new-note');
+		body.style.removeProperty('--native-button-color-new-folder');
+		body.style.removeProperty('--native-button-color-sort-order');
+		body.style.removeProperty('--native-button-color-auto-reveal');
+		body.style.removeProperty('--native-button-color-collapse-all');
 	}
 }

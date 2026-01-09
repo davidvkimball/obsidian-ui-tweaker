@@ -106,10 +106,15 @@ export class ExplorerManager {
 		button.onclick = (): void => {
 			const commands = (this.plugin.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
 			if (commands?.executeCommandById) {
+				// Command execution is tracked by the interceptor in main.ts
+				// Just execute the command - the interceptor will handle toggle tracking
 				void commands.executeCommandById(pair.id);
 				// Update toggle state after command execution
+				// The interceptor will also refresh, but we update this button immediately for responsiveness
 				setTimeout(() => {
 					this.updateButtonToggleState(button, pair);
+					// Also update all other buttons for this command
+					this.updateAllButtonsForCommand(pair.id);
 				}, 100);
 			}
 		};
@@ -203,6 +208,43 @@ export class ExplorerManager {
 				if (button) {
 					button.setAttribute('aria-label', pair.name);
 					// Update toggle state as well
+					this.updateButtonToggleState(button, pair);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Update all buttons for a specific command ID across all explorers
+	 */
+	private updateAllButtonsForCommand(commandId: string): void {
+		const pair = this.plugin.settings.explorerCommands.find(p => p.id === commandId);
+		if (!pair) return;
+
+		const explorers = this.plugin.app.workspace.getLeavesOfType('file-explorer');
+		explorers.forEach((leaf) => {
+			const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
+			if (!navButtonsContainer) return;
+
+			const button = navButtonsContainer.querySelector(`[data-explorer-command-id="${commandId}"]`) as HTMLElement;
+			if (button) {
+				this.updateButtonToggleState(button, pair);
+			}
+		});
+	}
+
+	/**
+	 * Refresh toggle states for all buttons
+	 */
+	public refreshToggleStates(): void {
+		const explorers = this.plugin.app.workspace.getLeavesOfType('file-explorer');
+		explorers.forEach((leaf) => {
+			const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
+			if (!navButtonsContainer) return;
+
+			for (const pair of this.plugin.settings.explorerCommands) {
+				const button = navButtonsContainer.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
+				if (button && pair.toggleIcon) {
 					this.updateButtonToggleState(button, pair);
 				}
 			}

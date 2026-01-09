@@ -82,6 +82,15 @@ export interface UISettings {
 
 	// Explorer custom commands
 	explorerCommands: CommandIconPair[];
+
+	// Native explorer button colors (optional)
+	nativeExplorerButtonColors?: {
+		newNote?: string;
+		newFolder?: string;
+		sortOrder?: string;
+		autoReveal?: string;
+		collapseAll?: string;
+	};
 }
 
 export const DEFAULT_SETTINGS: UISettings = {
@@ -162,4 +171,13 @@ export const DEFAULT_SETTINGS: UISettings = {
 
 	// Explorer
 	explorerCommands: [],
+
+	// Native explorer button colors
+	nativeExplorerButtonColors: {
+		newNote: undefined,
+		newFolder: undefined,
+		sortOrder: undefined,
+		autoReveal: undefined,
+		collapseAll: undefined,
+	},
 };
