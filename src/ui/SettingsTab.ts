@@ -26,26 +26,36 @@ export class UITweakerSettingTab extends PluginSettingTab {
 	render(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+
+		// On mobile, simplify: just show the Mobile tab directly (no tab navigation)
+		// This avoids CSS conflicts with Obsidian's app.css and provides a cleaner experience
+		// DON'T add ui-tweaker-settings class on mobile - let it use native Obsidian styling
+		if (Platform.isMobile || document.body.classList.contains('is-mobile')) {
+			const mobileTab = new MobileTab(this.app, this.plugin);
+			void mobileTab.render(containerEl);
+			return;
+		}
+
+		// Desktop: Add the class for tab navigation styling
 		containerEl.addClass('ui-tweaker-settings');
 
-		// Create enhanced tab navigation
+		// Desktop: Use tab navigation
 		const tabContainer = containerEl.createDiv('tab-container');
 		const tabNav = tabContainer.createDiv('tab-nav');
 		const tabContent = tabContainer.createDiv('tab-content');
 
 		// Tab definitions
-		// Filter out status bar tab on mobile (status bar isn't visible on mobile)
 		const tabs: Array<{ id: string; name: string; renderer: TabRenderer }> = [
 			{
 				id: 'hider',
 				name: 'Hider',
 				renderer: new HiderTab(this.app, this.plugin)
 			},
-			...(Platform.isMobile ? [] : [{
+			{
 				id: 'status-bar',
 				name: 'Status bar',
 				renderer: new StatusBarTab(this.app, this.plugin)
-			}]),
+			},
 			{
 				id: 'tab-bar',
 				name: 'Tab bar',
@@ -69,7 +79,6 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				text: tab.name,
 				cls: `tab-button ${index === 0 ? 'active' : ''}`
 			});
-			
 			
 			button.addEventListener('click', () => {
 				// Remove active class from all buttons
