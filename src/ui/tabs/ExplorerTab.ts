@@ -6,7 +6,7 @@
 import { setIcon } from 'obsidian';
 import { TabRenderer } from '../common/TabRenderer';
 import { createSettingsGroup } from '../../utils/settings-compat';
-import { CommandIconPair } from '../../types';
+import { CommandIconPair, ExplorerButtonItem } from '../../types';
 import { chooseNewCommand } from '../../utils/chooseCommand';
 import { IconPickerModal } from '../../modals/IconPickerModal';
 import { setCssProps } from '../../uiManager';
@@ -28,6 +28,11 @@ export class ExplorerTab extends TabRenderer {
 		// Ensure explorerCommands exists
 		if (!settings.explorerCommands) {
 			settings.explorerCommands = [];
+		}
+
+		// Ensure explorerButtonItems exists
+		if (!settings.explorerButtonItems) {
+			settings.explorerButtonItems = [];
 		}
 
 		// Ensure nativeExplorerButtonColors exists
@@ -52,21 +57,16 @@ export class ExplorerTab extends TabRenderer {
 			};
 		}
 
-		// Native explorer button controls (at the top)
-		// Store reference to native buttons container for targeted re-renders
-		const nativeButtonsContainer = container.createDiv({ cls: 'native-explorer-buttons-container' });
-		this.renderNativeButtonControls(nativeButtonsContainer, container);
+		// Don't trigger consolidation on render - only when settings actually change
+		// This prevents flickering when opening settings
 
-		// Separator between native buttons and custom commands (always show)
-		container.createEl('hr');
-
-		// List of commands using Setting components (like TabBarTab)
-		settings.explorerCommands.forEach((pair, index) => {
-			this.renderCommandItem(container, pair, index);
+		// Unified list of all buttons (native, external, custom)
+		settings.explorerButtonItems.forEach((item, index) => {
+			this.renderButtonItem(container, item, index);
 		});
 
 		// Add command button (at the end)
-		if (settings.explorerCommands.length > 0) {
+		if (settings.explorerButtonItems.length > 0) {
 			// Add separator
 			container.createEl('hr');
 		}
@@ -86,8 +86,26 @@ export class ExplorerTab extends TabRenderer {
 						void (async () => {
 							try {
 								const pair = await chooseNewCommand(this.plugin);
-								// Push directly to settings and save
+								// Push to explorerCommands
 								settings.explorerCommands.push(pair);
+								// Create corresponding ExplorerButtonItem
+								const item: ExplorerButtonItem = {
+									id: `custom-${pair.id}`,
+									name: pair.name,
+									ariaLabel: pair.name,
+									type: 'custom',
+									commandId: pair.id,
+									icon: pair.icon,
+									displayName: pair.displayName,
+									mode: pair.mode,
+									color: pair.color,
+									showOnFileTypes: pair.showOnFileTypes,
+									hideOnFileTypes: pair.hideOnFileTypes,
+									toggleIcon: pair.toggleIcon,
+									useActiveClass: pair.useActiveClass,
+									hidden: false,
+								};
+								settings.explorerButtonItems.push(item);
 								await this.saveSettings();
 								this.plugin.explorerManager?.reorder();
 								this.render(container);
@@ -338,6 +356,772 @@ export class ExplorerTab extends TabRenderer {
 		renderNativeButton('Collapse all', 'collapseAllButton', 'collapseAll');
 	}
 
+	private renderButtonItem(container: HTMLElement, item: ExplorerButtonItem, index: number): void {
+		const settings = this.getSettings();
+		const group = createSettingsGroup(container, undefined, 'ui-tweaker');
+		
+		// Store reference to other settings for collapsible functionality
+		const otherSettings: HTMLElement[] = [];
+
+		// Get the command pair for custom commands
+		const pair = item.type === 'custom' && item.commandId 
+			? settings.explorerCommands.find(c => c.id === item.commandId)
+			: null;
+
+		// Determine display name
+		const displayName = item.type === 'custom' && pair 
+			? (pair.displayName || pair.name)
+			: item.name;
+
+		// Map native button IDs to setting keys
+		const nativeButtonMap: Record<string, { settingKey: 'newNoteButton' | 'newFolderButton' | 'sortOrderButton' | 'autoRevealButton' | 'collapseAllButton', colorKey: 'newNote' | 'newFolder' | 'sortOrder' | 'autoReveal' | 'collapseAll' }> = {
+			'native-newNote': { settingKey: 'newNoteButton', colorKey: 'newNote' },
+			'native-newFolder': { settingKey: 'newFolderButton', colorKey: 'newFolder' },
+			'native-sortOrder': { settingKey: 'sortOrderButton', colorKey: 'sortOrder' },
+			'native-autoReveal': { settingKey: 'autoRevealButton', colorKey: 'autoReveal' },
+			'native-collapseAll': { settingKey: 'collapseAllButton', colorKey: 'collapseAll' },
+		};
+
+		const nativeButtonInfo = item.type === 'native' ? nativeButtonMap[item.id] : null;
+		const isHidden = nativeButtonInfo ? settings[nativeButtonInfo.settingKey] : item.hidden;
+		const color = nativeButtonInfo 
+			? settings.nativeExplorerButtonColors?.[nativeButtonInfo.colorKey]
+			: (item.color && item.color !== '#000000' ? item.color : undefined);
+		const iconOverride = nativeButtonInfo
+			? settings.nativeExplorerButtonIcons?.[nativeButtonInfo.colorKey]
+			: (item.icon || undefined);
+
+		group.addSetting((setting): void => {
+			// Completely prevent collapse on setting element - ONLY chevron can toggle (if present)
+			// For external buttons, prevent all collapse since there's no chevron
+			if (item.type === 'external') {
+				setting.settingEl.addEventListener('click', (e) => {
+					const target = e.target as HTMLElement;
+					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+					if (!isExtraButton) {
+						e.stopPropagation();
+						e.stopImmediatePropagation();
+						e.preventDefault();
+						return false;
+					}
+				}, true);
+				
+				setting.settingEl.addEventListener('click', (e) => {
+					const target = e.target as HTMLElement;
+					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+					if (!isExtraButton) {
+						e.stopPropagation();
+						e.stopImmediatePropagation();
+						e.preventDefault();
+						return false;
+					}
+				}, false);
+			} else {
+				// For native and custom buttons, allow chevron to toggle
+				setting.settingEl.addEventListener('click', (e) => {
+					const target = e.target as HTMLElement;
+					const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
+					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+					const isNameEdit = target.closest('.ui-tweaker-name-display') !== null || target.closest('.ui-tweaker-edit-icon') !== null || target.closest('.ui-tweaker-editable-name') !== null;
+					if (!isChevronClick && !isExtraButton && !isNameEdit) {
+						e.stopPropagation();
+						e.stopImmediatePropagation();
+						e.preventDefault();
+						return false;
+					}
+				}, true);
+				
+				setting.settingEl.addEventListener('click', (e) => {
+					const target = e.target as HTMLElement;
+					const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
+					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
+					const isNameEdit = target.closest('.ui-tweaker-name-display') !== null || target.closest('.ui-tweaker-edit-icon') !== null || target.closest('.ui-tweaker-editable-name') !== null;
+					if (!isChevronClick && !isExtraButton && !isNameEdit) {
+						e.stopPropagation();
+						e.stopImmediatePropagation();
+						e.preventDefault();
+						return false;
+					}
+				}, false);
+			}
+			
+			// Make nameEl a flex container so chevron can be positioned to the left
+			const nameEl = setting.nameEl;
+			setCssProps(nameEl, { display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' });
+			
+			// Add chevrons-up-down icon to the LEFT of the name (only for native and custom buttons)
+			let chevronContainer: HTMLElement | null = null;
+			let isExpanded = false;
+			if (item.type === 'native' || item.type === 'custom') {
+				chevronContainer = document.createElement('div');
+				chevronContainer.className = 'ui-tweaker-collapse-icon';
+				setCssProps(chevronContainer, { 
+					cursor: 'default',
+					background: 'transparent',
+					padding: '0',
+					margin: '0',
+					display: 'inline-flex',
+					alignItems: 'center',
+					justifyContent: 'center'
+				});
+				nameEl.insertBefore(chevronContainer, nameEl.firstChild);
+				isExpanded = this.expandedStates.get(item.id) ?? false;
+				setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
+				
+				// Toggle on chevron click
+				chevronContainer.addEventListener('click', (e) => {
+					e.stopPropagation();
+					e.stopImmediatePropagation();
+					e.preventDefault();
+					isExpanded = !isExpanded;
+					this.expandedStates.set(item.id, isExpanded);
+					setIcon(chevronContainer!, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
+					otherSettings.forEach(settingEl => {
+						setCssProps(settingEl, { display: isExpanded ? '' : 'none' });
+					});
+				});
+			}
+			
+			// Create name container (editable only for custom buttons)
+			const nameContainer = nameEl.createDiv({ cls: 'ui-tweaker-editable-name' });
+			setCssProps(nameContainer, { display: 'flex', alignItems: 'center', gap: '0.5rem' });
+			
+			// Function to create the display element with click handler
+			const createNameDisplay = (name: string) => {
+				nameContainer.empty();
+				
+				const display = nameContainer.createSpan({ 
+					text: name === displayName ? name : `${name} (${displayName})`,
+					cls: 'ui-tweaker-name-display'
+				});
+				
+				// Add pencil icon (only for custom buttons, not external)
+				if (item.type === 'custom') {
+					const iconContainer = nameContainer.createDiv({ cls: 'ui-tweaker-edit-icon' });
+					setCssProps(iconContainer, { opacity: '0.6' });
+					setIcon(iconContainer, 'lucide-pencil-line');
+					
+					// Make name and icon editable on click
+					const startEdit = () => {
+						const currentName = item.name;
+						
+						nameContainer.empty();
+						
+						const nameInput = nameContainer.createEl('input', {
+							type: 'text',
+							value: currentName
+						});
+						nameInput.addClass('mod-text-input');
+						
+						nameInput.focus();
+						nameInput.select();
+						
+						const saveName = () => {
+							nameInput.removeEventListener('blur', saveName);
+							
+							let newName = nameInput.value.trim();
+							if (!newName) {
+								newName = currentName;
+							}
+							item.name = newName;
+							
+							// Update command pair name if custom
+							if (pair) {
+								pair.name = newName;
+							}
+							
+							// Update button names
+							this.plugin.explorerManager?.updateButtonNames();
+							
+							void (async () => {
+								await this.saveSettings();
+								this.render(container);
+							})();
+						};
+						
+						nameInput.addEventListener('keydown', (e) => {
+							if (e.key === 'Enter') {
+								e.preventDefault();
+								saveName();
+							} else if (e.key === 'Escape') {
+								e.preventDefault();
+								createNameDisplay(currentName);
+							}
+						});
+						
+						nameInput.addEventListener('blur', saveName);
+					};
+					
+					display.addEventListener('click', startEdit);
+					iconContainer.addEventListener('click', startEdit);
+					
+					iconContainer.addEventListener('mouseenter', () => {
+						setCssProps(iconContainer, { opacity: '1' });
+					});
+					iconContainer.addEventListener('mouseleave', () => {
+						setCssProps(iconContainer, { opacity: '0.6' });
+					});
+				}
+			};
+			
+			// Create initial display
+			createNameDisplay(item.name);
+			
+			setting.setDesc('')
+				.addExtraButton((button) => {
+					// Icon preview (for custom commands and native with overrides)
+					if (item.type === 'custom' && pair) {
+						const iconEl = button.extraSettingsEl;
+						setIcon(iconEl, pair.icon);
+						iconEl.setAttribute('data-explorer-command-id', pair.id);
+						if (pair.color && pair.color !== '#000000') {
+							setCssProps(iconEl, { color: pair.color });
+						} else {
+							iconEl.style.removeProperty('color');
+						}
+						button.setTooltip('Change icon');
+						button.onClick(() => {
+							const modal = new IconPickerModal(this.app, (iconId) => {
+								void (async () => {
+									if (iconId && iconId !== pair.icon) {
+										pair.icon = iconId;
+										item.icon = iconId;
+										await this.saveSettings();
+										this.plugin.explorerManager?.reorder();
+										this.render(container);
+									}
+								})();
+							});
+							modal.open();
+						});
+					} else if (item.type === 'native' && iconOverride) {
+						const iconEl = button.extraSettingsEl;
+						setIcon(iconEl, iconOverride);
+						button.setTooltip('Change icon');
+						button.onClick(() => {
+							const modal = new IconPickerModal(this.app, (iconId) => {
+								void (async () => {
+									if (!nativeButtonInfo) return;
+									if (!settings.nativeExplorerButtonIcons) {
+										settings.nativeExplorerButtonIcons = {};
+									}
+									if (iconId) {
+										settings.nativeExplorerButtonIcons[nativeButtonInfo.colorKey] = iconId;
+									} else {
+										settings.nativeExplorerButtonIcons[nativeButtonInfo.colorKey] = undefined;
+									}
+									await this.saveSettings();
+									this.plugin.explorerManager?.applyNativeIconOverrides();
+									this.render(container);
+								})();
+							});
+							modal.open();
+						});
+					} else {
+						// No icon preview for external buttons or native without override
+						setCssProps(button.extraSettingsEl, { display: 'none' });
+					}
+					// Prevent icon flickering on hover by not updating on hover
+					button.extraSettingsEl.addEventListener('mouseenter', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('mouseleave', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+				})
+				.addExtraButton((button) => {
+					// Move up
+					button.setIcon('chevron-up');
+					if (index > 0) {
+						button.setTooltip('Move up');
+						button.onClick(() => {
+							// Preserve scroll position to prevent flickering
+							const scrollContainer = container.closest('.vertical-tab-content') || 
+								container.closest('.settings-content') || 
+								container.closest('.vertical-tab-content-container') ||
+								container;
+							const scrollPos = scrollContainer.scrollTop;
+							void (async () => {
+								arrayMoveMutable(settings.explorerButtonItems, index, index - 1);
+								await this.saveSettings();
+								this.plugin.explorerManager?.reorder();
+								this.render(container);
+								// Restore scroll position after render with multiple attempts
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+									// Also try after a short delay in case DOM isn't ready
+									setTimeout(() => {
+										scrollContainer.scrollTop = scrollPos;
+										// One more attempt after a longer delay
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 50);
+									}, 0);
+								});
+							})();
+						});
+					} else {
+						button.setTooltip('Already at top');
+						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
+						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
+					}
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+				})
+				.addExtraButton((button) => {
+					// Move down
+					button.setIcon('chevron-down');
+					if (index < settings.explorerButtonItems.length - 1) {
+						button.setTooltip('Move down');
+						button.onClick(() => {
+							// Preserve scroll position to prevent flickering
+							const scrollContainer = container.closest('.vertical-tab-content') || 
+								container.closest('.settings-content') || 
+								container.closest('.vertical-tab-content-container') ||
+								container;
+							const scrollPos = scrollContainer.scrollTop;
+							void (async () => {
+								arrayMoveMutable(settings.explorerButtonItems, index, index + 1);
+								await this.saveSettings();
+								this.plugin.explorerManager?.reorder();
+								this.render(container);
+								// Restore scroll position after render with multiple attempts
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+									// Also try after a short delay in case DOM isn't ready
+									setTimeout(() => {
+										scrollContainer.scrollTop = scrollPos;
+										// One more attempt after a longer delay
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 50);
+									}, 0);
+								});
+							})();
+						});
+					} else {
+						button.setTooltip('Already at bottom');
+						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
+						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
+					}
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+				});
+
+			// Delete button (only for custom commands)
+			if (item.type === 'custom') {
+				setting.addExtraButton((button) => {
+					button.setIcon('trash');
+					button.setTooltip('Delete');
+					button.extraSettingsEl.addClass('mod-warning');
+					setCssProps(button.extraSettingsEl, { color: 'var(--text-error)' });
+					button.onClick(() => {
+						void (async () => {
+							// Remove from both arrays
+							const itemIdx = settings.explorerButtonItems.indexOf(item);
+							if (itemIdx > -1) {
+								settings.explorerButtonItems.splice(itemIdx, 1);
+							}
+							if (pair) {
+								const cmdIdx = settings.explorerCommands.indexOf(pair);
+								if (cmdIdx > -1) {
+									settings.explorerCommands.splice(cmdIdx, 1);
+								}
+							}
+							await this.saveSettings();
+							this.plugin.explorerManager?.reorder();
+							this.render(container);
+						})();
+					});
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+				});
+			}
+
+			// Hide/Show toggle (for native and external buttons)
+			if ((item.type === 'native' && nativeButtonInfo) || item.type === 'external') {
+				setting.addExtraButton((button) => {
+					const iconEl = button.extraSettingsEl;
+					setIcon(iconEl, isHidden ? 'eye-off' : 'eye');
+					button.setTooltip(isHidden ? 'Show button' : 'Hide button');
+					button.onClick(() => {
+						void (async () => {
+							if (item.type === 'native' && nativeButtonInfo) {
+								settings[nativeButtonInfo.settingKey] = !settings[nativeButtonInfo.settingKey];
+								item.hidden = settings[nativeButtonInfo.settingKey];
+							} else if (item.type === 'external') {
+								item.hidden = !item.hidden;
+							}
+							await this.saveSettings();
+							const newIsHidden = item.hidden;
+							setIcon(iconEl, newIsHidden ? 'eye-off' : 'eye');
+							button.setTooltip(newIsHidden ? 'Show button' : 'Hide button');
+							this.plugin.explorerManager?.reorder();
+						})();
+					});
+					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+				});
+			}
+		});
+
+		// Collapsible settings section (only for native and custom)
+		if (item.type === 'native' || item.type === 'custom') {
+			// Color picker
+			if (item.type === 'native' && nativeButtonInfo) {
+				group.addSetting((setting): void => {
+					otherSettings.push(setting.settingEl);
+					const hasColor = color !== undefined;
+					
+					setting
+						.setName('Custom color')
+						.setDesc('Set a custom color for this icon')
+						.addColorPicker((colorPicker) => {
+							const currentColor = color ?? '#000000';
+							colorPicker.setValue(currentColor);
+							
+							const controlEl = setting.controlEl;
+							controlEl.addEventListener('click', (e) => e.stopPropagation());
+							
+							setTimeout(() => {
+								const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
+								if (colorInput) {
+									colorInput.addEventListener('click', (e) => e.stopPropagation());
+								}
+							}, 0);
+							
+							if (hasColor) {
+								setTimeout(() => {
+									const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
+									const resetButton = controlEl.createEl('button', {
+										cls: 'clickable-icon ui-tweaker-color-reset',
+										attr: { 'aria-label': 'Reset to default color' }
+									});
+									setIcon(resetButton, 'lucide-rotate-cw');
+									setCssProps(resetButton, { marginRight: '0.5rem' });
+									resetButton.addEventListener('click', (e) => {
+										e.stopPropagation();
+										e.stopImmediatePropagation();
+										e.preventDefault();
+										void (async () => {
+											if (!settings.nativeExplorerButtonColors) {
+												settings.nativeExplorerButtonColors = {};
+											}
+											settings.nativeExplorerButtonColors[nativeButtonInfo.colorKey] = undefined;
+											await this.saveSettings();
+											this.plugin.explorerManager?.applyNativeIconOverrides();
+											this.render(container);
+										})();
+									});
+									if (colorPickerEl) {
+										controlEl.insertBefore(resetButton, colorPickerEl);
+									}
+								}, 0);
+							}
+							
+							colorPicker.onChange((value) => {
+								void (async () => {
+									if (!settings.nativeExplorerButtonColors) {
+										settings.nativeExplorerButtonColors = {};
+									}
+									const newColor = value === '#000000' ? undefined : value;
+									settings.nativeExplorerButtonColors[nativeButtonInfo.colorKey] = newColor;
+									await this.saveSettings();
+									this.plugin.explorerManager?.applyNativeIconOverrides();
+									
+									// Update reset button visibility without full re-render
+									const existingReset = controlEl.querySelector('.ui-tweaker-color-reset');
+									if (newColor && !existingReset) {
+										// Add reset button
+										const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
+										const resetButton = controlEl.createEl('button', {
+											cls: 'clickable-icon ui-tweaker-color-reset',
+											attr: { 'aria-label': 'Reset to default color' }
+										});
+										setIcon(resetButton, 'lucide-rotate-cw');
+										setCssProps(resetButton, { marginRight: '0.5rem' });
+										resetButton.addEventListener('click', (e) => {
+											e.stopPropagation();
+											e.stopImmediatePropagation();
+											e.preventDefault();
+											void (async () => {
+												if (!settings.nativeExplorerButtonColors) {
+													settings.nativeExplorerButtonColors = {};
+												}
+												settings.nativeExplorerButtonColors[nativeButtonInfo.colorKey] = undefined;
+												await this.saveSettings();
+												this.plugin.explorerManager?.applyNativeIconOverrides();
+												this.render(container);
+											})();
+										});
+										if (colorPickerEl) {
+											controlEl.insertBefore(resetButton, colorPickerEl);
+										}
+									} else if (!newColor && existingReset) {
+										// Remove reset button
+										existingReset.remove();
+									}
+								})();
+							});
+						});
+				});
+
+				// Icon override
+				group.addSetting((setting): void => {
+					otherSettings.push(setting.settingEl);
+					const hasIconOverride = iconOverride !== undefined;
+					
+					setting
+						.setName('Icon override')
+						.setDesc('Override the default icon for this button')
+						.addButton((button) => {
+							const currentIcon = iconOverride || 'Default';
+							button.setButtonText(currentIcon === 'Default' ? 'Set icon...' : currentIcon).onClick(() => {
+								const modal = new IconPickerModal(this.app, (iconId) => {
+									void (async () => {
+										if (!settings.nativeExplorerButtonIcons) {
+											settings.nativeExplorerButtonIcons = {};
+										}
+										if (iconId) {
+											settings.nativeExplorerButtonIcons[nativeButtonInfo.colorKey] = iconId;
+										} else {
+											settings.nativeExplorerButtonIcons[nativeButtonInfo.colorKey] = undefined;
+										}
+										await this.saveSettings();
+										this.plugin.explorerManager?.applyNativeIconOverrides();
+										this.render(container);
+									})();
+								});
+								modal.open();
+							});
+							button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+							
+							// Add reset button if icon override is set
+							if (hasIconOverride) {
+								setTimeout(() => {
+									const controlEl = setting.controlEl;
+									const buttonEl = controlEl.querySelector('button') || controlEl.lastElementChild;
+									
+									const resetButton = controlEl.createEl('button', {
+										cls: 'clickable-icon ui-tweaker-icon-override-reset',
+										attr: { 'aria-label': 'Reset icon override' }
+									});
+									setIcon(resetButton, 'lucide-rotate-cw');
+									setCssProps(resetButton, { marginRight: '0.5rem' });
+									resetButton.addEventListener('click', (e) => {
+										e.stopPropagation();
+										e.stopImmediatePropagation();
+										e.preventDefault();
+										void (async () => {
+											if (!settings.nativeExplorerButtonIcons) {
+												settings.nativeExplorerButtonIcons = {};
+											}
+											settings.nativeExplorerButtonIcons[nativeButtonInfo.colorKey] = undefined;
+											await this.saveSettings();
+											this.plugin.explorerManager?.applyNativeIconOverrides();
+											this.render(container);
+										})();
+									});
+									
+									// Insert reset button before the main button
+									if (buttonEl) {
+										controlEl.insertBefore(resetButton, buttonEl);
+									} else {
+										controlEl.insertBefore(resetButton, controlEl.firstChild);
+									}
+								}, 0);
+							}
+						});
+				});
+			} else if (item.type === 'custom' && pair) {
+				// Custom command settings (device mode, color, toggle icon, etc.)
+				// Device mode
+				group.addSetting((setting): void => {
+					otherSettings.push(setting.settingEl);
+					setting
+						.setName('Device mode')
+						.setDesc('Choose which devices this button appears on')
+						.addDropdown((dropdown) => {
+							const appId = (this.app as { appId?: string }).appId || 'this-device';
+							dropdown
+								.addOption('any', 'All devices')
+								.addOption('desktop', 'Desktop only')
+								.addOption('mobile', 'Mobile only')
+								.addOption(appId, 'This device')
+								.setValue(pair.mode || 'any')
+								.onChange((value) => {
+									void (async () => {
+										pair.mode = value;
+										item.mode = value;
+										await this.saveSettings();
+										this.plugin.explorerManager?.reorder();
+										this.render(container);
+									})();
+								});
+							dropdown.selectEl.addEventListener('click', (e) => e.stopPropagation());
+						});
+				});
+
+				// Custom color picker
+				group.addSetting((setting): void => {
+					otherSettings.push(setting.settingEl);
+					const hasColor = pair.color !== undefined;
+					
+					setting
+						.setName('Custom color')
+						.setDesc('Set a custom color for this icon')
+						.addColorPicker((colorPicker) => {
+							const currentColor = pair.color ?? '#000000';
+							colorPicker.setValue(currentColor);
+							
+							const controlEl = setting.controlEl;
+							controlEl.addEventListener('click', (e) => e.stopPropagation());
+							
+							setTimeout(() => {
+								const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
+								if (colorInput) {
+									colorInput.addEventListener('click', (e) => e.stopPropagation());
+								}
+							}, 0);
+							
+							if (hasColor) {
+								setTimeout(() => {
+									const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
+									const resetButton = controlEl.createEl('button', {
+										cls: 'clickable-icon ui-tweaker-color-reset',
+										attr: { 'aria-label': 'Reset to default color' }
+									});
+									setIcon(resetButton, 'lucide-rotate-cw');
+									setCssProps(resetButton, { marginRight: '0.5rem' });
+									resetButton.addEventListener('click', (e) => {
+										e.stopPropagation();
+										e.stopImmediatePropagation();
+										e.preventDefault();
+										void (async () => {
+											pair.color = undefined;
+											item.color = undefined;
+											await this.saveSettings();
+											this.plugin.explorerManager?.reorder();
+											this.render(container);
+										})();
+									});
+									if (colorPickerEl) {
+										controlEl.insertBefore(resetButton, colorPickerEl);
+									}
+								}, 0);
+							}
+							
+							colorPicker.onChange((value) => {
+								const newColor = value === '#000000' ? undefined : value;
+								pair.color = newColor;
+								item.color = newColor;
+								
+								// Update icon preview color in real-time
+								const iconButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
+								if (iconButton) {
+									if (newColor && newColor !== '#000000') {
+										setCssProps(iconButton, { color: newColor });
+									} else {
+										iconButton.style.removeProperty('color');
+									}
+								}
+								
+								// Update reset button visibility without full re-render
+								const controlEl = setting.controlEl;
+								const existingReset = controlEl.querySelector('.ui-tweaker-color-reset');
+								if (newColor && !existingReset) {
+									// Add reset button
+									const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
+									const resetButton = controlEl.createEl('button', {
+										cls: 'clickable-icon ui-tweaker-color-reset',
+										attr: { 'aria-label': 'Reset to default color' }
+									});
+									setIcon(resetButton, 'lucide-rotate-cw');
+									setCssProps(resetButton, { marginRight: '0.5rem' });
+									resetButton.addEventListener('click', (e) => {
+										e.stopPropagation();
+										e.stopImmediatePropagation();
+										e.preventDefault();
+										void (async () => {
+											pair.color = undefined;
+											item.color = undefined;
+											await this.saveSettings();
+											this.plugin.explorerManager?.reorder();
+											this.render(container);
+										})();
+									});
+									if (colorPickerEl) {
+										controlEl.insertBefore(resetButton, colorPickerEl);
+									}
+								} else if (!newColor && existingReset) {
+									// Remove reset button
+									existingReset.remove();
+								}
+								
+								void (async () => {
+									await this.saveSettings();
+									this.plugin.explorerManager?.reorder();
+								})();
+							});
+						});
+				});
+
+				// Toggle icon configuration
+				group.addSetting((setting): void => {
+					otherSettings.push(setting.settingEl);
+					
+					setting
+						.setName('Toggle icon')
+						.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
+						.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
+						.addButton((button) => {
+							const currentToggleIcon = pair.toggleIcon || 'None';
+							button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
+								const modal = new IconPickerModal(this.app, (iconId) => {
+									void (async () => {
+										if (iconId) {
+											pair.toggleIcon = iconId;
+											item.toggleIcon = iconId;
+										} else {
+											pair.toggleIcon = undefined;
+											item.toggleIcon = undefined;
+										}
+										await this.saveSettings();
+										this.plugin.explorerManager?.reorder();
+										this.render(container);
+									})();
+								});
+								modal.open();
+							});
+							button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+						});
+				});
+
+				// Use active class option
+				group.addSetting((setting): void => {
+					otherSettings.push(setting.settingEl);
+					setting
+						.setName('Use active class instead of icon swap')
+						.setDesc('When toggled on, add is-active class instead of swapping icon (explorer only)')
+						.addToggle((toggle) => {
+							toggle.setValue(pair.useActiveClass ?? false);
+							toggle.onChange((value) => {
+								void (async () => {
+									pair.useActiveClass = value;
+									item.useActiveClass = value;
+									await this.saveSettings();
+									this.plugin.explorerManager?.reorder();
+									this.render(container);
+								})();
+							});
+							toggle.toggleEl.addEventListener('click', (e) => e.stopPropagation());
+						});
+				});
+			}
+		}
+
+		// Apply collapse state
+		setTimeout(() => {
+			const savedExpanded = this.expandedStates.get(item.id) ?? false;
+			otherSettings.forEach(settingEl => {
+				setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
+			});
+		}, 0);
+	}
+
 	private renderCommandItem(container: HTMLElement, pair: CommandIconPair, index: number): void {
 		const settings = this.getSettings();
 		const group = createSettingsGroup(container, undefined, 'ui-tweaker');
@@ -540,11 +1324,29 @@ export class ExplorerTab extends TabRenderer {
 					if (index > 0) {
 						button.setTooltip('Move up');
 						button.onClick(() => {
+							// Preserve scroll position to prevent flickering
+							const scrollContainer = container.closest('.vertical-tab-content') || 
+								container.closest('.settings-content') || 
+								container.closest('.vertical-tab-content-container') ||
+								container;
+							const scrollPos = scrollContainer.scrollTop;
 							void (async () => {
 								arrayMoveMutable(settings.explorerCommands, index, index - 1);
 								await this.saveSettings();
 								this.plugin.explorerManager?.reorder();
 								this.render(container);
+								// Restore scroll position after render with multiple attempts
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+									// Also try after a short delay in case DOM isn't ready
+									setTimeout(() => {
+										scrollContainer.scrollTop = scrollPos;
+										// One more attempt after a longer delay
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 50);
+									}, 0);
+								});
 							})();
 						});
 					} else {
@@ -562,11 +1364,29 @@ export class ExplorerTab extends TabRenderer {
 					if (index < settings.explorerCommands.length - 1) {
 						button.setTooltip('Move down');
 						button.onClick(() => {
+							// Preserve scroll position to prevent flickering
+							const scrollContainer = container.closest('.vertical-tab-content') || 
+								container.closest('.settings-content') || 
+								container.closest('.vertical-tab-content-container') ||
+								container;
+							const scrollPos = scrollContainer.scrollTop;
 							void (async () => {
 								arrayMoveMutable(settings.explorerCommands, index, index + 1);
 								await this.saveSettings();
 								this.plugin.explorerManager?.reorder();
 								this.render(container);
+								// Restore scroll position after render with multiple attempts
+								requestAnimationFrame(() => {
+									scrollContainer.scrollTop = scrollPos;
+									// Also try after a short delay in case DOM isn't ready
+									setTimeout(() => {
+										scrollContainer.scrollTop = scrollPos;
+										// One more attempt after a longer delay
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 50);
+									}, 0);
+								});
 							})();
 						});
 					} else {
@@ -700,27 +1520,67 @@ export class ExplorerTab extends TabRenderer {
 					
 					colorPicker.onChange((value) => {
 						// If set to black (#000000), treat as "no custom color" and remove it
-						if (value === '#000000') {
-							pair.color = undefined;
-						} else {
-							pair.color = value;
-						}
+						const newColor = value === '#000000' ? undefined : value;
+						pair.color = newColor;
 						
 						// Update icon preview color in real-time
 						const iconButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 						if (iconButton) {
-							if (pair.color && pair.color !== '#000000') {
-								setCssProps(iconButton, { color: pair.color });
+							if (newColor && newColor !== '#000000') {
+								setCssProps(iconButton, { color: newColor });
 							} else {
 								iconButton.style.removeProperty('color');
 							}
 						}
 						
-						// Save and reorder, then re-render to show/hide reset button
+						// Update reset button visibility without full re-render
+						const controlEl = setting.controlEl;
+						const existingReset = controlEl.querySelector('.ui-tweaker-color-reset');
+						if (newColor && !existingReset) {
+							// Add reset button
+							const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
+							const resetButton = controlEl.createEl('button', {
+								cls: 'clickable-icon ui-tweaker-color-reset',
+								attr: { 'aria-label': 'Reset to default color' }
+							});
+							setIcon(resetButton, 'lucide-rotate-cw');
+							setCssProps(resetButton, { marginRight: '0.5rem' });
+							resetButton.addEventListener('click', (e) => {
+								e.stopPropagation();
+								e.stopImmediatePropagation();
+								e.preventDefault();
+								void (async () => {
+									// Remove color entirely
+									pair.color = undefined;
+									
+									// Update icon preview to remove color
+									const iconButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
+									if (iconButton) {
+										iconButton.style.removeProperty('color');
+									}
+									
+									await this.saveSettings();
+									this.plugin.explorerManager?.reorder();
+									this.render(container);
+								})();
+							});
+							
+							// Insert reset button before color picker
+							if (colorPickerEl) {
+								controlEl.insertBefore(resetButton, colorPickerEl);
+							} else {
+								// Fallback: insert at start
+								controlEl.insertBefore(resetButton, controlEl.firstChild);
+							}
+						} else if (!newColor && existingReset) {
+							// Remove reset button
+							existingReset.remove();
+						}
+						
+						// Save and reorder (no full re-render to prevent flickering)
 						void (async () => {
 							await this.saveSettings();
 							this.plugin.explorerManager?.reorder();
-							this.render(container);
 						})();
 					});
 				});

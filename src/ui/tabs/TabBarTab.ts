@@ -286,6 +286,10 @@ export class TabBarTab extends TabRenderer {
 									// Also try after a short delay in case DOM isn't ready
 									setTimeout(() => {
 										scrollContainer.scrollTop = scrollPos;
+										// One more attempt after a longer delay
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 50);
 									}, 0);
 								});
 							})();
@@ -322,6 +326,10 @@ export class TabBarTab extends TabRenderer {
 									// Also try after a short delay in case DOM isn't ready
 									setTimeout(() => {
 										scrollContainer.scrollTop = scrollPos;
+										// One more attempt after a longer delay
+										setTimeout(() => {
+											scrollContainer.scrollTop = scrollPos;
+										}, 50);
 									}, 0);
 								});
 							})();

@@ -35,3 +35,21 @@ export interface StatusBarItem {
 	mode?: Mode; // Device mode (for custom items)
 	sticky?: 'left' | 'right' | false; // Stick item to far left or far right of status bar
 }
+
+export interface ExplorerButtonItem {
+	id: string; // Unique identifier (e.g., `native-newNote`, `external-commander-123`, `custom-commandId`)
+	name: string; // Display name (editable)
+	ariaLabel: string; // Original aria-label for identification
+	type: 'native' | 'external' | 'custom'; // Button type
+	commandId?: string; // For custom commands: the command ID to execute
+	hidden?: boolean; // Whether button is hidden
+	// Properties from CommandIconPair for custom commands
+	icon?: string; // Icon ID (for custom commands and native with overrides)
+	displayName?: string; // Original command display name (for custom commands)
+	mode?: Mode; // Device mode (for custom commands)
+	color?: string; // Custom color for icon
+	showOnFileTypes?: string; // Show only on these file types
+	hideOnFileTypes?: string; // Never show on these file types
+	toggleIcon?: string; // Icon to show when command is toggled on
+	useActiveClass?: boolean; // For explorer only: use is-active class instead of icon swap
+}

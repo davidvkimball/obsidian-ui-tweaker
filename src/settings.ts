@@ -2,7 +2,7 @@
  * Settings interface and defaults
  */
 
-import { UIVisibilityState, MobileNavPosition, CommandIconPair, StatusBarItem } from './types';
+import { UIVisibilityState, MobileNavPosition, CommandIconPair, StatusBarItem, ExplorerButtonItem } from './types';
 
 export interface UISettings {
 	// Auto-hide elements (Show/Hide/Reveal)
@@ -80,8 +80,11 @@ export interface UISettings {
 	// Status Bar items (unified list of existing + custom)
 	statusBarItems: StatusBarItem[];
 
-	// Explorer custom commands
+	// Explorer custom commands (legacy - kept for migration)
 	explorerCommands: CommandIconPair[];
+
+	// Explorer button items (unified list of native + external + custom)
+	explorerButtonItems: ExplorerButtonItem[];
 
 	// Native explorer button colors (optional)
 	nativeExplorerButtonColors?: {
@@ -180,6 +183,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 
 	// Explorer
 	explorerCommands: [],
+	explorerButtonItems: [],
 
 	// Native explorer button colors
 	nativeExplorerButtonColors: {
