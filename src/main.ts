@@ -271,6 +271,9 @@ export default class UITweakerPlugin extends Plugin {
 	private setupHelpButtonReplacement() {
 		// Only proceed if replacement is enabled
 		if (!this.settings.helpButtonReplacement?.enabled) {
+			if (this.helpButtonObserver) {
+				this.helpButtonObserver.disconnect();
+			}
 			this.restoreHelpButton();
 			return;
 		}
@@ -316,9 +319,6 @@ export default class UITweakerPlugin extends Plugin {
 		if (this.helpButtonObserver) {
 			this.helpButtonObserver.disconnect();
 		}
-
-		// Ensure we have the latest settings
-		await this.loadSettings();
 
 		// Update CSS first (this will hide the help button globally)
 		this.updateHelpButtonCSS();
@@ -384,6 +384,13 @@ export default class UITweakerPlugin extends Plugin {
 			// Clear any existing click handlers
 			customButton.onclick = null;
 			
+			// Ensure the button is visible and properly aligned
+			setCssProps(customButton, {
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center'
+			});
+			
 			// Replace the icon using Obsidian's setIcon function
 			const iconContainer = customButton.querySelector('svg')?.parentElement || customButton;
 			const iconId = this.settings.helpButtonReplacement?.iconId;
@@ -425,8 +432,9 @@ export default class UITweakerPlugin extends Plugin {
 				}
 			}, true); // Use capture phase to ensure we handle it first
 
-			// Insert the custom button right after the original (hidden) button
-			helpButton.parentElement?.insertBefore(customButton, helpButton.nextSibling);
+			// Insert the custom button right before the original (hidden) button
+			// This preserves the CSS :first-child behavior if needed
+			helpButton.parentElement?.insertBefore(customButton, helpButton);
 			
 			// Store reference to custom button
 			this.customHelpButton = customButton;
@@ -524,13 +532,17 @@ export default class UITweakerPlugin extends Plugin {
 			document.body.classList.remove('ui-tweaker-hide-help-button');
 		}
 
-		// Remove the custom button (only if replacement is disabled)
-		if (!this.settings.helpButtonReplacement?.enabled && this.customHelpButton) {
-			if (document.body.contains(this.customHelpButton)) {
+		// Remove the custom button
+		if (this.customHelpButton) {
+			if (this.customHelpButton.parentElement) {
 				this.customHelpButton.remove();
 			}
 			this.customHelpButton = undefined;
 		}
+
+		// Clean up any remaining custom buttons in the DOM just in case
+		const existingReplacements = document.querySelectorAll('.ui-tweaker-help-replacement');
+		existingReplacements.forEach(el => el.remove());
 	}
 
 	private setupSyncButtonReplacement() {
@@ -580,9 +592,6 @@ export default class UITweakerPlugin extends Plugin {
 		if (this.syncButtonObserver) {
 			this.syncButtonObserver.disconnect();
 		}
-
-		// Ensure we have the latest settings
-		await this.loadSettings();
 
 		// Update CSS first (this will hide the sync button globally)
 		this.updateSyncButtonCSS();

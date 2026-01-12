@@ -10,6 +10,7 @@ import { UISettings } from '../../settings';
 
 export class MobileTab extends TabRenderer {
 	render(container: HTMLElement): void {
+		container.empty();
 		// ========================================
 		// Mobile
 		// ========================================
@@ -37,7 +38,7 @@ export class MobileTab extends TabRenderer {
 		this.addToggleSetting(mobileGroup, 'Hide sync icon', 'Hide sync status icons in mobile interface.', 'hideMobileSyncIcon');
 
 		// Replace sync button with custom action
-		this.renderSyncButtonReplacement(mobileGroup);
+		this.renderSyncButtonReplacement(container, mobileGroup);
 
 		// ========================================
 		// Mobile navigation menu
@@ -90,7 +91,7 @@ export class MobileTab extends TabRenderer {
 		});
 	}
 
-	private renderSyncButtonReplacement(group: SettingsContainer): void {
+	private renderSyncButtonReplacement(container: HTMLElement, group: SettingsContainer): void {
 		const settings = this.getSettings();
 		if (!settings.syncButtonReplacement) {
 			settings.syncButtonReplacement = {
@@ -114,7 +115,22 @@ export class MobileTab extends TabRenderer {
 							};
 						}
 						settings.syncButtonReplacement.enabled = value;
-						void this.saveSettings();
+						
+						void (async () => {
+							await this.saveSettings();
+							
+							// Refresh the current tab content while preserving scroll
+							// Defer the render to prevent the UI from getting "stuck"
+							setTimeout(() => {
+								const scrollPos = container.scrollTop;
+								this.render(container);
+								
+								// Restore scroll position after render
+								requestAnimationFrame(() => {
+									container.scrollTop = scrollPos;
+								});
+							}, 50);
+						})();
 					})
 				);
 		});
@@ -161,7 +177,18 @@ export class MobileTab extends TabRenderer {
 									};
 								}
 								settings.syncButtonReplacement.commandId = commandId;
-								void this.saveSettings();
+								void (async () => {
+									await this.saveSettings();
+									
+									// Refresh the current tab content while preserving scroll
+									setTimeout(() => {
+										const scrollPos = container.scrollTop;
+										this.render(container);
+										requestAnimationFrame(() => {
+											container.scrollTop = scrollPos;
+										});
+									}, 50);
+								})();
 							});
 							modal.open();
 						})
@@ -193,7 +220,18 @@ export class MobileTab extends TabRenderer {
 									};
 								}
 								settings.syncButtonReplacement.iconId = iconId;
-								void this.saveSettings();
+								void (async () => {
+									await this.saveSettings();
+									
+									// Refresh the current tab content while preserving scroll
+									setTimeout(() => {
+										const scrollPos = container.scrollTop;
+										this.render(container);
+										requestAnimationFrame(() => {
+											container.scrollTop = scrollPos;
+										});
+									}, 50);
+								})();
 							});
 							modal.open();
 						})

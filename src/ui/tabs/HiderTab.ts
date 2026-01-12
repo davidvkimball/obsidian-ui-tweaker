@@ -11,6 +11,7 @@ import { UIVisibilityState } from '../../types';
 
 export class HiderTab extends TabRenderer {
 	render(container: HTMLElement): void {
+		container.empty();
 		// ========================================
 		// Auto-hide elements
 		// ========================================
@@ -98,7 +99,7 @@ export class HiderTab extends TabRenderer {
 		);
 
 		// Replace help button with custom action
-		this.renderHelpButtonReplacement(vaultProfileGroup);
+		this.renderHelpButtonReplacement(container, vaultProfileGroup);
 
 		this.addVisibilitySetting(
 			vaultProfileGroup,
@@ -237,7 +238,7 @@ export class HiderTab extends TabRenderer {
 		});
 	}
 
-	private renderHelpButtonReplacement(group: SettingsContainer): void {
+	private renderHelpButtonReplacement(container: HTMLElement, group: SettingsContainer): void {
 		const settings = this.getSettings();
 		if (!settings.helpButtonReplacement) {
 			settings.helpButtonReplacement = {
@@ -261,7 +262,22 @@ export class HiderTab extends TabRenderer {
 							};
 						}
 						settings.helpButtonReplacement.enabled = value;
-						void this.saveSettings();
+						
+						void (async () => {
+							await this.saveSettings();
+							
+							// Refresh the current tab content while preserving scroll
+							// Defer the render to prevent the UI from getting "stuck"
+							setTimeout(() => {
+								const scrollPos = container.scrollTop;
+								this.render(container);
+								
+								// Restore scroll position after render
+								requestAnimationFrame(() => {
+									container.scrollTop = scrollPos;
+								});
+							}, 50);
+						})();
 					})
 				);
 		});
@@ -308,7 +324,18 @@ export class HiderTab extends TabRenderer {
 									};
 								}
 								settings.helpButtonReplacement.commandId = commandId;
-								void this.saveSettings();
+								void (async () => {
+									await this.saveSettings();
+									
+									// Refresh the current tab content while preserving scroll
+									setTimeout(() => {
+										const scrollPos = container.scrollTop;
+										this.render(container);
+										requestAnimationFrame(() => {
+											container.scrollTop = scrollPos;
+										});
+									}, 50);
+								})();
 							});
 							modal.open();
 						})
@@ -340,7 +367,18 @@ export class HiderTab extends TabRenderer {
 									};
 								}
 								settings.helpButtonReplacement.iconId = iconId;
-								void this.saveSettings();
+								void (async () => {
+									await this.saveSettings();
+									
+									// Refresh the current tab content while preserving scroll
+									setTimeout(() => {
+										const scrollPos = container.scrollTop;
+										this.render(container);
+										requestAnimationFrame(() => {
+											container.scrollTop = scrollPos;
+										});
+									}, 50);
+								})();
 							});
 							modal.open();
 						})

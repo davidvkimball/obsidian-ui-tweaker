@@ -939,19 +939,15 @@ body.ui-tweaker-hide-sync-button .is-mobile .status-bar > .plugin-sync:not(.ui-t
    Custom Button Display
    ======================================== */
 
-/* Ensure custom replacement buttons are visible */
+/* Ensure custom replacement buttons are visible and properly aligned */
 .ui-tweaker-help-replacement,
-.ui-tweaker-sync-replacement {
-	display: block !important;
-}
-
-/* Center icon within custom sync replacement button */
 .ui-tweaker-sync-replacement {
 	display: flex !important;
 	align-items: center !important;
 	justify-content: center !important;
 }
 
+.ui-tweaker-help-replacement svg,
 .ui-tweaker-sync-replacement svg {
 	margin: 0 !important;
 }
