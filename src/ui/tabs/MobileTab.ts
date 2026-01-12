@@ -96,7 +96,7 @@ export class MobileTab extends TabRenderer {
 		if (!settings.syncButtonReplacement) {
 			settings.syncButtonReplacement = {
 				enabled: false,
-				commandId: 'open-settings',
+				commandId: 'ui-tweaker:open-settings',
 				iconId: 'wrench',
 			};
 		}
@@ -110,7 +110,7 @@ export class MobileTab extends TabRenderer {
 						if (!settings.syncButtonReplacement) {
 							settings.syncButtonReplacement = {
 								enabled: true,
-								commandId: '',
+								commandId: 'ui-tweaker:open-settings',
 								iconId: 'wrench',
 							};
 						}
@@ -144,13 +144,7 @@ export class MobileTab extends TabRenderer {
 					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
 					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
 						const commands = commandRegistry.listCommands();
-						const command = commands.find((cmd) => 
-							cmd && cmd.name && (
-								cmd.id === commandId || 
-								cmd.id === commandId.replace(/^ui-tweaker:+/g, '') ||
-								cmd.id === `ui-tweaker:${commandId.replace(/^ui-tweaker:+/g, '')}`
-							)
-						);
+						const command = commands.find((cmd) => cmd && cmd.id === commandId);
 						if (command?.name) {
 							return command.name;
 						}
@@ -172,7 +166,7 @@ export class MobileTab extends TabRenderer {
 								if (!settings.syncButtonReplacement) {
 									settings.syncButtonReplacement = {
 										enabled: true,
-										commandId: '',
+										commandId: 'ui-tweaker:open-settings',
 										iconId: 'wrench',
 									};
 								}
@@ -215,7 +209,7 @@ export class MobileTab extends TabRenderer {
 								if (!settings.syncButtonReplacement) {
 									settings.syncButtonReplacement = {
 										enabled: true,
-										commandId: 'open-settings',
+										commandId: 'ui-tweaker:open-settings',
 										iconId: 'wrench',
 									};
 								}

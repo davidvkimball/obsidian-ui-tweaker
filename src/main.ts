@@ -157,12 +157,6 @@ export default class UITweakerPlugin extends Plugin {
 				if (!this.settings.helpButtonReplacement.iconId) {
 					this.settings.helpButtonReplacement.iconId = 'wrench';
 				}
-				// Migrate old command IDs (remove ui-tweaker: prefix)
-				if (this.settings.helpButtonReplacement.commandId?.startsWith('ui-tweaker:')) {
-					this.settings.helpButtonReplacement.commandId = this.settings.helpButtonReplacement.commandId.replace(/^ui-tweaker:+/g, '');
-					// Save migrated settings
-					await this.saveSettings();
-				}
 			}
 			
 			// Ensure syncButtonReplacement structure exists
@@ -176,12 +170,6 @@ export default class UITweakerPlugin extends Plugin {
 				// Ensure iconId is defined even if syncButtonReplacement exists
 				if (!this.settings.syncButtonReplacement.iconId) {
 					this.settings.syncButtonReplacement.iconId = 'wrench';
-				}
-				// Migrate old command IDs (remove ui-tweaker: prefix)
-				if (this.settings.syncButtonReplacement.commandId?.startsWith('ui-tweaker:')) {
-					this.settings.syncButtonReplacement.commandId = this.settings.syncButtonReplacement.commandId.replace(/^ui-tweaker:+/g, '');
-					// Save migrated settings
-					await this.saveSettings();
 				}
 			}
 			
