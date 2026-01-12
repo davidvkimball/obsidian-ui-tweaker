@@ -48,6 +48,9 @@ export class ExplorerManager {
 			// Add buttons to all existing explorers
 			this.addButtonsToAllLeaves();
 			
+			// Reorder immediately to ensure correct order on startup
+			this.reorder();
+			
 			// Set up mutation observer for external button detection (after explorers are ready)
 			setTimeout(() => {
 				this.setupMutationObserver();
@@ -69,55 +72,18 @@ export class ExplorerManager {
 	}
 
 	private addButtonsToExplorer(leaf: WorkspaceLeaf): void {
-		// Find the nav-buttons-container (like Commander does)
-		const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
-		if (!navButtonsContainer) {
-			return;
-		}
-
-		// Add buttons for each custom command
-		for (const pair of this.plugin.settings.explorerCommands) {
-			this.addExplorerButton(navButtonsContainer, pair, leaf);
-		}
+		// Just reorder - it will create missing custom buttons and position everything correctly
+		this.reorder();
 	}
 
 	/**
 	 * Migrate existing explorerCommands to explorerButtonItems
 	 */
 	public migrateExplorerCommands(): void {
-		// Only migrate if explorerButtonItems is empty and explorerCommands has items
-		if (this.plugin.settings.explorerButtonItems.length === 0 && 
-			this.plugin.settings.explorerCommands.length > 0) {
-			
-			// Convert custom commands
-			for (const command of this.plugin.settings.explorerCommands) {
-				const item: ExplorerButtonItem = {
-					id: `custom-${command.id}`,
-					name: command.name,
-					ariaLabel: command.name,
-					type: 'custom',
-					commandId: command.id,
-					icon: command.icon,
-					displayName: command.displayName,
-					mode: command.mode,
-					color: command.color,
-					showOnFileTypes: command.showOnFileTypes,
-					hideOnFileTypes: command.hideOnFileTypes,
-					toggleIcon: command.toggleIcon,
-					useActiveClass: command.useActiveClass,
-					hidden: false,
-				};
-				this.plugin.settings.explorerButtonItems.push(item);
-			}
-
-			// Detect native buttons and add them
-			this.consolidateSettingsAndElements();
-
-			void this.plugin.saveSettings();
-		}
+		// ... existing code ...
 	}
 
-	private addExplorerButton(container: HTMLElement, pair: CommandIconPair, leaf: WorkspaceLeaf): void {
+	private createOrUpdateExplorerButton(container: HTMLElement, pair: CommandIconPair, leaf: WorkspaceLeaf): HTMLElement | null {
 		// Check if button already exists (like Commander)
 		const existingButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 		if (existingButton) {
@@ -131,12 +97,12 @@ export class ExplorerManager {
 			}
 			// Update toggle state
 			this.updateButtonToggleState(existingButton, pair);
-			return;
+			return existingButton;
 		}
 
 		// Check device mode
 		if (!isModeActive(pair.mode, this.plugin)) {
-			return;
+			return null;
 		}
 
 		// Create button with native CSS classes (exactly like Commander)
@@ -215,6 +181,7 @@ export class ExplorerManager {
 
 		// Append button to container (exactly like Commander)
 		container.appendChild(button);
+		return button;
 	}
 
 	/**
@@ -487,7 +454,10 @@ export class ExplorerManager {
 					// Recreate custom command button
 					const commandPair = this.plugin.settings.explorerCommands.find(c => c.id === item.commandId);
 					if (commandPair) {
-						this.addExplorerButton(navButtonsContainer, commandPair, leaf);
+						const newButton = this.createOrUpdateExplorerButton(navButtonsContainer, commandPair, leaf);
+						if (newButton) {
+							orderedButtons.push(newButton);
+						}
 					}
 				}
 			}
