@@ -88,7 +88,10 @@ export class StatusBarManager {
 		// Filter out known dynamic state class patterns
 		const dynamicPatterns = [
 			/-statusbar-(idle|pull|push|commit|message|status|add|conflict|paused|failed-init)$/,
-			// Add more patterns as needed for other plugins
+			// Common state classes that shouldn't be part of an element's identity
+			/^(is-active|is-loading|is-hidden|is-collapsed|is-selected|is-flashing|mod-active|mod-loading)$/,
+			// obsidian-git specific dynamic classes
+			/^obsidian-git-statusbar-/,
 		];
 		return dynamicPatterns.some(pattern => pattern.test(className));
 	}
@@ -99,6 +102,33 @@ export class StatusBarManager {
 	 */
 	private generateCanonicalName(element: HTMLElement, allClasses: string[]): string {
 		const ignoredClasses = ['mod-clickable', 'status-bar-item', 'ui-tweaker-status-bar-item', 'ui-tweaker-status-bar-hidden'];
+
+		// EXPLICIT HANDLING FOR OBSIDIAN-GIT (Most unruly plugin)
+		
+		// 1. Main Status Bar (has obsidian-git-statusbar-* classes)
+		if (allClasses.some(cls => cls.startsWith('obsidian-git-statusbar-'))) {
+			return 'plugin-obsidian-git-status';
+		}
+
+		// 2. Changes/Diff Bar (has git-changes-status-bar class)
+		if (allClasses.includes('git-changes-status-bar')) {
+			return 'plugin-obsidian-git-changes';
+		}
+
+		// 3. Branch Bar (no identifying classes except mod-clickable, but text looks like branch)
+		const textContent = element.textContent?.trim();
+		const looksLikeBranch = textContent && textContent.length > 0 && 
+			/^[a-z0-9][a-z0-9._\-/]*$/i.test(textContent) && 
+			textContent.length < 30 && 
+			!textContent.includes(':') && 
+			!/^[0-9]/.test(textContent) &&
+			!element.getAttribute('aria-label');
+
+		if (looksLikeBranch && (allClasses.length === 1 && allClasses[0] === 'mod-clickable')) {
+			return 'plugin-obsidian-git-branch';
+		}
+
+		// GENERAL HANDLING FOR OTHER PLUGINS
 
 		// Extract plugin identifier (stable)
 		const pluginClass = allClasses.find(cls => 
@@ -119,7 +149,6 @@ export class StatusBarManager {
 
 			// Use plugin identifier as base
 			// Only add other stable classes if they provide meaningful distinction
-			// For obsidian-git, we want just "plugin-obsidian-git" or "obsidian-git"
 			if (stableClasses.length > 0 && !pluginClass.includes('obsidian-git')) {
 				// For other plugins, include stable classes if they exist
 				return `${pluginClass}-${stableClasses.join('-')}`;
@@ -139,11 +168,9 @@ export class StatusBarManager {
 		}
 
 		// Fallback: check text content
-		const textContent = element.textContent?.trim();
 		if (textContent && textContent.length > 0 && textContent.length < 50 && !textContent.includes(':')) {
-			const looksLikeBranch = /^[a-z0-9][a-z0-9_-]*$/i.test(textContent) && textContent.length < 30;
 			if (looksLikeBranch) {
-				return 'plugin-obsidian-git';
+				return 'plugin-obsidian-git-branch';
 			}
 			const sanitized = textContent
 				.toLowerCase()
@@ -167,13 +194,12 @@ export class StatusBarManager {
 		parts.pop(); // Remove index
 		const fullName = parts.join(';');
 		
-		// For obsidian-git, extract just the plugin identifier
-		// Handle IDs like "plugin-obsidian-git-obsidian-git-statusbar-idle-..."
-		if (fullName.startsWith('plugin-obsidian-git')) {
-			return 'plugin-obsidian-git';
+		// For obsidian-git, migration to new stable IDs
+		if (fullName.includes('obsidian-git-statusbar-') || fullName === 'plugin-obsidian-git') {
+			return 'plugin-obsidian-git-status';
 		}
-		if (fullName.startsWith('obsidian-git')) {
-			return 'obsidian-git';
+		if (fullName === 'git-changes-status-bar') {
+			return 'plugin-obsidian-git-changes';
 		}
 		
 		// For other cases, try to find plugin identifier in the name
@@ -206,6 +232,11 @@ export class StatusBarManager {
 					i += 2; // Skip "failed-init"
 					continue;
 				}
+			}
+			
+			// Filter out other generic dynamic classes
+			if (this.isDynamicStateClass(nameParts[i])) {
+				continue;
 			}
 			
 			filteredParts.push(nameParts[i]);
@@ -342,64 +373,31 @@ export class StatusBarManager {
 				} else {
 					// If no exact position match, use smarter matching by characteristics
 				
-				// Determine element type: branch (short simple text) vs main status bar (aria-label, longer text, or dynamic)
-				const isBranchLike = elementText && 
-					elementText.length < 30 && 
-					!elementText.includes(':') && 
-					!/^[0-9]/.test(elementText) && // Not starting with numbers (like "0 words")
-					!elementAriaLabel; // Branch items typically don't have aria-labels
-				
-				const isMainStatusBar = elementAriaLabel || 
-					(elementText && (elementText.includes(':') || elementText.length > 30));
+				// Determine element type
+				const isGitBranch = canonicalName === 'plugin-obsidian-git-branch';
+				const isGitStatus = canonicalName === 'plugin-obsidian-git-status';
+				const isGitChanges = canonicalName === 'plugin-obsidian-git-changes';
 				
 				// Try to match by saved item name/content similarity
 				const scoredMatches = matchingSavedItems.map(item => {
 					let score = 0;
 					const savedName = item.name || '';
-					const isSavedNameBranchLike = savedName.length < 20 && 
-						!savedName.includes('plugin-') && 
-						!savedName.includes('status-bar') &&
-						savedName !== 'Status bar item';
-					const isSavedNameGeneric = savedName.includes('plugin-') || 
-						savedName.includes('status-bar') ||
-						savedName === 'Status bar item';
 					
-					// Strong match: branch-like element with branch-like saved name
-					if (isBranchLike && isSavedNameBranchLike) {
-						// Check exact or close match
-						if (elementText.toLowerCase() === savedName.toLowerCase()) {
-							score += 50; // Very strong match
-						} else if (elementText.toLowerCase().includes(savedName.toLowerCase()) || 
-						           savedName.toLowerCase().includes(elementText.toLowerCase())) {
-							score += 30; // Strong match
-						} else {
-							score += 10; // Still prefer branch-like names for branch-like elements
-						}
+					// Match by explicit name content
+					if (elementText && savedName && (elementText.toLowerCase().includes(savedName.toLowerCase()) || savedName.toLowerCase().includes(elementText.toLowerCase()))) {
+						score += 20;
 					}
-					
-					// Strong match: main status bar with generic saved name
-					if (isMainStatusBar && isSavedNameGeneric) {
-						score += 40; // Very strong match
+					if (elementAriaLabel && savedName && (elementAriaLabel.toLowerCase().includes(savedName.toLowerCase()) || savedName.toLowerCase().includes(elementAriaLabel.toLowerCase()))) {
+						score += 20;
 					}
-					
-					// Penalize mismatches
-					if (isBranchLike && isSavedNameGeneric) {
-						score -= 20; // Branch element shouldn't match generic name
-					}
-					if (isMainStatusBar && isSavedNameBranchLike) {
-						score -= 20; // Main status bar shouldn't match branch name
-					}
-					
-					// Check if saved name matches element text/aria-label
-					if (elementText && savedName && elementText.toLowerCase().includes(savedName.toLowerCase())) {
+					if (elementTitle && savedName && (elementTitle.toLowerCase().includes(savedName.toLowerCase()) || savedName.toLowerCase().includes(elementTitle.toLowerCase()))) {
 						score += 10;
 					}
-					if (elementAriaLabel && savedName && elementAriaLabel.toLowerCase().includes(savedName.toLowerCase())) {
-						score += 10;
-					}
-					if (elementTitle && savedName && elementTitle.toLowerCase().includes(savedName.toLowerCase())) {
-						score += 5;
-					}
+
+					// Preferred types match
+					if (isGitBranch && savedName.length < 20 && !savedName.includes('plugin-')) score += 30;
+					if (isGitStatus && (savedName.includes('Git') || savedName.includes('Commit'))) score += 30;
+					if (isGitChanges && (savedName.includes('+') || savedName.includes('-') || savedName.includes('~'))) score += 30;
 					
 					return { item, score };
 				});
@@ -409,7 +407,6 @@ export class StatusBarManager {
 					if (b.score !== a.score) {
 						return b.score - a.score;
 					}
-					// If scores are equal, prefer items that appear earlier in settings (maintain order)
 					const indexA = this.items.indexOf(a.item);
 					const indexB = this.items.indexOf(b.item);
 					return indexA - indexB;
@@ -421,13 +418,13 @@ export class StatusBarManager {
 				// Single match - verify it's the right position if possible
 				const parts = matchingSavedItems[0].id.split(';');
 				const itemIndex = parseInt(parts[parts.length - 1] || '0', 10);
-				// If the index doesn't match DOM position, we might need to adjust
-				// But only if there are other unmatched items with same canonical name
+				
 				const allUnmatchedSameCanonical = savedItems.filter(item => {
 					if (matchedSavedIds.has(item.id)) return false;
 					const itemCanonicalName = this.getCanonicalNameFromId(item.id);
 					return itemCanonicalName === canonicalName;
 				});
+				
 				if (allUnmatchedSameCanonical.length > 1 && itemIndex !== actualDomPosition) {
 					// There are other items, try to find better match by position
 					const betterMatch = allUnmatchedSameCanonical.find(item => {
@@ -490,8 +487,9 @@ export class StatusBarManager {
 				// Only update saved item's name if:
 				// 1. The saved item has a generic name (like canonical name or "Status bar item")
 				// 2. OR the element name matches the saved name (confirming it's the right match)
-				// This prevents name swapping when wrong items are matched
+				// 3. OR it's a branch name (which is expected to change)
 				const canonicalNameFromId = this.getCanonicalNameFromId(id);
+				const isBranch = canonicalNameFromId === 'plugin-obsidian-git-branch';
 				const hasGenericName = !savedItem.name || 
 					savedItem.name === canonicalNameFromId || 
 					savedItem.name === 'Status bar item' ||
@@ -499,20 +497,14 @@ export class StatusBarManager {
 					savedItem.name.startsWith('status-bar-item');
 
 				if (elementName && elementName.length > 0 && elementName.length < 100) {
-					// For dynamic content like "Last Commit: X minutes ago", don't update the name
-					if (!elementName.includes(':') || elementName.length < 30) {
-						// Only update if:
-						// - Saved item has generic name (safe to update)
-						// - OR element name matches saved name (confirming correct match)
-						if (hasGenericName || elementName === savedItem.name) {
-							// For branch names (short, no colons), update the name
-							// For main status bar (has colons or longer), keep saved name
-							if (elementName.length < 30 && !elementName.includes(':')) {
-								savedItem.name = elementName;
-							} else if (hasGenericName && elementName.length >= 30) {
-								// For longer names, use a portion or keep generic
-								savedItem.name = elementName.substring(0, 50);
-							}
+					// Only update if it's a branch or has a generic name
+					if (isBranch || hasGenericName) {
+						// For branch names, update the name
+						if (isBranch && elementName.length < 30 && !elementName.includes(':')) {
+							savedItem.name = elementName;
+						} else if (hasGenericName) {
+							// For other items with generic names, use the element name
+							savedItem.name = elementName.substring(0, 50);
 						}
 					}
 				} else if (hasGenericName) {
@@ -555,9 +547,6 @@ export class StatusBarManager {
 							existingIndex;
 						id = `${canonicalName};${index}`;
 						pluginElementCount[canonicalName] = index;
-					} else {
-						// ID already uses canonical name - preserve it
-						// The index and name were already set above when we parsed the existing ID
 					}
 				}
 			}
@@ -571,17 +560,14 @@ export class StatusBarManager {
 				element.textContent?.trim() || 
 				null;
 
-			// If we have a meaningful name from content, enhance it
-			if (elementName && elementName.length > 0 && elementName.length < 100) {
-				// Use the content as the name (e.g., "master" for branch display)
-				// Don't override if it's too long (might be dynamic content)
-			} else {
-				// Fall back to ID-based name
-				elementName = id.split(';')[0] || 'Status bar item';
-			}
-
 			// If this is a new item (not in saved items), add it to settings
 			if (!savedItemsMap.has(id)) {
+				// If we have a meaningful name from content, use it
+				if (!elementName || elementName.length === 0 || elementName.length > 100) {
+					// Fall back to ID-based name
+					elementName = id.split(';')[0] || 'Status bar item';
+				}
+
 				newItems.push({
 					id: id,
 					name: elementName,
