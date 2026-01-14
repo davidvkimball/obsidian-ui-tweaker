@@ -162,13 +162,10 @@ export class ExplorerManager {
 							void this.removeCommand(pair);
 						});
 					// Add warning class to make text and icon red
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-					const dom = (item as any).dom;
+					const dom = (item as unknown as { dom: HTMLElement }).dom;
 					if (dom) {
-						// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 						dom.classList.add('mod-warning');
 						// Also make the icon red
-						// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 						const iconEl = dom.querySelector('.menu-item-icon svg');
 						if (iconEl) {
 							// Use setCssProps to set color (already imported from uiManager)

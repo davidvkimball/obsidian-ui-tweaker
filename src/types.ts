@@ -6,7 +6,7 @@ export type UIVisibilityState = 'show' | 'hide' | 'reveal';
 
 export type MobileNavPosition = '1' | '2' | '3' | '4' | '5' | '6';
 
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- Mode can be a device ID string which might overlap with literal types
 export type Mode = 'desktop' | 'any' | 'mobile' | string; // string = "this device" (app.appId)
 
 export interface CommandIconPair {

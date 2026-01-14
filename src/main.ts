@@ -272,7 +272,7 @@ export default class UITweakerPlugin extends Plugin {
 		// Wait for the DOM to be ready
 		const trySetup = () => {
 			if (this.settings.helpButtonReplacement?.enabled) {
-				void this.updateHelpButton();
+				this.updateHelpButton();
 			}
 		};
 
@@ -296,7 +296,7 @@ export default class UITweakerPlugin extends Plugin {
 		document.body.classList.toggle('ui-tweaker-hide-help-button', shouldHideHelpButton);
 	}
 
-	public async updateHelpButton() {
+	public updateHelpButton() {
 		// Only proceed if replacement is enabled
 		if (!this.settings.helpButtonReplacement?.enabled) {
 			this.restoreHelpButton();
@@ -326,7 +326,7 @@ export default class UITweakerPlugin extends Plugin {
 				// Also retry after a short delay
 				setTimeout(() => {
 					if (this.settings.helpButtonReplacement?.enabled) {
-						void this.updateHelpButton();
+						this.updateHelpButton();
 					}
 				}, 500);
 				return;
@@ -350,7 +350,7 @@ export default class UITweakerPlugin extends Plugin {
 				// Also retry after a short delay
 				setTimeout(() => {
 					if (this.settings.helpButtonReplacement?.enabled) {
-						void this.updateHelpButton();
+						this.updateHelpButton();
 					}
 				}, 500);
 				return;
@@ -472,7 +472,7 @@ export default class UITweakerPlugin extends Plugin {
 					if (this.customHelpButton && !document.body.contains(this.customHelpButton)) {
 						this.customHelpButton = undefined;
 					}
-					void this.updateHelpButton();
+					this.updateHelpButton();
 				}
 			}, 100);
 		});
@@ -546,7 +546,7 @@ export default class UITweakerPlugin extends Plugin {
 		// Wait for the DOM to be ready
 		const trySetup = () => {
 			if (this.settings.syncButtonReplacement?.enabled) {
-				void this.updateSyncButton();
+				this.updateSyncButton();
 			}
 		};
 
@@ -569,7 +569,7 @@ export default class UITweakerPlugin extends Plugin {
 		document.body.classList.toggle('ui-tweaker-hide-sync-button', shouldHide);
 	}
 
-	public async updateSyncButton() {
+	public updateSyncButton() {
 		// Only proceed if replacement is enabled
 		if (!this.settings.syncButtonReplacement?.enabled) {
 			this.restoreSyncButton();
@@ -623,7 +623,7 @@ export default class UITweakerPlugin extends Plugin {
 				// Also retry after a short delay
 				setTimeout(() => {
 					if (this.settings.syncButtonReplacement?.enabled) {
-						void this.updateSyncButton();
+						this.updateSyncButton();
 					}
 				}, 500);
 				return;
@@ -836,9 +836,11 @@ export default class UITweakerPlugin extends Plugin {
 					}
 					// Set flag to prevent infinite loops
 					this.isUpdatingSyncButton = true;
-					void this.updateSyncButton().finally(() => {
+					try {
+						this.updateSyncButton();
+					} finally {
 						this.isUpdatingSyncButton = false;
-					});
+					}
 				}
 			}, 100);
 		});
