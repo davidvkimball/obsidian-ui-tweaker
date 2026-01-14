@@ -231,7 +231,7 @@ export class StatusBarTab extends TabRenderer {
 		// Preview
 		const previewSpan = entry.createSpan('ui-tweaker-status-bar-row-preview');
 		if (item.icon) {
-			const previewIcon = previewSpan.createSpan('status-bar-item clickable-icon');
+			const previewIcon = previewSpan.createSpan('status-bar-item mod-clickable');
 			setIcon(previewIcon, item.icon);
 			if (item.color && item.color !== '#000000') {
 				setCssProps(previewIcon, { color: item.color });

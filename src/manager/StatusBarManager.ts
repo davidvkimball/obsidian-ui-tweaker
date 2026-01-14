@@ -479,7 +479,7 @@ export class StatusBarManager {
 		if (this.customActions.has(item)) return;
 
 		const btn = this.container.createDiv({
-			cls: 'ui-tweaker-status-bar-item status-bar-item clickable-icon',
+			cls: 'ui-tweaker-status-bar-item status-bar-item mod-clickable',
 			attr: { 
 				'aria-label': item.name,
 				'data-tooltip-position': 'top',
