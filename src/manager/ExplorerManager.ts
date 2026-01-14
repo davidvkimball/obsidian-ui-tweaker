@@ -58,10 +58,27 @@ export class ExplorerManager {
 
 			// Register cleanup
 			this.plugin.register(() => {
-				this.observers.forEach(observer => observer.disconnect());
-				this.observers = [];
+				this.cleanup();
 			});
 		});
+	}
+
+	/**
+	 * Remove all buttons created by this manager from the DOM
+	 */
+	public cleanup(): void {
+		this.observers.forEach(observer => observer.disconnect());
+		this.observers = [];
+		
+		const explorers = this.plugin.app.workspace.getLeavesOfType('file-explorer');
+		explorers.forEach((leaf) => {
+			const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
+			if (navButtonsContainer) {
+				const managedButtons = navButtonsContainer.querySelectorAll('[data-ui-tweaker-managed="true"]');
+				managedButtons.forEach(btn => btn.remove());
+			}
+		});
+		this.buttons.clear();
 	}
 
 	private addButtonsToAllLeaves(): void {
@@ -112,6 +129,7 @@ export class ExplorerManager {
 				'data-explorer-command-id': pair.id,
 				'aria-label': pair.name,
 				'aria-label-position': 'top',
+				'data-ui-tweaker-managed': 'true',
 			},
 		});
 
@@ -241,7 +259,19 @@ export class ExplorerManager {
 		if (!navButtonsContainer) return;
 
 		// Get all buttons from DOM (in DOM order)
-		const existingButtons = Array.from(navButtonsContainer.querySelectorAll<HTMLElement>('.nav-action-button'));
+		const existingButtons = Array.from(navButtonsContainer.querySelectorAll<HTMLElement>('.nav-action-button')).filter(
+			element => {
+				// CRITICAL FIX: Ignore orphaned managed buttons (e.g., from deleted data)
+				if (element.getAttribute('data-ui-tweaker-managed') === 'true') {
+					const commandId = element.getAttribute('data-explorer-command-id');
+					// If it's a managed button but not in our current items list, ignore it for discovery
+					if (!commandId || !this.plugin.settings.explorerButtonItems.some(item => item.commandId === commandId)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		);
 
 		// Get saved items from settings
 		const savedItems = this.plugin.settings.explorerButtonItems || [];

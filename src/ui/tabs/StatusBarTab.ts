@@ -139,12 +139,13 @@ export class StatusBarTab extends TabRenderer {
 
 		// Lock icon (new feature)
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
-		lockSpan.setAttribute('aria-label', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
+		const lockIcon = item.sticky === 'right' ? 'corner-right-down' : (item.sticky === 'left' ? 'corner-right-up' : 'unlock');
+		lockSpan.setAttribute('aria-label', item.sticky ? `Pinned to ${item.sticky === 'right' ? 'End' : 'Start'}` : 'Unlocked - click to pin to end');
 		lockSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
 		});
-		setIcon(lockSpan, item.sticky ? 'lock' : 'unlock');
+		setIcon(lockSpan, lockIcon);
 		if (item.sticky) {
 			lockSpan.addClass('ui-tweaker-locked');
 		}
@@ -315,12 +316,13 @@ export class StatusBarTab extends TabRenderer {
 
 		// Lock icon (new feature)
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
-		lockSpan.setAttribute('aria-label', item.sticky ? `Locked to ${item.sticky}` : 'Unlocked - click to lock position');
+		const lockIcon = item.sticky === 'right' ? 'corner-right-down' : (item.sticky === 'left' ? 'corner-right-up' : 'unlock');
+		lockSpan.setAttribute('aria-label', item.sticky ? `Pinned to ${item.sticky === 'right' ? 'End' : 'Start'}` : 'Unlocked - click to pin to end');
 		lockSpan.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
 		});
-		setIcon(lockSpan, item.sticky ? 'lock' : 'unlock');
+		setIcon(lockSpan, lockIcon);
 		if (item.sticky) {
 			lockSpan.addClass('ui-tweaker-locked');
 		}
@@ -358,34 +360,33 @@ export class StatusBarTab extends TabRenderer {
 		rowsContainer: HTMLElement,
 		settings: UISettings
 	): void {
-		// If already locked, unlock it
-		if (item.sticky) {
-			item.sticky = false;
-			setIcon(lockSpan, 'unlock');
-			lockSpan.removeClass('ui-tweaker-locked');
-			lockSpan.setAttribute('aria-label', 'Unlocked - click to lock position');
-		} else {
-			// Determine lock position based on current index
-			// Position 0 or 1 -> lock left
-			// Last position or second-to-last -> lock right
-			if (currentIndex === 0 || currentIndex === 1) {
-				item.sticky = 'left';
-			} else if (currentIndex === totalItems - 1 || currentIndex === totalItems - 2) {
-				item.sticky = 'right';
-			} else {
-				// For items in the middle, lock to the nearest end
-				const distanceToStart = currentIndex;
-				const distanceToEnd = totalItems - 1 - currentIndex;
-				item.sticky = distanceToStart <= distanceToEnd ? 'left' : 'right';
+		// Cycle: false -> 'right' (End) -> 'left' (Start) -> false (Unlock)
+		if (!item.sticky) {
+			item.sticky = 'right';
+			// Move to end of array
+			const oldIndex = settings.statusBarItems.findIndex(i => i.id === item.id);
+			if (oldIndex !== -1) {
+				arrayMoveMutable(settings.statusBarItems, oldIndex, settings.statusBarItems.length - 1);
 			}
-			setIcon(lockSpan, 'lock');
-			lockSpan.addClass('ui-tweaker-locked');
-			lockSpan.setAttribute('aria-label', `Locked to ${item.sticky}`);
+		} else if (item.sticky === 'right') {
+			item.sticky = 'left';
+			// Move to start of array
+			const oldIndex = settings.statusBarItems.findIndex(i => i.id === item.id);
+			if (oldIndex !== -1) {
+				arrayMoveMutable(settings.statusBarItems, oldIndex, 0);
+			}
+		} else {
+			item.sticky = false;
 		}
 		
 		// Update status bar order
 		this.plugin.statusBarManager?.reorder();
 		void this.saveSettings();
+
+		// Full re-render of the settings tab to reflect new order in the UI list
+		if (this.container) {
+			this.render(this.container);
+		}
 	}
 
 	/**
@@ -516,7 +517,8 @@ export class StatusBarTab extends TabRenderer {
 		// Device mode icon removed - status bar not visible on mobile, so no need for device indicators
 		movableRow.createSpan('ui-tweaker-status-bar-row-md-only');
 		const dragLock = movableRow.createSpan('ui-tweaker-status-bar-row-lock');
-		setIcon(dragLock, item.sticky ? 'lock' : 'unlock');
+		const lockIcon = item.sticky === 'right' ? 'corner-right-down' : (item.sticky === 'left' ? 'corner-right-up' : 'unlock');
+		setIcon(dragLock, lockIcon);
 		const dragVisibility = movableRow.createSpan('ui-tweaker-status-bar-row-visibility');
 		setIcon(dragVisibility, item.hidden ? 'eye-off' : 'eye');
 

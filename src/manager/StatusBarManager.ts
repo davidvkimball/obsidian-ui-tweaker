@@ -71,13 +71,30 @@ export class StatusBarManager {
 
 			// Register cleanup
 			this.plugin.register(() => {
-				if (this.observer) {
-					this.observer.disconnect();
-				}
-				this.customActions.forEach((action) => action.remove());
-				this.customActions.clear();
+				this.cleanup();
 			});
 		});
+	}
+
+	/**
+	 * Remove all buttons created by this manager from the DOM
+	 */
+	public cleanup(): void {
+		if (this.observer) {
+			this.observer.disconnect();
+		}
+		this.customActions.forEach((action) => action.remove());
+		this.customActions.clear();
+		
+		// Also clean up any buttons that might have been left behind (orphaned)
+		if (this.container) {
+			const managedButtons = this.container.querySelectorAll('[data-ui-tweaker-managed="true"]');
+			managedButtons.forEach(btn => btn.remove());
+			
+			// Restore visibility of any hidden native items
+			const hiddenItems = this.container.querySelectorAll('.ui-tweaker-status-bar-hidden');
+			hiddenItems.forEach(item => item.removeClass('ui-tweaker-status-bar-hidden'));
+		}
 	}
 
 	/**
@@ -103,33 +120,6 @@ export class StatusBarManager {
 	private generateCanonicalName(element: HTMLElement, allClasses: string[]): string {
 		const ignoredClasses = ['mod-clickable', 'status-bar-item', 'ui-tweaker-status-bar-item', 'ui-tweaker-status-bar-hidden'];
 
-		// EXPLICIT HANDLING FOR OBSIDIAN-GIT (Most unruly plugin)
-		
-		// 1. Main Status Bar (has obsidian-git-statusbar-* classes)
-		if (allClasses.some(cls => cls.startsWith('obsidian-git-statusbar-'))) {
-			return 'plugin-obsidian-git-status';
-		}
-
-		// 2. Changes/Diff Bar (has git-changes-status-bar class)
-		if (allClasses.includes('git-changes-status-bar')) {
-			return 'plugin-obsidian-git-changes';
-		}
-
-		// 3. Branch Bar (no identifying classes except mod-clickable, but text looks like branch)
-		const textContent = element.textContent?.trim();
-		const looksLikeBranch = textContent && textContent.length > 0 && 
-			/^[a-z0-9][a-z0-9._\-/]*$/i.test(textContent) && 
-			textContent.length < 30 && 
-			!textContent.includes(':') && 
-			!/^[0-9]/.test(textContent) &&
-			!element.getAttribute('aria-label');
-
-		if (looksLikeBranch && (allClasses.length === 1 && allClasses[0] === 'mod-clickable')) {
-			return 'plugin-obsidian-git-branch';
-		}
-
-		// GENERAL HANDLING FOR OTHER PLUGINS
-
 		// Extract plugin identifier (stable)
 		const pluginClass = allClasses.find(cls => 
 			cls.includes('plugin-') || 
@@ -139,25 +129,40 @@ export class StatusBarManager {
 		);
 
 		if (pluginClass) {
+			// For obsidian-git, use simplified identifiers to handle dynamic class changes
+			if (pluginClass.includes('obsidian-git') || pluginClass.startsWith('git-')) {
+				if (allClasses.some(cls => cls.startsWith('obsidian-git-statusbar-'))) return 'plugin-obsidian-git-status';
+				if (allClasses.includes('git-changes-status-bar')) return 'plugin-obsidian-git-changes';
+				
+				// Branch detection (for initial ID generation)
+				const textContent = element.textContent?.trim();
+				// Robust branch detection: short, alphanumeric with dashes/underscores, no colons
+				const looksLikeBranch = textContent && textContent.length > 0 && 
+					/^[a-z0-9][a-z0-9._\-/]*$/i.test(textContent) && 
+					textContent.length < 30 && 
+					!textContent.includes(':') && 
+					!/^[0-9]/.test(textContent) &&
+					!element.getAttribute('data-ui-tweaker-managed');
+				
+				if (looksLikeBranch) return 'plugin-obsidian-git-branch';
+				
+				return 'plugin-obsidian-git';
+			}
+
 			// Filter out dynamic state classes and ignored classes
-			// Keep only stable classes that help identify the element
 			const stableClasses = allClasses.filter(cls => 
 				!this.isDynamicStateClass(cls) && 
 				!ignoredClasses.includes(cls) &&
-				cls !== pluginClass // Don't duplicate the plugin class
+				cls !== pluginClass
 			);
 
-			// Use plugin identifier as base
-			// Only add other stable classes if they provide meaningful distinction
-			if (stableClasses.length > 0 && !pluginClass.includes('obsidian-git')) {
-				// For other plugins, include stable classes if they exist
+			if (stableClasses.length > 0) {
 				return `${pluginClass}-${stableClasses.join('-')}`;
 			}
 			return pluginClass;
 		}
 
-		// No plugin identifier found - use fallback logic
-		// Filter out dynamic and ignored classes
+		// No plugin identifier found - use filtered classes
 		const stableClasses = allClasses.filter(cls => 
 			!this.isDynamicStateClass(cls) && 
 			!ignoredClasses.includes(cls)
@@ -165,20 +170,6 @@ export class StatusBarManager {
 
 		if (stableClasses.length > 0) {
 			return stableClasses.join('-');
-		}
-
-		// Fallback: check text content
-		if (textContent && textContent.length > 0 && textContent.length < 50 && !textContent.includes(':')) {
-			if (looksLikeBranch) {
-				return 'plugin-obsidian-git-branch';
-			}
-			const sanitized = textContent
-				.toLowerCase()
-				.replace(/[^a-z0-9]+/g, '-')
-				.replace(/^-+|-+$/g, '');
-			if (sanitized) {
-				return `status-bar-item-${sanitized}`;
-			}
 		}
 
 		return 'status-bar-item';
@@ -196,10 +187,16 @@ export class StatusBarManager {
 		
 		// For obsidian-git, migration to new stable IDs
 		if (fullName.includes('obsidian-git-statusbar-') || fullName === 'plugin-obsidian-git') {
+			// Smarter migration: check the saved item's name to distinguish between status and branch
+			// This handles cases where old IDs like 'plugin-obsidian-git;2' were used for branches
+			const savedItem = this.items.find(i => i.id === id);
+			if (savedItem && savedItem.name && 
+				/^[a-z0-9][a-z0-9._\-/]*$/i.test(savedItem.name) && 
+				savedItem.name.length < 30 && 
+				!savedItem.name.includes('plugin-')) {
+				return 'plugin-obsidian-git-branch';
+			}
 			return 'plugin-obsidian-git-status';
-		}
-		if (fullName === 'git-changes-status-bar') {
-			return 'plugin-obsidian-git-changes';
 		}
 		
 		// For other cases, try to find plugin identifier in the name
@@ -256,321 +253,77 @@ export class StatusBarManager {
 
 		// Get all existing status bar elements from DOM (in DOM order)
 		const existingElements = Array.from(this.container.children).filter(
-			el => el.classList.contains('status-bar-item') && !el.classList.contains('ui-tweaker-status-bar-item')
+			el => {
+				const element = el as HTMLElement;
+				// Ignore our own custom items (they are managed separately)
+				if (element.classList.contains('ui-tweaker-status-bar-item')) return false;
+				
+				// CRITICAL FIX: Ignore orphaned managed buttons (e.g., from deleted data)
+				if (element.getAttribute('data-ui-tweaker-managed') === 'true') {
+					const id = element.getAttribute('data-ui-tweaker-status-bar-id');
+					// If it's a managed button but not in our current items list, ignore it for discovery
+					if (!id || !this.items.some(item => item.id === id)) {
+						return false;
+					}
+				}
+				
+				// Process EVERY child of the status bar (like Status Bar Organizer)
+				// Many plugins add clickable icons without the 'status-bar-item' class
+				return true;
+			}
 		) as HTMLElement[];
 
 		// Get saved items from settings (preserve ALL saved items, even if not currently visible)
 		const savedItems = this.items.filter(item => item.type === 'existing');
-		
-		// Create a map of saved items by ID for quick lookup
 		const savedItemsMap = new Map(savedItems.map(item => [item.id, item]));
 
 		// Track element counts per name pattern (like Status Bar Organizer does)
 		const pluginElementCount: { [key: string]: number } = {};
-		
-		// Track which saved items we've matched to DOM elements
 		const matchedSavedIds = new Set<string>();
 		const newItems: StatusBarItem[] = [];
 
-		// Track position for each canonical name (for matching by DOM order)
-		// Note: We calculate actualDomPosition by counting preceding elements, not using a counter
-		// This ensures correct positioning even when consolidateSettingsAndElements is called multiple times
-
-		// Process elements in DOM order (single pass, like Status Bar Organizer)
-		existingElements.forEach((element, elementIndex) => {
-			// Check if element already has an ID
+		// Process elements in DOM order (single pass, EXACTLY like Status Bar Organizer)
+		existingElements.forEach((element) => {
 			let id = element.getAttribute('data-ui-tweaker-status-bar-id');
-			let name: string;
+			let canonicalName: string;
 			let index: number;
 
-			// Preserve existing ID if it exists and is valid (matches Status Bar Organizer behavior)
-			// This ensures elements keep their IDs even when classes change dynamically
 			if (id) {
-				// Validate ID format (should have name;index pattern)
-				const parts = id.split(';');
-				if (parts.length >= 2) {
-					const indexStr = parts[parts.length - 1];
-					if (indexStr && !isNaN(parseInt(indexStr, 10))) {
-						// Valid ID format - preserve it
-						if (savedItemsMap.has(id)) {
-							// Element has ID and it's in saved items - already matched!
-							matchedSavedIds.add(id);
-							index = parseInt(indexStr, 10);
-							name = parts.slice(0, -1).join(';');
-							// Update element count tracking
-							pluginElementCount[name] = Math.max(
-								index,
-								name in pluginElementCount ? pluginElementCount[name] : 0
-							);
-							return;
-						} else {
-							// ID exists but not in saved items yet - still preserve it
-							// This handles cases where ID was set previously but item hasn't been saved
-							index = parseInt(indexStr, 10);
-							name = parts.slice(0, -1).join(';');
-							// Update element count tracking
-							pluginElementCount[name] = Math.max(
-								index,
-								name in pluginElementCount ? pluginElementCount[name] : 0
-							);
-							// Continue to matching logic below to potentially add to saved items
-						}
-					} else {
-						// Invalid ID format - regenerate
-						id = null;
-					}
-				} else {
-					// Invalid ID format - regenerate
-					id = null;
-				}
+				// Element already tagged - TRUST THE TAG (like SBO)
+				const parsed = this.parseElementId(id);
+				canonicalName = parsed.name;
+				index = parsed.index;
+			} else {
+				// New element - generate ID from classes and current DOM order count
+				const allClasses = Array.from(element.classList);
+				canonicalName = this.generateCanonicalName(element, allClasses);
+				index = (canonicalName in pluginElementCount) ? pluginElementCount[canonicalName] + 1 : 1;
+				id = `${canonicalName};${index}`;
+				element.setAttribute('data-ui-tweaker-status-bar-id', id);
 			}
 
-			// Element doesn't have a valid saved ID - generate one
-			// Generate canonical name from class names (filtering out dynamic state classes)
-			const allClasses = Array.from(element.classList);
-			const canonicalName = this.generateCanonicalName(element, allClasses);
-			name = canonicalName;
+			// Update global count tracking for this scan
+			pluginElementCount[canonicalName] = Math.max(index, pluginElementCount[canonicalName] || 0);
 
-			// Get element characteristics for logging
-			const elementText = element.textContent?.trim() || '';
-			const elementAriaLabel = element.getAttribute('aria-label') || '';
-			const elementTitle = element.getAttribute('title') || '';
-
-			// Enhanced matching algorithm:
-			// 1. Match by canonical name (ignoring dynamic state class differences)
-			// 2. When multiple items have same canonical name, match by DOM position (index in ID)
-			let matchingSavedItems = savedItems.filter(item => {
-				if (matchedSavedIds.has(item.id)) return false;
-				const itemCanonicalName = this.getCanonicalNameFromId(item.id);
-				return itemCanonicalName === canonicalName;
-			});
-
-			// Calculate position based on how many elements with same canonical name appear before this one
-			// This ensures consistent positioning even if consolidateSettingsAndElements is called multiple times
-			let actualDomPosition = 1;
-			for (let i = 0; i < elementIndex; i++) {
-				const prevElement = existingElements[i];
-				const prevClasses = Array.from(prevElement.classList);
-				const prevCanonicalName = this.generateCanonicalName(prevElement, prevClasses);
-				if (prevCanonicalName === canonicalName) {
-					actualDomPosition++;
-				}
-			}
-
-
-			// If multiple items match by canonical name, match by DOM position first
-			// The Nth element in DOM order should match the saved item with index N
-			if (matchingSavedItems.length > 1) {
-				// First, try to match by exact index position using actualDomPosition
-				const positionMatch = matchingSavedItems.find(item => {
-					const parts = item.id.split(';');
-					const itemIndex = parseInt(parts[parts.length - 1] || '0', 10);
-					return itemIndex === actualDomPosition;
-				});
-
-				if (positionMatch) {
-					matchingSavedItems = [positionMatch];
-				} else {
-					// If no exact position match, use smarter matching by characteristics
-				
-				// Determine element type
-				const isGitBranch = canonicalName === 'plugin-obsidian-git-branch';
-				const isGitStatus = canonicalName === 'plugin-obsidian-git-status';
-				const isGitChanges = canonicalName === 'plugin-obsidian-git-changes';
-				
-				// Try to match by saved item name/content similarity
-				const scoredMatches = matchingSavedItems.map(item => {
-					let score = 0;
-					const savedName = item.name || '';
-					
-					// Match by explicit name content
-					if (elementText && savedName && (elementText.toLowerCase().includes(savedName.toLowerCase()) || savedName.toLowerCase().includes(elementText.toLowerCase()))) {
-						score += 20;
-					}
-					if (elementAriaLabel && savedName && (elementAriaLabel.toLowerCase().includes(savedName.toLowerCase()) || savedName.toLowerCase().includes(elementAriaLabel.toLowerCase()))) {
-						score += 20;
-					}
-					if (elementTitle && savedName && (elementTitle.toLowerCase().includes(savedName.toLowerCase()) || savedName.toLowerCase().includes(elementTitle.toLowerCase()))) {
-						score += 10;
-					}
-
-					// Preferred types match
-					if (isGitBranch && savedName.length < 20 && !savedName.includes('plugin-')) score += 30;
-					if (isGitStatus && (savedName.includes('Git') || savedName.includes('Commit'))) score += 30;
-					if (isGitChanges && (savedName.includes('+') || savedName.includes('-') || savedName.includes('~'))) score += 30;
-					
-					return { item, score };
-				});
-				
-				// Sort by score (highest first), then by position in settings
-				scoredMatches.sort((a, b) => {
-					if (b.score !== a.score) {
-						return b.score - a.score;
-					}
-					const indexA = this.items.indexOf(a.item);
-					const indexB = this.items.indexOf(b.item);
-					return indexA - indexB;
-				});
-				
-					matchingSavedItems = [scoredMatches[0].item];
-				}
-			} else if (matchingSavedItems.length === 1) {
-				// Single match - verify it's the right position if possible
-				const parts = matchingSavedItems[0].id.split(';');
-				const itemIndex = parseInt(parts[parts.length - 1] || '0', 10);
-				
-				const allUnmatchedSameCanonical = savedItems.filter(item => {
-					if (matchedSavedIds.has(item.id)) return false;
-					const itemCanonicalName = this.getCanonicalNameFromId(item.id);
-					return itemCanonicalName === canonicalName;
-				});
-				
-				if (allUnmatchedSameCanonical.length > 1 && itemIndex !== actualDomPosition) {
-					// There are other items, try to find better match by position
-					const betterMatch = allUnmatchedSameCanonical.find(item => {
-						const itemParts = item.id.split(';');
-						const itemIdx = parseInt(itemParts[itemParts.length - 1] || '0', 10);
-						return itemIdx === actualDomPosition;
-					});
-					if (betterMatch) {
-						matchingSavedItems = [betterMatch];
-					}
-				}
-			}
-
-			// If no match by canonical name, try matching by plugin identifier + position
-			// This handles cases where the same plugin element might have slightly different class combinations
-			if (matchingSavedItems.length === 0) {
-				const pluginClass = allClasses.find(cls => 
-					cls.includes('plugin-') || 
-					cls.includes('obsidian-git') ||
-					cls.includes('-git')
-				);
-				
-				if (pluginClass) {
-					// Find saved items from the same plugin that haven't been matched
-					const samePluginItems = savedItems.filter(item => {
-						if (matchedSavedIds.has(item.id)) return false;
-						const itemCanonicalName = this.getCanonicalNameFromId(item.id);
-						return itemCanonicalName.includes(pluginClass) || 
-						       itemCanonicalName.includes('obsidian-git') ||
-						       itemCanonicalName.includes('plugin-obsidian-git');
-					});
-
-					// Match by DOM position (order) - first unmatched item from same plugin
-					if (samePluginItems.length > 0) {
-						// Sort by their current position in settings to maintain order
-						samePluginItems.sort((a, b) => {
-							const indexA = this.items.indexOf(a);
-							const indexB = this.items.indexOf(b);
-							return indexA - indexB;
-						});
-						matchingSavedItems = [samePluginItems[0]];
-					}
-				}
-			}
-
-			if (matchingSavedItems.length > 0) {
-				// Match to the best matching saved item
-				// Use the saved item's ID to preserve its index and all properties (sticky, hidden, etc.)
-				const savedItem = matchingSavedItems[0];
-				id = savedItem.id;
+			// Check if we have a saved item for this ID
+			const savedItem = savedItemsMap.get(id);
+			if (savedItem) {
 				matchedSavedIds.add(id);
 				
-				// Update the saved item's name from DOM if it has changed (but preserve all other properties like sticky)
-				// Get element name for display (use text content or aria-label for better names)
-				let elementName = element.getAttribute('aria-label') || 
-					element.getAttribute('title') ||
-					element.textContent?.trim() || 
-					null;
+				// Update display name if it's generic or if it's a branch (which changes)
+				let elementName = element.getAttribute('aria-label') || element.getAttribute('title') || element.textContent?.trim();
+				const isBranch = canonicalName === 'plugin-obsidian-git-branch';
+				const hasGenericName = !savedItem.name || savedItem.name === canonicalName || savedItem.name === 'Status bar item' || savedItem.name.startsWith('plugin-');
 
-				// Only update saved item's name if:
-				// 1. The saved item has a generic name (like canonical name or "Status bar item")
-				// 2. OR the element name matches the saved name (confirming it's the right match)
-				// 3. OR it's a branch name (which is expected to change)
-				const canonicalNameFromId = this.getCanonicalNameFromId(id);
-				const isBranch = canonicalNameFromId === 'plugin-obsidian-git-branch';
-				const hasGenericName = !savedItem.name || 
-					savedItem.name === canonicalNameFromId || 
-					savedItem.name === 'Status bar item' ||
-					savedItem.name.startsWith('plugin-') ||
-					savedItem.name.startsWith('status-bar-item');
-
-				if (elementName && elementName.length > 0 && elementName.length < 100) {
-					// Only update if it's a branch or has a generic name
-					if (isBranch || hasGenericName) {
-						// For branch names, update the name
-						if (isBranch && elementName.length < 30 && !elementName.includes(':')) {
-							savedItem.name = elementName;
-						} else if (hasGenericName) {
-							// For other items with generic names, use the element name
-							savedItem.name = elementName.substring(0, 50);
-						}
-					}
-				} else if (hasGenericName) {
-					// Fall back to ID-based name if no meaningful content and saved name is generic
-					const fallbackName = canonicalNameFromId || 'Status bar item';
-					if (!savedItem.name || savedItem.name === fallbackName) {
-						savedItem.name = fallbackName;
-					}
-				}
-				
-				// Parse the ID to update element count tracking
-				const parts = id.split(';');
-				const indexStr = parts.pop();
-				if (indexStr) {
-					index = parseInt(indexStr, 10);
-					// Update element count tracking using canonical name
-					pluginElementCount[canonicalName] = Math.max(
-						index,
-						canonicalName in pluginElementCount ? pluginElementCount[canonicalName] : 0
-					);
+				if (elementName && (isBranch || hasGenericName)) {
+					savedItem.name = elementName.substring(0, 50);
 				}
 			} else {
-				// No match found - this is a truly new element OR element has existing ID but no saved match
-				if (!id) {
-					// Generate new ID using canonical name
-					index = (canonicalName in pluginElementCount) ? pluginElementCount[canonicalName] + 1 : 1;
-					id = `${canonicalName};${index}`;
-					pluginElementCount[canonicalName] = index;
-				} else {
-					// Element has existing ID but no saved match
-					// Normalize the ID to use canonical name (removes dynamic classes from ID)
-					// This ensures consistency and prevents duplicates
-					const existingCanonicalName = this.getCanonicalNameFromId(id);
-					if (existingCanonicalName !== canonicalName) {
-						// ID has different canonical name - update to use current canonical name
-						// Preserve the index if it makes sense, otherwise generate new one
-						const existingIndex = parseInt(id.split(';').pop() || '1', 10);
-						index = (canonicalName in pluginElementCount) ? 
-							Math.max(pluginElementCount[canonicalName] + 1, existingIndex) : 
-							existingIndex;
-						id = `${canonicalName};${index}`;
-						pluginElementCount[canonicalName] = index;
-					}
-				}
-			}
-
-			// Set the ID on the element
-			element.setAttribute('data-ui-tweaker-status-bar-id', id);
-
-			// Get element name for display (use text content or aria-label for better names)
-			let elementName = element.getAttribute('aria-label') || 
-				element.getAttribute('title') ||
-				element.textContent?.trim() || 
-				null;
-
-			// If this is a new item (not in saved items), add it to settings
-			if (!savedItemsMap.has(id)) {
-				// If we have a meaningful name from content, use it
-				if (!elementName || elementName.length === 0 || elementName.length > 100) {
-					// Fall back to ID-based name
-					elementName = id.split(';')[0] || 'Status bar item';
-				}
-
+				// New item found - add to settings
+				let elementName = element.getAttribute('aria-label') || element.getAttribute('title') || element.textContent?.trim() || canonicalName;
 				newItems.push({
 					id: id,
-					name: elementName,
+					name: elementName.substring(0, 50),
 					type: 'existing',
 					hidden: false,
 					mdOnly: false,
@@ -578,15 +331,22 @@ export class StatusBarManager {
 			}
 		});
 
-		// Add new items to settings (preserve existing items that aren't currently visible)
+		// Add new items to settings
 		if (newItems.length > 0) {
 			this.plugin.settings.statusBarItems.push(...newItems);
-			// Save immediately to prevent duplicates
 			void this.plugin.saveSettings();
 		}
+	}
 
-		// Items in settings but not currently visible are kept (like Status Bar Organizer)
-		// They'll show up in the UI but marked as "not currently visible"
+	/**
+	 * Helper to parse internal ID into name and index
+	 */
+	private parseElementId(id: string): { name: string, index: number } {
+		const parts = id.split(';');
+		const indexStr = parts.pop();
+		const index = parseInt(indexStr || '1', 10);
+		const name = parts.join(';');
+		return { name, index };
 	}
 
 	/**
@@ -724,6 +484,7 @@ export class StatusBarManager {
 				'aria-label': item.name,
 				'data-tooltip-position': 'top',
 				'data-ui-tweaker-status-bar-id': item.id,
+				'data-ui-tweaker-managed': 'true',
 			},
 		});
 

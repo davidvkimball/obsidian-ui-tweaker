@@ -124,6 +124,12 @@ export default class UITweakerPlugin extends Plugin {
 		if (this.uiManager) {
 			this.uiManager.cleanup();
 		}
+		if (this.explorerManager) {
+			this.explorerManager.cleanup();
+		}
+		if (this.statusBarManager) {
+			this.statusBarManager.cleanup();
+		}
 		this.restoreHelpButton();
 		if (this.helpButtonObserver) {
 			this.helpButtonObserver.disconnect();
