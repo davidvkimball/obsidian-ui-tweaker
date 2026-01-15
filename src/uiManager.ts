@@ -3,8 +3,13 @@
  */
 
 import { Platform } from 'obsidian';
+import UITweakerPlugin from './main';
 import { UISettings } from './settings';
 import { UIVisibilityState } from './types';
+
+interface CollapsibleSplit {
+	collapsed: boolean;
+}
 
 // Lightweight helper that mirrors Obsidian's setCssProps API where unavailable
 export function setCssProps(el: HTMLElement, props: Record<string, string | number>) {
@@ -14,10 +19,14 @@ export function setCssProps(el: HTMLElement, props: Record<string, string | numb
 }
 
 export class UIManager {
+	private plugin: UITweakerPlugin;
 	private settings: UISettings;
 	private revealListeners: Map<string, () => void> = new Map();
+	private tabObserver: MutationObserver | null = null;
+	private sidebarObserver: MutationObserver | null = null;
 
-	constructor(settings: UISettings) {
+	constructor(plugin: UITweakerPlugin, settings: UISettings) {
+		this.plugin = plugin;
 		this.settings = settings;
 	}
 
@@ -59,6 +68,26 @@ export class UIManager {
 
 		// Simple toggles
 		body.classList.toggle('hider-tabs', this.settings.tabBar);
+		if (this.settings.tabBar) {
+			const os = this.detectOS();
+			// Remove OS-specific classes first
+			body.classList.remove('hider-tabs-windows', 'hider-tabs-macos', 'hider-tabs-neutral');
+			body.classList.add(`hider-tabs-${os}`);
+		} else {
+			body.classList.remove('hider-tabs-windows', 'hider-tabs-macos', 'hider-tabs-neutral');
+		}
+		
+		// Auto-hide tab bar when only one tab
+		body.classList.toggle('auto-hide-tab-bar-when-single-tab', this.settings.tabBarHideWhenSingle);
+		if (this.settings.tabBarHideWhenSingle) {
+			const os = this.detectOS();
+			// Remove OS-specific classes first
+			body.classList.remove('auto-hide-tab-bar-windows', 'auto-hide-tab-bar-macos', 'auto-hide-tab-bar-neutral');
+			body.classList.add(`auto-hide-tab-bar-${os}`);
+			this.setupTabObserver();
+		} else {
+			this.cleanupTabObserver();
+		}
 		
 		// Window dragging - only apply when tab bar is hidden
 		if (this.settings.tabBar && this.settings.enableWindowDragging) {
@@ -104,6 +133,7 @@ export class UIManager {
 		body.classList.toggle('hider-search-suggestions', this.settings.searchSuggestions);
 		body.classList.toggle('hider-search-counts', this.settings.searchTermCounts);
 		body.classList.toggle('hider-meta', this.settings.propertiesInReadingView);
+		body.classList.toggle('ui-tweaker-deemphasize-properties', this.settings.deemphasizeProperties);
 		body.classList.toggle('metadata-heading-off', this.settings.propertiesInHeading);
 		body.classList.toggle('metadata-add-property-off', this.settings.addPropertyButton);
 		body.classList.toggle('hider-instructions', this.settings.instructions);
@@ -252,7 +282,112 @@ export class UIManager {
 		}
 	}
 
+	/**
+	 * Set up MutationObserver to detect single tab state and sidebar state
+	 * Ported from obsidian-oxygen-settings
+	 */
+	private setupTabObserver(): void {
+		if (this.tabObserver) {
+			return; // Already set up
+		}
+
+		const checkSidebars = () => {
+			const workspace = this.plugin.app.workspace;
+			const rightSidebarCollapsed = (workspace.rightSplit as unknown as CollapsibleSplit)?.collapsed !== false;
+			const leftSidebarCollapsed = (workspace.leftSplit as unknown as CollapsibleSplit)?.collapsed !== false;
+
+			document.body.classList.toggle('is-right-sidebar-collapsed', rightSidebarCollapsed);
+			document.body.classList.toggle('is-left-sidebar-collapsed', leftSidebarCollapsed);
+		};
+
+		// Debounce function
+		let checkTimeout: number | null = null;
+		const debouncedCheck = () => {
+			if (checkTimeout) {
+				clearTimeout(checkTimeout);
+			}
+			checkTimeout = window.setTimeout(() => {
+				checkSidebars();
+				checkTimeout = null;
+			}, 150);
+		};
+
+		// Initial check
+		setTimeout(checkSidebars, 100);
+
+		// Watch for changes in workspace
+		this.tabObserver = new MutationObserver(() => {
+			debouncedCheck();
+		});
+
+		const workspace = document.querySelector('.workspace');
+		if (workspace) {
+			this.tabObserver.observe(workspace, {
+				childList: true,
+				subtree: true
+			});
+		}
+
+		// Listen to workspace layout and resize events
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('layout-change', () => {
+				debouncedCheck();
+			})
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('resize', () => {
+				debouncedCheck();
+			})
+		);
+
+		// Watch for class changes on workspace element (sidebar toggles)
+		const workspaceEl = document.querySelector('.workspace');
+		if (workspaceEl) {
+			this.sidebarObserver = new MutationObserver((mutations) => {
+				let shouldCheck = false;
+				mutations.forEach((mutation) => {
+					if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+						shouldCheck = true;
+					}
+				});
+				if (shouldCheck) {
+					// Check immediately for sidebar toggles to sync animation
+					checkSidebars();
+					// Still run debounced check as a safety fallback
+					debouncedCheck();
+				}
+			});
+
+			this.sidebarObserver.observe(workspaceEl, {
+				attributes: true,
+				attributeFilter: ['class']
+			});
+		}
+	}
+
+	/**
+	 * Cleanup tab observer
+	 */
+	private cleanupTabObserver(): void {
+		if (this.tabObserver) {
+			this.tabObserver.disconnect();
+			this.tabObserver = null;
+		}
+
+		if (this.sidebarObserver) {
+			this.sidebarObserver.disconnect();
+			this.sidebarObserver = null;
+		}
+
+		// Remove all sidebar related classes
+		document.body.classList.remove('is-right-sidebar-collapsed', 'is-left-sidebar-collapsed');
+
+		// Remove OS-specific classes
+		document.body.classList.remove('auto-hide-tab-bar-windows', 'auto-hide-tab-bar-macos', 'auto-hide-tab-bar-neutral');
+	}
+
 	cleanup() {
+		this.cleanupTabObserver();
 		// Remove all event listeners
 		this.revealListeners.forEach((cleanup) => cleanup());
 		this.revealListeners.clear();

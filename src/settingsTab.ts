@@ -365,6 +365,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 
 		this.addToggleSetting(propertiesGroup, 'Hide properties in Reading view', 'Hides the properties section in Reading view.', 'propertiesInReadingView');
 
+		this.addToggleSetting(propertiesGroup, 'Deemphasize properties', 'Softens visual prominence of file properties. They become more visible on hover.', 'deemphasizeProperties');
+
 		this.addToggleSetting(propertiesGroup, 'Hide properties heading', 'Hide "Properties" heading above properties.', 'propertiesInHeading');
 
 		this.addToggleSetting(propertiesGroup, 'Hide "Add property" button', 'Hide "Add property" button below properties.', 'addPropertyButton');

@@ -73,6 +73,8 @@ export class HiderTab extends TabRenderer {
 		this.addToggleSetting(navigationGroup, 'Hide tab bar', 'Hides the tab container at the top of the window.', 'tabBar');
 
 		this.addToggleSetting(navigationGroup, 'Make top of window draggable without tab bar', 'Enables window dragging from the top of the window when the tab bar is hidden. Only works when "Hide tab bar" is enabled.', 'enableWindowDragging');
+		
+		this.addToggleSetting(navigationGroup, 'Hide tab header when only one tab', 'Hide the tab bar automatically when only 1 tab is open.', 'tabBarHideWhenSingle');
 
 		// View header buttons
 		this.addToggleSetting(navigationGroup, 'Hide "Reading mode" button', 'Hide "Reading mode" button in view headers.', 'readingModeButton');
@@ -197,6 +199,8 @@ export class HiderTab extends TabRenderer {
 		const propertiesGroup = createSettingsGroup(container, 'Properties', 'ui-tweaker');
 
 		this.addToggleSetting(propertiesGroup, 'Hide properties in Reading view', 'Hides the properties section in Reading view.', 'propertiesInReadingView');
+
+		this.addToggleSetting(propertiesGroup, 'Deemphasize properties', 'Softens visual prominence of file properties. They become more visible on hover.', 'deemphasizeProperties');
 
 		this.addToggleSetting(propertiesGroup, 'Hide properties heading', 'Hide "Properties" heading above properties.', 'propertiesInHeading');
 

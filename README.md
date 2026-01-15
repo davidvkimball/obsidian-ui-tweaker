@@ -67,6 +67,7 @@ UI Tweaker provides extensive control over Obsidian's interface with three visib
 ### Properties
 
 - Properties in Reading view
+- Deemphasize properties (Softens visual prominence of file properties. They become more visible on hover.)
 - Properties heading
 - Add property button
 

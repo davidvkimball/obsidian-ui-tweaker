@@ -18,6 +18,7 @@ export interface UISettings {
 
 	// Simple toggles (Show/Hide only)
 	tabBar: boolean;
+	tabBarHideWhenSingle: boolean;
 	enableWindowDragging: boolean;
 	newNoteButton: boolean;
 	newFolderButton: boolean;
@@ -39,6 +40,7 @@ export interface UISettings {
 	propertiesInReadingView: boolean;
 	propertiesInHeading: boolean;
 	addPropertyButton: boolean;
+	deemphasizeProperties: boolean;
 	instructions: boolean;
 
 	// Mobile-specific settings (Show/Hide only)
@@ -119,6 +121,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 
 	// Simple toggles
 	tabBar: false,
+	tabBarHideWhenSingle: false,
 	enableWindowDragging: false,
 	newNoteButton: false,
 	newFolderButton: false,
@@ -140,6 +143,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 	propertiesInReadingView: false,
 	propertiesInHeading: false,
 	addPropertyButton: false,
+	deemphasizeProperties: false,
 	instructions: false,
 
 	// Mobile-specific

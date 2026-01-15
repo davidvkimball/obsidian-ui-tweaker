@@ -98,6 +98,12 @@ export function registerCommands(context: CommandContext) {
 		refresh();
 	});
 
+	registerToggleCommand(plugin, 'toggle-tab-bar-single', 'Toggle hide tab bar when only one tab', async () => {
+		settings.tabBarHideWhenSingle = !settings.tabBarHideWhenSingle;
+		await saveSettings();
+		refresh();
+	});
+
 	registerToggleCommand(plugin, 'toggle-new-note-button', 'Toggle new note button', async () => {
 		settings.newNoteButton = !settings.newNoteButton;
 		await saveSettings();
@@ -205,6 +211,12 @@ export function registerCommands(context: CommandContext) {
 
 	registerToggleCommand(plugin, 'toggle-properties-reading-view', 'Toggle properties in Reading view', async () => {
 		settings.propertiesInReadingView = !settings.propertiesInReadingView;
+		await saveSettings();
+		refresh();
+	});
+
+	registerToggleCommand(plugin, 'toggle-deemphasize-properties', 'Toggle deemphasize properties', async () => {
+		settings.deemphasizeProperties = !settings.deemphasizeProperties;
 		await saveSettings();
 		refresh();
 	});

@@ -30,7 +30,7 @@ export default class UITweakerPlugin extends Plugin {
 		await this.loadSettings();
 
 		// Initialize UI manager
-		this.uiManager = new UIManager(this.settings);
+		this.uiManager = new UIManager(this, this.settings);
 		this.uiManager.applyStyles();
 
 		// Initialize Tab Bar Manager

@@ -581,7 +581,7 @@ export class TabBarTab extends TabRenderer {
 				.setName('Show only on these file types')
 				.setDesc('Show button only on specified file types or views. Enter comma-separated file extensions (like "md,mdx") or view types for views without files (like "{{graph}}"). Leave empty to show on all. Use {{graph}} for graph view and {{empty}} for blank/new tabs.')
 				.addText((text) => {
-					text.setPlaceholder('md, mdx');
+					text.setPlaceholder('Example: md, mdx');
 					text.setValue(pair.showOnFileTypes ?? '');
 					text.onChange((value) => {
 						void (async () => {
