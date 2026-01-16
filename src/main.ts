@@ -26,6 +26,12 @@ export default class UITweakerPlugin extends Plugin {
 	public statusBarManager?: StatusBarManager;
 	public explorerManager?: ExplorerManager;
 
+	get isMobile(): boolean {
+		return Platform.isMobile || 
+			document.body.classList.contains('is-mobile') || 
+			document.body.classList.contains('emulate-mobile');
+	}
+
 	async onload() {
 		await this.loadSettings();
 
@@ -112,7 +118,7 @@ export default class UITweakerPlugin extends Plugin {
 		this.setupHelpButtonReplacement();
 		
 		// Set up sync button replacement (only on mobile)
-		if (Platform.isMobile) {
+		if (this.isMobile) {
 			this.setupSyncButtonReplacement();
 		} else {
 			// Make sure class is removed on desktop
@@ -254,7 +260,7 @@ export default class UITweakerPlugin extends Plugin {
 		this.setupHelpButtonReplacement();
 		// Always update sync button CSS to ensure it matches current settings
 		this.updateSyncButtonCSS();
-		if (Platform.isMobile) {
+		if (this.isMobile) {
 			this.setupSyncButtonReplacement();
 		} else {
 			// Make sure class is removed on desktop
@@ -544,7 +550,7 @@ export default class UITweakerPlugin extends Plugin {
 		this.updateSyncButtonCSS();
 		
 		// Only proceed if replacement is enabled AND we're on mobile
-		if (!this.settings.syncButtonReplacement?.enabled || !Platform.isMobile) {
+		if (!this.settings.syncButtonReplacement?.enabled || !this.isMobile) {
 			this.restoreSyncButton();
 			return;
 		}
@@ -571,7 +577,7 @@ export default class UITweakerPlugin extends Plugin {
 	public updateSyncButtonCSS() {
 		// Hide sync button if replacement is enabled AND we're on mobile
 		// Use CSS class instead of style element
-		const shouldHide = (this.settings.syncButtonReplacement?.enabled ?? false) && Platform.isMobile;
+		const shouldHide = (this.settings.syncButtonReplacement?.enabled ?? false) && this.isMobile;
 		document.body.classList.toggle('ui-tweaker-hide-sync-button', shouldHide);
 	}
 
@@ -600,11 +606,12 @@ export default class UITweakerPlugin extends Plugin {
 			// Find the sync button in mobile right drawer header
 			// Actual pattern: clickable-icon workspace-drawer-header-icon mod-raised sync-status-icon
 			let syncButton: HTMLElement | null = null;
+			let drawerHeader: HTMLElement | null = null;
 			
 			// Search in right drawer header
 			const rightDrawer = document.querySelector('.workspace-drawer.mod-right');
 			if (rightDrawer) {
-				const drawerHeader = rightDrawer.querySelector('.workspace-drawer-header');
+				drawerHeader = rightDrawer.querySelector('.workspace-drawer-header') as HTMLElement;
 				if (drawerHeader) {
 					// Look for sync-status-icon class (this is the actual class!)
 					syncButton = drawerHeader.querySelector('.sync-status-icon, .workspace-drawer-header-icon.sync-status-icon') as HTMLElement;
@@ -623,7 +630,7 @@ export default class UITweakerPlugin extends Plugin {
 				}
 			}
 			
-			if (!syncButton) {
+			if (!drawerHeader) {
 				// Set up observer to catch it when it appears
 				this.setupSyncButtonObserver();
 				// Also retry after a short delay
@@ -641,8 +648,21 @@ export default class UITweakerPlugin extends Plugin {
 			}
 			this.customSyncButton = undefined;
 
-			// Create a new custom button (clone preserves all original classes)
-			const customButton = syncButton.cloneNode(true) as HTMLElement;
+			// Create a new custom button
+			// If we found the original sync button, clone it to get standard drawer header styles
+			// If not, create a fresh one with standard classes
+			let customButton: HTMLElement;
+			if (syncButton) {
+				customButton = syncButton.cloneNode(true) as HTMLElement;
+				// Remove sync-specific classes that might cause error colors or behavior
+				customButton.classList.remove('sync-status-icon', 'mod-error', 'mod-warning', 'mod-success', 'mod-syncing');
+				// Remove tracking attributes if cloning an already-hidden original
+				customButton.removeAttribute('data-ui-tweaker-original-sync-hidden');
+			} else {
+				customButton = document.createElement('div');
+				customButton.classList.add('clickable-icon', 'workspace-drawer-header-icon', 'mod-raised');
+			}
+			
 			customButton.removeAttribute('aria-label');
 			// Add unique identifier to avoid conflicts with other plugins
 			customButton.setAttribute('data-ui-tweaker-sync-replacement', 'true');
@@ -692,80 +712,53 @@ export default class UITweakerPlugin extends Plugin {
 				}
 			}
 
-			// Insert custom button in place of the original (like help button replacement)
-			// Insert right before the original, then hide the original directly
-			const parent = syncButton.parentElement;
-			if (parent) {
-				parent.insertBefore(customButton, syncButton);
+			// Add our custom click handler BEFORE insertion
+			// Use capture phase to ensure we handle it first
+			const handleInteraction = (evt: Event) => {
+				evt.preventDefault();
+				evt.stopPropagation();
+				
+				const commandId = this.settings.syncButtonReplacement?.commandId;
+				if (commandId) {
+					// For open-settings, execute directly (this works!)
+					if (commandId === 'open-settings' || commandId === 'ui-tweaker:open-settings') {
+						const settingApi = (this.app as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
+						if (settingApi) {
+							settingApi.open?.();
+							// Use type assertion for settingTab as it's a private property
+							const pluginInstance = this as unknown as { settingTab?: { id?: string } };
+							if (pluginInstance.settingTab?.id && settingApi.openTabById) {
+								settingApi.openTabById(pluginInstance.settingTab.id);
+							}
+						}
+					} else {
+						// For other commands, try executeCommandById
+						((this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands as { executeCommandById?: (id: string) => Promise<void> })?.executeCommandById?.(commandId).catch((error: unknown) => {
+							console.warn('[UI Tweaker] Error executing command:', error);
+							new Notice(`Failed to execute command: ${commandId}`);
+						});
+					}
+				}
+			};
+
+			customButton.addEventListener('click', handleInteraction, true);
+			customButton.addEventListener('touchstart', handleInteraction, true);
+
+			// Insert custom button in the header
+			if (syncButton) {
+				// Insert right before the original, then hide the original directly
+				syncButton.parentElement?.insertBefore(customButton, syncButton);
+				
+				// Hide the original button directly (more reliable than CSS selectors)
+				setCssProps(syncButton, { display: 'none' });
+				// Add data attribute to track it (in case Obsidian recreates it)
+				syncButton.setAttribute('data-ui-tweaker-original-sync-hidden', 'true');
+				// Store reference to original button so we can restore it later
+				this.originalSyncButton = syncButton;
 			} else {
-				// Fallback: just insert after if parent is missing
-				syncButton.parentElement?.insertBefore(customButton, syncButton.nextSibling);
+				// If no sync button, append to header (usual location is right side)
+				drawerHeader.appendChild(customButton);
 			}
-			
-			// Add our custom click handler AFTER insertion
-			// Don't prevent default - let the click happen naturally, just execute our command
-			customButton.addEventListener('click', (evt: MouseEvent) => {
-				evt.preventDefault();
-				evt.stopPropagation();
-				
-				const commandId = this.settings.syncButtonReplacement?.commandId;
-				if (commandId) {
-					// For open-settings, execute directly (this works!)
-					if (commandId === 'open-settings' || commandId === 'ui-tweaker:open-settings') {
-						const settingApi = (this.app as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
-						if (settingApi) {
-							settingApi.open?.();
-							// Use type assertion for settingTab as it's a private property
-							const pluginInstance = this as unknown as { settingTab?: { id?: string } };
-							if (pluginInstance.settingTab?.id && settingApi.openTabById) {
-								settingApi.openTabById(pluginInstance.settingTab.id);
-							}
-						}
-					} else {
-						// For other commands, try executeCommandById
-						((this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands as { executeCommandById?: (id: string) => Promise<void> })?.executeCommandById?.(commandId).catch((error: unknown) => {
-							console.warn('[UI Tweaker] Error executing command:', error);
-							new Notice(`Failed to execute command: ${commandId}`);
-						});
-					}
-				}
-			}, true); // Use capture phase to ensure we handle it first
-			
-			// Also add touchstart for mobile - same logic as click
-			customButton.addEventListener('touchstart', (evt: TouchEvent) => {
-				evt.preventDefault();
-				evt.stopPropagation();
-				
-				const commandId = this.settings.syncButtonReplacement?.commandId;
-				if (commandId) {
-					// For open-settings, execute directly (this works!)
-					if (commandId === 'open-settings' || commandId === 'ui-tweaker:open-settings') {
-						const settingApi = (this.app as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
-						if (settingApi) {
-							settingApi.open?.();
-							// Use type assertion for settingTab as it's a private property
-							const pluginInstance = this as unknown as { settingTab?: { id?: string } };
-							if (pluginInstance.settingTab?.id && settingApi.openTabById) {
-								settingApi.openTabById(pluginInstance.settingTab.id);
-							}
-						}
-					} else {
-						// For other commands, try executeCommandById
-						((this.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands as { executeCommandById?: (id: string) => Promise<void> })?.executeCommandById?.(commandId).catch((error: unknown) => {
-							console.warn('[UI Tweaker] Error executing command:', error);
-							new Notice(`Failed to execute command: ${commandId}`);
-						});
-					}
-				}
-			}, true);
-			
-			// Hide the original button directly (more reliable than CSS selectors)
-			setCssProps(syncButton, { display: 'none' });
-			// Add data attribute to track it (in case Obsidian recreates it)
-			syncButton.setAttribute('data-ui-tweaker-original-sync-hidden', 'true');
-			
-			// Store reference to original button so we can restore it later
-			this.originalSyncButton = syncButton;
 			
 			// Store reference to custom button
 			this.customSyncButton = customButton;
@@ -942,7 +935,7 @@ export default class UITweakerPlugin extends Plugin {
 
 	private restoreSyncButton() {
 		// Remove CSS class if replacement is disabled or not on mobile
-		if (!this.settings.syncButtonReplacement?.enabled || !Platform.isMobile) {
+		if (!this.settings.syncButtonReplacement?.enabled || !this.isMobile) {
 			document.body.classList.remove('ui-tweaker-hide-sync-button');
 		}
 
@@ -956,6 +949,7 @@ export default class UITweakerPlugin extends Plugin {
 			// Restore the original button's visibility (we hid it with style.display = 'none')
 			if (this.originalSyncButton && document.body.contains(this.originalSyncButton)) {
 				this.originalSyncButton.style.removeProperty('display');
+				this.originalSyncButton.removeAttribute('data-ui-tweaker-original-sync-hidden');
 			}
 			this.originalSyncButton = undefined;
 		}

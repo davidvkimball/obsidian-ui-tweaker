@@ -1,6 +1,6 @@
 {
 	"name": "ui-tweaker",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "Add, hide, or modify various interface elements.",
 	"main": "main.js",
 	"type": "module",

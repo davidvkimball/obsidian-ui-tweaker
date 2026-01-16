@@ -66,6 +66,9 @@ export class UIManager {
 		// Ribbon - boolean toggle (auto-collapse-ribbon)
 		body.classList.toggle('auto-collapse-ribbon', this.settings.ribbonRevealOnHover);
 
+		// Global replacement visibility
+		body.classList.toggle('ui-tweaker-sync-replacement-enabled', this.settings.syncButtonReplacement?.enabled);
+
 		// Simple toggles
 		body.classList.toggle('hider-tabs', this.settings.tabBar);
 		if (this.settings.tabBar) {
