@@ -109,6 +109,7 @@ export class UIManager {
 		body.classList.toggle('hide-button-auto-reveal', this.settings.autoRevealButton);
 		body.classList.toggle('hide-button-collapse-all', this.settings.collapseAllButton);
 		body.classList.toggle('hide-button-reading-mode', this.settings.readingModeButton);
+		body.classList.toggle('hide-button-bookmarked', this.settings.bookmarkedButton);
 		body.classList.toggle('hide-button-search-settings', this.settings.searchSettingsButton);
 		
 		// Tab icons - now support Reveal

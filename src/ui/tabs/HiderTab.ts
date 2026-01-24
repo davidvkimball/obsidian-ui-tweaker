@@ -79,6 +79,8 @@ export class HiderTab extends TabRenderer {
 		// View header buttons
 		this.addToggleSetting(navigationGroup, 'Hide "Reading mode" button', 'Hide "Reading mode" button in view headers.', 'readingModeButton');
 
+		this.addToggleSetting(navigationGroup, 'Hide "Bookmarked" button', 'Hide "Bookmarked" button in view headers.', 'bookmarkedButton');
+
 		this.addToggleSetting(navigationGroup, 'Hide "Search settings" button', 'Hide "Search settings" button in search pane.', 'searchSettingsButton');
 
 		// ========================================

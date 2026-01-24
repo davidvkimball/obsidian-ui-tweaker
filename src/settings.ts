@@ -26,6 +26,7 @@ export interface UISettings {
 	autoRevealButton: boolean;
 	collapseAllButton: boolean;
 	readingModeButton: boolean;
+	bookmarkedButton: boolean;
 	searchSettingsButton: boolean;
 	tabListIcon: UIVisibilityState; // Changed to support Reveal
 	newTabIcon: UIVisibilityState; // Changed to support Reveal
@@ -129,6 +130,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 	autoRevealButton: false,
 	collapseAllButton: false,
 	readingModeButton: false,
+	bookmarkedButton: false,
 	searchSettingsButton: false,
 	tabListIcon: 'show',
 	newTabIcon: 'show',
