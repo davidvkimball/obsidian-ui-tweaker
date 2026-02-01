@@ -8,7 +8,7 @@ import UITweakerPlugin from '../main';
 import { CommandIconPair } from '../types';
 import { matchesFileTypeFilter, isModeActive, isCommandChecked } from '../utils/commandUtils';
 import { IconPickerModal } from '../modals/IconPickerModal';
-import { setCssProps } from '../uiManager';
+import { setCssProps } from '../utils/cssUtils';
 
 export class TabBarManager {
 	private plugin: UITweakerPlugin;
@@ -28,13 +28,13 @@ export class TabBarManager {
 			// Remove all buttons on plugin unload
 			this.removeButtonsFromAllLeaves();
 		});
-		
+
 		this.plugin.registerEvent(
 			this.plugin.app.workspace.on('layout-change', () => {
 				this.addButtonsToAllLeaves();
 			})
 		);
-		
+
 		this.plugin.app.workspace.onLayoutReady(() =>
 			setTimeout(() => this.addButtonsToAllLeaves(), 100)
 		);
@@ -48,12 +48,12 @@ export class TabBarManager {
 		if (!(view instanceof ItemView)) {
 			return;
 		}
-		
+
 		const buttons = this.buttonsFor(leaf, true);
 		if (!buttons) {
 			return;
 		}
-		
+
 		// If button already exists, update its name and color instead of creating new one
 		if (buttons.has(id)) {
 			const existingButton = buttons.get(id);
@@ -80,7 +80,7 @@ export class TabBarManager {
 
 		// Determine initial icon based on toggle state
 		const initialIcon = this.getIconForToggleState(pair);
-		
+
 		const buttonIcon = view.addAction(initialIcon, name, () => {
 			this.plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
 			const commands = (this.plugin.app as { commands?: { executeCommandById?: (id: string) => Promise<void> } }).commands;
@@ -104,7 +104,7 @@ export class TabBarManager {
 		if (pair.color && pair.color !== '#000000') {
 			setCssProps(buttonIcon, { color: pair.color });
 		}
-		
+
 		// Update toggle state after creation
 		this.updateButtonToggleState(buttonIcon, pair);
 
@@ -208,7 +208,7 @@ export class TabBarManager {
 			if (!(leaf.view instanceof ItemView)) return;
 			const buttons = this.buttonsFor(leaf);
 			if (!buttons) return;
-			
+
 			for (const [id, button] of buttons.entries()) {
 				const pair = this.pairs.find(p => p.id === id);
 				if (pair) {
@@ -251,7 +251,7 @@ export class TabBarManager {
 
 		// Check if command is currently toggled on
 		const isChecked = isCommandChecked(pair.id, this.plugin);
-		
+
 		// Swap icon based on toggle state
 		setIcon(button, isChecked ? pair.toggleIcon : pair.icon);
 	}

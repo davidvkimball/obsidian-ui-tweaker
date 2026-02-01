@@ -8,7 +8,7 @@ import { TabRenderer } from '../common/TabRenderer';
 import { StatusBarItem } from '../../types';
 import { UISettings } from '../../settings';
 import { chooseNewCommand } from '../../utils/chooseCommand';
-import { setCssProps } from '../../uiManager';
+import { setCssProps } from '../../utils/cssUtils';
 import { createSettingsGroup } from '../../utils/settings-compat';
 
 // Simple array move utility
@@ -27,7 +27,7 @@ export class StatusBarTab extends TabRenderer {
 		const settings = this.getSettings();
 		// Store container reference for re-renders
 		this.container = container;
-		
+
 		// Ensure statusBarItems exists
 		if (!settings.statusBarItems) {
 			settings.statusBarItems = [];
@@ -35,7 +35,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Create wrapper
 		const wrapper = container.createDiv('ui-tweaker-status-bar-rows-wrapper');
-		
+
 		// Create rows container
 		const rowsContainer = wrapper.createDiv('ui-tweaker-status-bar-rows-container');
 
@@ -52,7 +52,7 @@ export class StatusBarTab extends TabRenderer {
 		if (settings.statusBarItems.length > 0) {
 			container.createEl('hr');
 		}
-		
+
 		const addGroup = createSettingsGroup(container, undefined, 'ui-tweaker');
 		addGroup.addSetting((setting): void => {
 			setting
@@ -70,11 +70,11 @@ export class StatusBarTab extends TabRenderer {
 								const pair = await chooseNewCommand(this.plugin);
 								await this.plugin.statusBarManager?.addCustomCommand(pair);
 								// Save scroll position before re-render
-								const scrollContainer = container.closest('.vertical-tab-content') || 
-									container.closest('.settings-content') || 
+								const scrollContainer = container.closest('.vertical-tab-content') ||
+									container.closest('.settings-content') ||
 									container.parentElement;
 								const scrollTop = scrollContainer?.scrollTop || 0;
-								
+
 								// Re-render and restore scroll
 								this.render(container);
 								requestAnimationFrame(() => {
@@ -109,7 +109,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Drag handle
 		const handle = entry.createSpan('ui-tweaker-status-bar-row-handle');
-		handle.addEventListener('mousedown', (event) => 
+		handle.addEventListener('mousedown', (event) =>
 			this.handleMouseDown(event, rowsContainer, item, settings)
 		);
 
@@ -184,7 +184,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Drag handle
 		const handle = entry.createSpan('ui-tweaker-status-bar-row-handle');
-		handle.addEventListener('mousedown', (event) => 
+		handle.addEventListener('mousedown', (event) =>
 			this.handleMouseDown(event, rowsContainer, item, settings)
 		);
 
@@ -193,7 +193,7 @@ export class StatusBarTab extends TabRenderer {
 		const displayName = item.displayName || item.name;
 		const nameText = item.name === displayName ? item.name : `${item.name} (${displayName})`;
 		titleSpan.textContent = nameText;
-		
+
 		// Make title editable on click
 		titleSpan.addEventListener('dblclick', () => {
 			const currentName = item.name;
@@ -206,7 +206,7 @@ export class StatusBarTab extends TabRenderer {
 			titleSpan.appendChild(input);
 			input.focus();
 			input.select();
-			
+
 			const saveName = () => {
 				let newName = input.value.trim();
 				if (!newName) newName = currentName;
@@ -215,7 +215,7 @@ export class StatusBarTab extends TabRenderer {
 				titleSpan.textContent = newName === displayName ? newName : `${newName} (${displayName})`;
 				void this.saveSettings();
 			};
-			
+
 			input.addEventListener('keydown', (e) => {
 				if (e.key === 'Enter') {
 					e.preventDefault();
@@ -262,7 +262,7 @@ export class StatusBarTab extends TabRenderer {
 				}
 			});
 		}
-		
+
 		// Color picker (Obsidian's native component)
 		const colorPickerContainer = entry.createSpan('ui-tweaker-status-bar-row-color-picker');
 		const colorPickerEl = colorPickerContainer.createDiv();
@@ -290,9 +290,9 @@ export class StatusBarTab extends TabRenderer {
 				this.render(this.container);
 			}
 		});
-		
+
 		// Device mode icon - removed (status bar not visible on mobile, so no need for device indicators)
-		
+
 		// MD-only icon
 		const mdOnlySpan = entry.createSpan('ui-tweaker-status-bar-row-md-only');
 		mdOnlySpan.setAttribute('aria-label', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
@@ -353,9 +353,9 @@ export class StatusBarTab extends TabRenderer {
 	 * Toggle lock position based on current position
 	 */
 	private toggleLock(
-		item: StatusBarItem, 
-		lockSpan: HTMLElement, 
-		currentIndex: number, 
+		item: StatusBarItem,
+		lockSpan: HTMLElement,
+		currentIndex: number,
 		totalItems: number,
 		rowsContainer: HTMLElement,
 		settings: UISettings
@@ -378,7 +378,7 @@ export class StatusBarTab extends TabRenderer {
 		} else {
 			item.sticky = false;
 		}
-		
+
 		// Update status bar order
 		this.plugin.statusBarManager?.reorder();
 		void this.saveSettings();
@@ -394,7 +394,7 @@ export class StatusBarTab extends TabRenderer {
 	 */
 	private toggleVisibility(item: StatusBarItem, visibilitySpan: HTMLElement, entry: HTMLElement): void {
 		item.hidden = !item.hidden;
-		
+
 		if (item.hidden) {
 			entry.addClass('ui-tweaker-status-bar-row-hidden');
 			setIcon(visibilitySpan, 'eye-off');
@@ -404,7 +404,7 @@ export class StatusBarTab extends TabRenderer {
 			setIcon(visibilitySpan, 'eye');
 			visibilitySpan.setAttribute('aria-label', 'Visible - click to hide');
 		}
-		
+
 		this.plugin.statusBarManager?.reorder();
 		void this.saveSettings(); // Save the hidden state
 	}
@@ -418,11 +418,11 @@ export class StatusBarTab extends TabRenderer {
 		if (entry) {
 			rowsContainer.removeChild(entry);
 		}
-		
+
 		await this.plugin.statusBarManager?.removeItem(item);
-		
+
 		// Position is implicit in array order (like Status Bar Organizer)
-		
+
 		void this.saveSettings();
 	}
 
@@ -461,8 +461,8 @@ export class StatusBarTab extends TabRenderer {
 		}
 
 		// Get the wrapper container
-		const wrapper = rowsContainer.closest('.ui-tweaker-status-bar-rows-wrapper') || 
-			rowsContainer.parentElement || 
+		const wrapper = rowsContainer.closest('.ui-tweaker-status-bar-rows-wrapper') ||
+			rowsContainer.parentElement ||
 			rowsContainer;
 		wrapper.appendChild(movableRow);
 
@@ -472,7 +472,7 @@ export class StatusBarTab extends TabRenderer {
 
 		// Position movable row (exactly like Status Bar Organizer)
 		const stationaryRect = stationaryRow.getBoundingClientRect();
-		setCssProps(movableRow, { 
+		setCssProps(movableRow, {
 			position: 'absolute',
 			left: (stationaryRect.left - containerX) + 'px',
 			top: (stationaryRect.top - containerY) + 'px',
@@ -542,7 +542,7 @@ export class StatusBarTab extends TabRenderer {
 
 			// Calculate distance (like Status Bar Organizer)
 			const dist = movableRow.getBoundingClientRect().top - stationaryRow.getBoundingClientRect().top;
-			
+
 			// If moved far enough, change position (like Status Bar Organizer)
 			if (Math.abs(dist) > stationaryRow.offsetHeight * 0.75) {
 				const dir = dist / Math.abs(dist);
@@ -555,7 +555,7 @@ export class StatusBarTab extends TabRenderer {
 					} else {
 						rowsContainer.appendChild(stationaryRow);
 					}
-					
+
 					// Update array order (don't save during drag - wait for mouse up)
 					if (settings.statusBarItems) {
 						const oldIndex = settings.statusBarItems.findIndex((i: StatusBarItem) => i.id === item.id);
@@ -566,7 +566,7 @@ export class StatusBarTab extends TabRenderer {
 							// Don't saveSettings during drag - wait for mouse up to save position
 						}
 					}
-					
+
 					index = newIndex;
 				}
 			}
@@ -582,7 +582,7 @@ export class StatusBarTab extends TabRenderer {
 			dragging = false;
 			window.removeEventListener('mousemove', handleMouseMove);
 			window.removeEventListener('mouseup', handleMouseUp);
-			
+
 			// Update status bar order and save position after drag completes
 			this.plugin.statusBarManager?.reorder();
 			void this.saveSettings();

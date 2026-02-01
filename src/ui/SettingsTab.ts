@@ -13,6 +13,8 @@ import { MobileTab } from './tabs/MobileTab';
 
 export class UITweakerSettingTab extends PluginSettingTab {
 	plugin: UITweakerPlugin;
+	public icon = 'lucide-wrench';
+	public id = 'ui-tweaker';
 
 	constructor(app: App, plugin: UITweakerPlugin) {
 		super(app, plugin);
@@ -79,7 +81,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				text: tab.name,
 				cls: `tab-button ${index === 0 ? 'active' : ''}`
 			});
-			
+
 			button.addEventListener('click', () => {
 				// Remove active class from all buttons
 				tabNav.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));

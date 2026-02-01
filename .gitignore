@@ -23,3 +23,5 @@ data.json
 
 # Reference materials
 .ref/
+package-lock.json
+pnpm-lock.yaml

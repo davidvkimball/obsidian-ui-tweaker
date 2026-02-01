@@ -9,7 +9,7 @@ import { createSettingsGroup } from '../../utils/settings-compat';
 import { CommandIconPair, ExplorerButtonItem } from '../../types';
 import { chooseNewCommand } from '../../utils/chooseCommand';
 import { IconPickerModal } from '../../modals/IconPickerModal';
-import { setCssProps } from '../../uiManager';
+import { setCssProps } from '../../utils/cssUtils';
 
 // Simple array move utility
 function arrayMoveMutable<T>(array: T[], from: number, to: number): void {
@@ -24,7 +24,7 @@ export class ExplorerTab extends TabRenderer {
 	render(container: HTMLElement): void {
 		container.empty();
 		const settings = this.getSettings();
-		
+
 		// Ensure explorerCommands exists
 		if (!settings.explorerCommands) {
 			settings.explorerCommands = [];
@@ -70,7 +70,7 @@ export class ExplorerTab extends TabRenderer {
 			// Add separator
 			container.createEl('hr');
 		}
-		
+
 		const addGroup = createSettingsGroup(container, undefined, 'ui-tweaker');
 		addGroup.addSetting((setting): void => {
 			setting
@@ -132,7 +132,7 @@ export class ExplorerTab extends TabRenderer {
 		container.empty();
 		const settings = this.getSettings();
 		const group = createSettingsGroup(container, 'Native explorer buttons', 'ui-tweaker');
-		
+
 		// Use mainContainer for scroll position if provided, otherwise use container
 		const scrollContainer = mainContainer || container;
 
@@ -175,12 +175,12 @@ export class ExplorerTab extends TabRenderer {
 				if (color) {
 					setting.addColorPicker((colorPicker) => {
 						colorPicker.setValue(color);
-						
+
 						const controlEl = setting.controlEl;
-						
+
 						// Prevent collapse and scroll jumping on color picker clicks
 						controlEl.addEventListener('click', (e) => e.stopPropagation());
-						
+
 						// Add event handler to the actual color input element
 						setTimeout(() => {
 							const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
@@ -188,11 +188,11 @@ export class ExplorerTab extends TabRenderer {
 								colorInput.addEventListener('click', (e) => e.stopPropagation());
 							}
 						}, 0);
-						
+
 						// Add reset button
 						setTimeout(() => {
 							const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
-							
+
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-color-reset',
 								attr: { 'aria-label': 'Reset to default color' }
@@ -221,14 +221,14 @@ export class ExplorerTab extends TabRenderer {
 									});
 								})();
 							});
-							
+
 							if (colorPickerEl) {
 								controlEl.insertBefore(resetButton, colorPickerEl);
 							} else {
 								controlEl.insertBefore(resetButton, controlEl.firstChild);
 							}
 						}, 0);
-						
+
 						colorPicker.onChange((value) => {
 							void (async () => {
 								if (!settings.nativeExplorerButtonColors) {
@@ -300,13 +300,13 @@ export class ExplorerTab extends TabRenderer {
 					});
 					// Prevent collapse on button click
 					button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
-					
+
 					// Add reset button if icon is set
 					if (iconOverride) {
 						setTimeout(() => {
 							const controlEl = setting.controlEl;
 							const buttonEl = controlEl.querySelector('button') || controlEl.lastElementChild;
-							
+
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-icon-reset',
 								attr: { 'aria-label': 'Reset to default icon' }
@@ -335,7 +335,7 @@ export class ExplorerTab extends TabRenderer {
 									});
 								})();
 							});
-							
+
 							// Insert reset button before the main button
 							if (buttonEl) {
 								controlEl.insertBefore(resetButton, buttonEl);
@@ -359,17 +359,17 @@ export class ExplorerTab extends TabRenderer {
 	private renderButtonItem(container: HTMLElement, item: ExplorerButtonItem, index: number): void {
 		const settings = this.getSettings();
 		const group = createSettingsGroup(container, undefined, 'ui-tweaker');
-		
+
 		// Store reference to other settings for collapsible functionality
 		const otherSettings: HTMLElement[] = [];
 
 		// Get the command pair for custom commands
-		const pair = item.type === 'custom' && item.commandId 
+		const pair = item.type === 'custom' && item.commandId
 			? settings.explorerCommands.find(c => c.id === item.commandId)
 			: null;
 
 		// Determine display name
-		const displayName = item.type === 'custom' && pair 
+		const displayName = item.type === 'custom' && pair
 			? (pair.displayName || pair.name)
 			: item.name;
 
@@ -384,7 +384,7 @@ export class ExplorerTab extends TabRenderer {
 
 		const nativeButtonInfo = item.type === 'native' ? nativeButtonMap[item.id] : null;
 		const isHidden = nativeButtonInfo ? settings[nativeButtonInfo.settingKey] : item.hidden;
-		const color = nativeButtonInfo 
+		const color = nativeButtonInfo
 			? settings.nativeExplorerButtonColors?.[nativeButtonInfo.colorKey]
 			: (item.color && item.color !== '#000000' ? item.color : undefined);
 		const iconOverride = nativeButtonInfo
@@ -405,7 +405,7 @@ export class ExplorerTab extends TabRenderer {
 						return false;
 					}
 				}, true);
-				
+
 				setting.settingEl.addEventListener('click', (e) => {
 					const target = e.target as HTMLElement;
 					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
@@ -430,7 +430,7 @@ export class ExplorerTab extends TabRenderer {
 						return false;
 					}
 				}, true);
-				
+
 				setting.settingEl.addEventListener('click', (e) => {
 					const target = e.target as HTMLElement;
 					const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
@@ -444,18 +444,18 @@ export class ExplorerTab extends TabRenderer {
 					}
 				}, false);
 			}
-			
+
 			// Make nameEl a flex container so chevron can be positioned to the left
 			const nameEl = setting.nameEl;
 			setCssProps(nameEl, { display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' });
-			
+
 			// Add chevrons-up-down icon to the LEFT of the name (only for native and custom buttons)
 			let chevronContainer: HTMLElement | null = null;
 			let isExpanded = false;
 			if (item.type === 'native' || item.type === 'custom') {
 				chevronContainer = document.createElement('div');
 				chevronContainer.className = 'ui-tweaker-collapse-icon';
-				setCssProps(chevronContainer, { 
+				setCssProps(chevronContainer, {
 					cursor: 'default',
 					background: 'transparent',
 					padding: '0',
@@ -467,7 +467,7 @@ export class ExplorerTab extends TabRenderer {
 				nameEl.insertBefore(chevronContainer, nameEl.firstChild);
 				isExpanded = this.expandedStates.get(item.id) ?? false;
 				setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
-				
+
 				// Toggle on chevron click
 				chevronContainer.addEventListener('click', (e) => {
 					e.stopPropagation();
@@ -481,64 +481,64 @@ export class ExplorerTab extends TabRenderer {
 					});
 				});
 			}
-			
+
 			// Create name container (editable only for custom buttons)
 			const nameContainer = nameEl.createDiv({ cls: 'ui-tweaker-editable-name' });
 			setCssProps(nameContainer, { display: 'flex', alignItems: 'center', gap: '0.5rem' });
-			
+
 			// Function to create the display element with click handler
 			const createNameDisplay = (name: string) => {
 				nameContainer.empty();
-				
-				const display = nameContainer.createSpan({ 
+
+				const display = nameContainer.createSpan({
 					text: name === displayName ? name : `${name} (${displayName})`,
 					cls: 'ui-tweaker-name-display'
 				});
-				
+
 				// Add pencil icon (only for custom buttons, not external)
 				if (item.type === 'custom') {
 					const iconContainer = nameContainer.createDiv({ cls: 'ui-tweaker-edit-icon' });
 					setCssProps(iconContainer, { opacity: '0.6' });
 					setIcon(iconContainer, 'lucide-pencil-line');
-					
+
 					// Make name and icon editable on click
 					const startEdit = () => {
 						const currentName = item.name;
-						
+
 						nameContainer.empty();
-						
+
 						const nameInput = nameContainer.createEl('input', {
 							type: 'text',
 							value: currentName
 						});
 						nameInput.addClass('mod-text-input');
-						
+
 						nameInput.focus();
 						nameInput.select();
-						
+
 						const saveName = () => {
 							nameInput.removeEventListener('blur', saveName);
-							
+
 							let newName = nameInput.value.trim();
 							if (!newName) {
 								newName = currentName;
 							}
 							item.name = newName;
-							
+
 							// Update command pair name if custom
 							if (pair) {
 								pair.name = newName;
 							}
-							
+
 							// Update button names
 							this.plugin.explorerManager?.updateButtonNames();
-							
+
 							void (async () => {
 								await this.saveSettings();
 								this.render(container);
 							})();
 						};
-						
+
 						nameInput.addEventListener('keydown', (e) => {
 							if (e.key === 'Enter') {
 								e.preventDefault();
@@ -548,13 +548,13 @@ export class ExplorerTab extends TabRenderer {
 								createNameDisplay(currentName);
 							}
 						});
-						
+
 						nameInput.addEventListener('blur', saveName);
 					};
-					
+
 					display.addEventListener('click', startEdit);
 					iconContainer.addEventListener('click', startEdit);
-					
+
 					iconContainer.addEventListener('mouseenter', () => {
 						setCssProps(iconContainer, { opacity: '1' });
 					});
@@ -563,10 +563,10 @@ export class ExplorerTab extends TabRenderer {
 					});
 				}
 			};
-			
+
 			// Create initial display
 			createNameDisplay(item.name);
-			
+
 			setting.setDesc('')
 				.addExtraButton((button) => {
 					// Icon preview (for custom commands and native with overrides)
@@ -633,8 +633,8 @@ export class ExplorerTab extends TabRenderer {
 						button.setTooltip('Move up');
 						button.onClick(() => {
 							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') || 
-								container.closest('.settings-content') || 
+							const scrollContainer = container.closest('.vertical-tab-content') ||
+								container.closest('.settings-content') ||
 								container.closest('.vertical-tab-content-container') ||
 								container;
 							const scrollPos = scrollContainer.scrollTop;
@@ -671,8 +671,8 @@ export class ExplorerTab extends TabRenderer {
 						button.setTooltip('Move down');
 						button.onClick(() => {
 							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') || 
-								container.closest('.settings-content') || 
+							const scrollContainer = container.closest('.vertical-tab-content') ||
+								container.closest('.settings-content') ||
 								container.closest('.vertical-tab-content-container') ||
 								container;
 							const scrollPos = scrollContainer.scrollTop;
@@ -765,24 +765,24 @@ export class ExplorerTab extends TabRenderer {
 				group.addSetting((setting): void => {
 					otherSettings.push(setting.settingEl);
 					const hasColor = color !== undefined;
-					
+
 					setting
 						.setName('Custom color')
 						.setDesc('Set a custom color for this icon')
 						.addColorPicker((colorPicker) => {
 							const currentColor = color ?? '#000000';
 							colorPicker.setValue(currentColor);
-							
+
 							const controlEl = setting.controlEl;
 							controlEl.addEventListener('click', (e) => e.stopPropagation());
-							
+
 							setTimeout(() => {
 								const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 								if (colorInput) {
 									colorInput.addEventListener('click', (e) => e.stopPropagation());
 								}
 							}, 0);
-							
+
 							if (hasColor) {
 								setTimeout(() => {
 									const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
@@ -811,7 +811,7 @@ export class ExplorerTab extends TabRenderer {
 									}
 								}, 0);
 							}
-							
+
 							colorPicker.onChange((value) => {
 								void (async () => {
 									if (!settings.nativeExplorerButtonColors) {
@@ -821,7 +821,7 @@ export class ExplorerTab extends TabRenderer {
 									settings.nativeExplorerButtonColors[nativeButtonInfo.colorKey] = newColor;
 									await this.saveSettings();
 									this.plugin.explorerManager?.applyNativeIconOverrides();
-									
+
 									// Update reset button visibility without full re-render
 									const existingReset = controlEl.querySelector('.ui-tweaker-color-reset');
 									if (newColor && !existingReset) {
@@ -863,7 +863,7 @@ export class ExplorerTab extends TabRenderer {
 				group.addSetting((setting): void => {
 					otherSettings.push(setting.settingEl);
 					const hasIconOverride = iconOverride !== undefined;
-					
+
 					setting
 						.setName('Icon override')
 						.setDesc('Override the default icon for this button')
@@ -888,13 +888,13 @@ export class ExplorerTab extends TabRenderer {
 								modal.open();
 							});
 							button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
-							
+
 							// Add reset button if icon override is set
 							if (hasIconOverride) {
 								setTimeout(() => {
 									const controlEl = setting.controlEl;
 									const buttonEl = controlEl.querySelector('button') || controlEl.lastElementChild;
-									
+
 									const resetButton = controlEl.createEl('button', {
 										cls: 'clickable-icon ui-tweaker-icon-override-reset',
 										attr: { 'aria-label': 'Reset icon override' }
@@ -915,7 +915,7 @@ export class ExplorerTab extends TabRenderer {
 											this.render(container);
 										})();
 									});
-									
+
 									// Insert reset button before the main button
 									if (buttonEl) {
 										controlEl.insertBefore(resetButton, buttonEl);
@@ -959,24 +959,24 @@ export class ExplorerTab extends TabRenderer {
 				group.addSetting((setting): void => {
 					otherSettings.push(setting.settingEl);
 					const hasColor = pair.color !== undefined;
-					
+
 					setting
 						.setName('Custom color')
 						.setDesc('Set a custom color for this icon')
 						.addColorPicker((colorPicker) => {
 							const currentColor = pair.color ?? '#000000';
 							colorPicker.setValue(currentColor);
-							
+
 							const controlEl = setting.controlEl;
 							controlEl.addEventListener('click', (e) => e.stopPropagation());
-							
+
 							setTimeout(() => {
 								const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 								if (colorInput) {
 									colorInput.addEventListener('click', (e) => e.stopPropagation());
 								}
 							}, 0);
-							
+
 							if (hasColor) {
 								setTimeout(() => {
 									const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
@@ -1003,12 +1003,12 @@ export class ExplorerTab extends TabRenderer {
 									}
 								}, 0);
 							}
-							
+
 							colorPicker.onChange((value) => {
 								const newColor = value === '#000000' ? undefined : value;
 								pair.color = newColor;
 								item.color = newColor;
-								
+
 								// Update icon preview color in real-time
 								const iconButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 								if (iconButton) {
@@ -1018,7 +1018,7 @@ export class ExplorerTab extends TabRenderer {
 										iconButton.style.removeProperty('color');
 									}
 								}
-								
+
 								// Update reset button visibility without full re-render
 								const controlEl = setting.controlEl;
 								const existingReset = controlEl.querySelector('.ui-tweaker-color-reset');
@@ -1050,7 +1050,7 @@ export class ExplorerTab extends TabRenderer {
 									// Remove reset button
 									existingReset.remove();
 								}
-								
+
 								void (async () => {
 									await this.saveSettings();
 									this.plugin.explorerManager?.reorder();
@@ -1062,7 +1062,7 @@ export class ExplorerTab extends TabRenderer {
 				// Toggle icon configuration
 				group.addSetting((setting): void => {
 					otherSettings.push(setting.settingEl);
-					
+
 					setting
 						.setName('Toggle icon')
 						.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
@@ -1125,10 +1125,10 @@ export class ExplorerTab extends TabRenderer {
 	private renderCommandItem(container: HTMLElement, pair: CommandIconPair, index: number): void {
 		const settings = this.getSettings();
 		const group = createSettingsGroup(container, undefined, 'ui-tweaker');
-		
+
 		// Store reference to other settings for collapsible functionality
 		const otherSettings: HTMLElement[] = [];
-		
+
 		// Command name with editable name (like Vault CMS) and icon preview with color
 		const displayName = pair.displayName || pair.name;
 		group.addSetting((setting): void => {
@@ -1149,7 +1149,7 @@ export class ExplorerTab extends TabRenderer {
 					return false;
 				}
 			}, true); // Capture phase - runs before other handlers
-			
+
 			// Also prevent on bubble phase as backup
 			setting.settingEl.addEventListener('click', (e) => {
 				const target = e.target as HTMLElement;
@@ -1163,15 +1163,15 @@ export class ExplorerTab extends TabRenderer {
 					return false;
 				}
 			}, false); // Bubble phase - backup
-			
+
 			// Make nameEl a flex container so chevron can be positioned to the left
 			const nameEl = setting.nameEl;
 			setCssProps(nameEl, { display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' });
-			
+
 			// Add chevrons-up-down icon to the LEFT of the name (before name container)
 			const chevronContainer = document.createElement('div');
 			chevronContainer.className = 'ui-tweaker-collapse-icon';
-			setCssProps(chevronContainer, { 
+			setCssProps(chevronContainer, {
 				cursor: 'default',
 				background: 'transparent',
 				padding: '0',
@@ -1185,7 +1185,7 @@ export class ExplorerTab extends TabRenderer {
 			// Restore collapse state from Map, default to false if not set
 			let isExpanded = this.expandedStates.get(pair.id) ?? false;
 			setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
-			
+
 			// Toggle on chevron click - ONLY way to change collapse state
 			chevronContainer.addEventListener('click', (e) => {
 				e.stopPropagation();
@@ -1200,63 +1200,63 @@ export class ExplorerTab extends TabRenderer {
 					setCssProps(settingEl, { display: isExpanded ? '' : 'none' });
 				});
 			});
-			
+
 			// Create editable name container with pencil icon
 			const nameContainer = nameEl.createDiv({ cls: 'ui-tweaker-editable-name' });
 			setCssProps(nameContainer, { display: 'flex', alignItems: 'center', gap: '0.5rem' });
-			
+
 			// Function to create the display element with click handler
 			const createNameDisplay = (name: string) => {
 				nameContainer.empty();
-				
-				const display = nameContainer.createSpan({ 
+
+				const display = nameContainer.createSpan({
 					text: name === displayName ? name : `${name} (${displayName})`,
 					cls: 'ui-tweaker-name-display'
 				});
-				
+
 				// Add pencil icon
 				const iconContainer = nameContainer.createDiv({ cls: 'ui-tweaker-edit-icon' });
 				setCssProps(iconContainer, { opacity: '0.6' });
 				setIcon(iconContainer, 'lucide-pencil-line');
-				
+
 				// Make name and icon editable on click
 				const startEdit = () => {
 					const currentName = pair.name;
-					
+
 					// Clear container
 					nameContainer.empty();
-					
+
 					// Create input using native Obsidian styling
 					const nameInput = nameContainer.createEl('input', {
 						type: 'text',
 						value: currentName
 					});
 					nameInput.addClass('mod-text-input');
-					
+
 					// Focus and select text
 					nameInput.focus();
 					nameInput.select();
-					
+
 					// Save on blur
 					const saveName = () => {
 						nameInput.removeEventListener('blur', saveName);
-						
+
 						let newName = nameInput.value.trim();
 						if (!newName) {
 							newName = currentName; // Revert to original if empty
 						}
 						pair.name = newName;
-						
+
 						// Update existing buttons immediately (don't wait for re-render)
 						this.plugin.explorerManager?.updateButtonNames();
-						
+
 						// Re-render to update display and save
 						void (async () => {
 							await this.saveSettings();
 							this.render(container);
 						})();
 					};
-					
+
 					// Save on Enter
 					nameInput.addEventListener('keydown', (e) => {
 						if (e.key === 'Enter') {
@@ -1268,15 +1268,15 @@ export class ExplorerTab extends TabRenderer {
 							createNameDisplay(currentName);
 						}
 					});
-					
+
 					// Save on blur
 					nameInput.addEventListener('blur', saveName);
 				};
-				
+
 				// Add click handlers to both name and icon
 				display.addEventListener('click', startEdit);
 				iconContainer.addEventListener('click', startEdit);
-				
+
 				// Add hover effect to icon
 				iconContainer.addEventListener('mouseenter', () => {
 					setCssProps(iconContainer, { opacity: '1' });
@@ -1285,10 +1285,10 @@ export class ExplorerTab extends TabRenderer {
 					setCssProps(iconContainer, { opacity: '0.6' });
 				});
 			};
-			
+
 			// Create initial display
 			createNameDisplay(pair.name);
-			
+
 			setting.setDesc('')
 				.addExtraButton((button) => {
 					// Change icon - preview with color (real-time updates)
@@ -1325,8 +1325,8 @@ export class ExplorerTab extends TabRenderer {
 						button.setTooltip('Move up');
 						button.onClick(() => {
 							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') || 
-								container.closest('.settings-content') || 
+							const scrollContainer = container.closest('.vertical-tab-content') ||
+								container.closest('.settings-content') ||
 								container.closest('.vertical-tab-content-container') ||
 								container;
 							const scrollPos = scrollContainer.scrollTop;
@@ -1365,8 +1365,8 @@ export class ExplorerTab extends TabRenderer {
 						button.setTooltip('Move down');
 						button.onClick(() => {
 							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') || 
-								container.closest('.settings-content') || 
+							const scrollContainer = container.closest('.vertical-tab-content') ||
+								container.closest('.settings-content') ||
 								container.closest('.vertical-tab-content-container') ||
 								container;
 							const scrollPos = scrollContainer.scrollTop;
@@ -1452,7 +1452,7 @@ export class ExplorerTab extends TabRenderer {
 		group.addSetting((setting): void => {
 			otherSettings.push(setting.settingEl);
 			const hasColor = pair.color !== undefined;
-			
+
 			setting
 				.setName('Custom color')
 				.setDesc('Set a custom color for this icon')
@@ -1460,13 +1460,13 @@ export class ExplorerTab extends TabRenderer {
 					// Use Commander's approach: always show color picker, default to #000 if not set
 					const currentColor = pair.color ?? '#000000';
 					colorPicker.setValue(currentColor);
-					
+
 					// Get the control element - color picker is added to it
 					const controlEl = setting.controlEl;
-					
+
 					// Prevent collapse on color picker clicks
 					controlEl.addEventListener('click', (e) => e.stopPropagation());
-					
+
 					// Add event handler to the actual color input element
 					setTimeout(() => {
 						const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
@@ -1474,14 +1474,14 @@ export class ExplorerTab extends TabRenderer {
 							colorInput.addEventListener('click', (e) => e.stopPropagation());
 						}
 					}, 0);
-					
+
 					// Add reset button to the left of color picker if color has been set
 					// Use setTimeout to ensure color picker is added first, then insert reset button before it
 					if (hasColor) {
 						setTimeout(() => {
 							// Find the color picker element (it's typically the last child or has a specific class)
 							const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
-							
+
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-color-reset',
 								attr: { 'aria-label': 'Reset to default color' }
@@ -1495,19 +1495,19 @@ export class ExplorerTab extends TabRenderer {
 								void (async () => {
 									// Remove color entirely
 									pair.color = undefined;
-									
+
 									// Update icon preview to remove color
 									const iconButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 									if (iconButton) {
 										iconButton.style.removeProperty('color');
 									}
-									
+
 									await this.saveSettings();
 									this.plugin.explorerManager?.reorder();
 									this.render(container);
 								})();
 							});
-							
+
 							// Insert reset button before color picker
 							if (colorPickerEl) {
 								controlEl.insertBefore(resetButton, colorPickerEl);
@@ -1517,12 +1517,12 @@ export class ExplorerTab extends TabRenderer {
 							}
 						}, 0);
 					}
-					
+
 					colorPicker.onChange((value) => {
 						// If set to black (#000000), treat as "no custom color" and remove it
 						const newColor = value === '#000000' ? undefined : value;
 						pair.color = newColor;
-						
+
 						// Update icon preview color in real-time
 						const iconButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 						if (iconButton) {
@@ -1532,7 +1532,7 @@ export class ExplorerTab extends TabRenderer {
 								iconButton.style.removeProperty('color');
 							}
 						}
-						
+
 						// Update reset button visibility without full re-render
 						const controlEl = setting.controlEl;
 						const existingReset = controlEl.querySelector('.ui-tweaker-color-reset');
@@ -1552,19 +1552,19 @@ export class ExplorerTab extends TabRenderer {
 								void (async () => {
 									// Remove color entirely
 									pair.color = undefined;
-									
+
 									// Update icon preview to remove color
 									const iconButton = container.querySelector(`[data-explorer-command-id="${pair.id}"]`) as HTMLElement;
 									if (iconButton) {
 										iconButton.style.removeProperty('color');
 									}
-									
+
 									await this.saveSettings();
 									this.plugin.explorerManager?.reorder();
 									this.render(container);
 								})();
 							});
-							
+
 							// Insert reset button before color picker
 							if (colorPickerEl) {
 								controlEl.insertBefore(resetButton, colorPickerEl);
@@ -1576,7 +1576,7 @@ export class ExplorerTab extends TabRenderer {
 							// Remove reset button
 							existingReset.remove();
 						}
-						
+
 						// Save and reorder (no full re-render to prevent flickering)
 						void (async () => {
 							await this.saveSettings();
@@ -1590,7 +1590,7 @@ export class ExplorerTab extends TabRenderer {
 		group.addSetting((setting): void => {
 			otherSettings.push(setting.settingEl);
 			const hasToggleIcon = pair.toggleIcon !== undefined;
-			
+
 			setting
 				.setName('Toggle icon')
 				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
@@ -1614,13 +1614,13 @@ export class ExplorerTab extends TabRenderer {
 					});
 					// Prevent collapse on click
 					button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
-					
+
 					// Add reset button if toggle icon is set
 					if (hasToggleIcon) {
 						setTimeout(() => {
 							const controlEl = setting.controlEl;
 							const buttonEl = controlEl.querySelector('button') || controlEl.lastElementChild;
-							
+
 							const resetButton = controlEl.createEl('button', {
 								cls: 'clickable-icon ui-tweaker-toggle-icon-reset',
 								attr: { 'aria-label': 'Reset toggle icon' }
@@ -1632,15 +1632,15 @@ export class ExplorerTab extends TabRenderer {
 								e.stopImmediatePropagation();
 								e.preventDefault();
 								// Preserve scroll position to prevent jumping
-								const scrollContainer = container.closest('.vertical-tab-content') || 
-									container.closest('.settings-content') || 
+								const scrollContainer = container.closest('.vertical-tab-content') ||
+									container.closest('.settings-content') ||
 									container.closest('.vertical-tab-content-container') ||
 									container;
 								const scrollPos = scrollContainer.scrollTop;
 								void (async () => {
 									// Remove toggle icon
 									pair.toggleIcon = undefined;
-									
+
 									await this.saveSettings();
 									this.plugin.explorerManager?.reorder();
 									this.render(container);
@@ -1654,7 +1654,7 @@ export class ExplorerTab extends TabRenderer {
 									});
 								})();
 							});
-							
+
 							// Insert reset button before the main button
 							if (buttonEl) {
 								controlEl.insertBefore(resetButton, buttonEl);
@@ -1687,7 +1687,7 @@ export class ExplorerTab extends TabRenderer {
 				});
 		});
 
-			// After all settings are added, apply collapse state from Map
+		// After all settings are added, apply collapse state from Map
 		setTimeout(() => {
 			const savedExpanded = this.expandedStates.get(pair.id) ?? false;
 			otherSettings.forEach(settingEl => {

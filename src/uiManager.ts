@@ -11,12 +11,7 @@ interface CollapsibleSplit {
 	collapsed: boolean;
 }
 
-// Lightweight helper that mirrors Obsidian's setCssProps API where unavailable
-export function setCssProps(el: HTMLElement, props: Record<string, string | number>) {
-	Object.entries(props).forEach(([key, value]) => {
-		el.style.setProperty(key, String(value));
-	});
-}
+import { getVaultSwitcherMask, setCssProps } from './utils/cssUtils';
 
 export class UIManager {
 	private plugin: UITweakerPlugin;
@@ -45,7 +40,7 @@ export class UIManager {
 		if (Platform.isWin) {
 			return 'windows';
 		}
-		
+
 		// Default to neutral/Linux
 		return 'neutral';
 	}
@@ -79,7 +74,7 @@ export class UIManager {
 		} else {
 			body.classList.remove('hider-tabs-windows', 'hider-tabs-macos', 'hider-tabs-neutral');
 		}
-		
+
 		// Auto-hide tab bar when only one tab
 		body.classList.toggle('auto-hide-tab-bar-when-single-tab', this.settings.tabBarHideWhenSingle);
 		if (this.settings.tabBarHideWhenSingle) {
@@ -91,7 +86,7 @@ export class UIManager {
 		} else {
 			this.cleanupTabObserver();
 		}
-		
+
 		// Window dragging - only apply when tab bar is hidden
 		if (this.settings.tabBar && this.settings.enableWindowDragging) {
 			const os = this.detectOS();
@@ -111,28 +106,28 @@ export class UIManager {
 		body.classList.toggle('hide-button-reading-mode', this.settings.readingModeButton);
 		body.classList.toggle('hide-button-bookmarked', this.settings.bookmarkedButton);
 		body.classList.toggle('hide-button-search-settings', this.settings.searchSettingsButton);
-		
+
 		// Tab icons - now support Reveal
 		this.applyVisibilityState(body, 'hide-tab-list-icon', this.settings.tabListIcon);
 		this.applyVisibilityState(body, 'hide-new-tab-icon', this.settings.newTabIcon);
 		this.applyVisibilityState(body, 'hide-tab-close-button', this.settings.tabCloseButton);
-		
+
 		body.classList.toggle('hider-status', this.settings.statusBar);
-		
+
 		// Scrollbars - now support Show/Hide/Reveal
 		this.applyVisibilityState(body, 'hider-scroll', this.settings.scrollBars);
-		
+
 		// Set up scrollbar reveal hover listeners if needed
 		if (this.settings.scrollBars === 'reveal') {
 			this.setupScrollbarRevealListeners();
 		} else {
 			this.removeScrollbarRevealListeners();
 		}
-		
+
 		// Sidebar toggle buttons - now support Reveal
 		this.applyVisibilityState(body, 'hider-left-sidebar-button', this.settings.leftSidebarToggleButton);
 		this.applyVisibilityState(body, 'hider-right-sidebar-button', this.settings.rightSidebarToggleButton);
-		
+
 		body.classList.toggle('hider-tooltips', this.settings.tooltips);
 		body.classList.toggle('hider-search-suggestions', this.settings.searchSuggestions);
 		body.classList.toggle('hider-search-counts', this.settings.searchTermCounts);
@@ -169,12 +164,9 @@ export class UIManager {
 		body.classList.add(`order-navbar-button-nth-child-5-${this.settings.openTabsPosition}`);
 		body.classList.add(`order-navbar-button-nth-child-6-${this.settings.ribbonMenuPosition}`);
 
-		// Vault switcher background transparency
-		// Use setCssProps for CSS custom properties (variables)
-		const maskValue = this.settings.vaultSwitcherBackgroundTransparency >= 1
-			? 'none'
-			: 'linear-gradient(to top, hsl(0, 0%, 0%) 0%, hsla(0, 0%, 0%, 0.99) 18.4%, hsla(0, 0%, 0%, 0.963) 33.7%, hsla(0, 0%, 0%, 0.92) 46.4%, hsla(0, 0%, 0%, 0.864) 56.7%, hsla(0, 0%, 0%, 0.796) 64.8%, hsla(0, 0%, 0%, 0.72) 71.2%, hsla(0, 0%, 0%, 0.637) 76.1%, hsla(0, 0%, 0%, 0.55) 79.9%, hsla(0, 0%, 0%, 0.46) 82.8%, hsla(0, 0%, 0%, 0.37) 85.2%, hsla(0, 0%, 0%, 0.283) 87.3%, hsla(0, 0%, 0%, 0.2) 89.6%, hsla(0, 0%, 0%, 0.124) 92.3%, hsla(0, 0%, 0%, 0.056) 95.6%, hsla(0, 0%, 0%, 0) 100%)';
-		
+		// Use getVaultSwitcherMask utility
+		const maskValue = getVaultSwitcherMask(this.settings.vaultSwitcherBackgroundTransparency);
+
 		setCssProps(body, {
 			'--auto-hide-vault-switcher-bg-transparency': String(this.settings.vaultSwitcherBackgroundTransparency),
 			'--auto-hide-vault-switcher-mask': maskValue,
@@ -227,24 +219,24 @@ export class UIManager {
 		const handleMouseMove = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
 			if (!target) return;
-			
+
 			// Clear all hover classes first
 			hoveredElements.forEach((el) => {
 				el.classList.remove('ui-tweaker-scrollbar-hover');
 			});
 			hoveredElements.clear();
-			
+
 			// Find scrollable containers and check if mouse is near the scrollbar area
 			let element: HTMLElement | null = target;
 			while (element && element !== document.body && element !== document.documentElement) {
 				if (isScrollable(element)) {
 					const rect = element.getBoundingClientRect();
 					const scrollbarArea = 25; // Width of area near edges where scrollbar would be
-					
+
 					// Check if mouse is in the scrollbar area (right edge for vertical, bottom edge for horizontal)
 					const isInVerticalScrollbarArea = e.clientX >= rect.right - scrollbarArea && e.clientX <= rect.right;
 					const isInHorizontalScrollbarArea = e.clientY >= rect.bottom - scrollbarArea && e.clientY <= rect.bottom;
-					
+
 					// Only add hover class if mouse is in the scrollbar area
 					if (isInVerticalScrollbarArea || isInHorizontalScrollbarArea) {
 						element.classList.add('ui-tweaker-scrollbar-hover');

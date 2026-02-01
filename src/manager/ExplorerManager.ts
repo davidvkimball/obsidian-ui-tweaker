@@ -8,7 +8,7 @@ import UITweakerPlugin from '../main';
 import { CommandIconPair, ExplorerButtonItem } from '../types';
 import { isModeActive, isCommandChecked } from '../utils/commandUtils';
 import { IconPickerModal } from '../modals/IconPickerModal';
-import { setCssProps } from '../uiManager';
+import { setCssProps } from '../utils/cssUtils';
 
 export class ExplorerManager {
 	private plugin: UITweakerPlugin;
@@ -44,13 +44,13 @@ export class ExplorerManager {
 					this.applyNativeIconOverrides();
 				})
 			);
-			
+
 			// Add buttons to all existing explorers
 			this.addButtonsToAllLeaves();
-			
+
 			// Reorder immediately to ensure correct order on startup
 			this.reorder();
-			
+
 			// Set up mutation observer for external button detection (after explorers are ready)
 			setTimeout(() => {
 				this.setupMutationObserver();
@@ -69,7 +69,7 @@ export class ExplorerManager {
 	public cleanup(): void {
 		this.observers.forEach(observer => observer.disconnect());
 		this.observers = [];
-		
+
 		const explorers = this.plugin.app.workspace.getLeavesOfType('file-explorer');
 		explorers.forEach((leaf) => {
 			const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
@@ -212,7 +212,7 @@ export class ExplorerManager {
 			'Collapse all': 'collapseAll',
 			'Expand all': 'collapseAll', // Both map to same key
 		};
-		
+
 		if (nativeButtonMap[ariaLabel]) {
 			return `native-${nativeButtonMap[ariaLabel]}`;
 		}
@@ -227,10 +227,10 @@ export class ExplorerManager {
 		const allClasses = Array.from(element.classList);
 		const ignoredClasses = ['clickable-icon', 'nav-action-button'];
 		const stableClasses = allClasses.filter(cls => !ignoredClasses.includes(cls));
-		
+
 		// Try to find plugin identifier in classes
-		const pluginClass = stableClasses.find(cls => 
-			cls.includes('plugin-') || 
+		const pluginClass = stableClasses.find(cls =>
+			cls.includes('plugin-') ||
 			cls.includes('commander') ||
 			cls.includes('explorer-focus')
 		);
@@ -286,7 +286,7 @@ export class ExplorerManager {
 		existingButtons.forEach((element) => {
 			const ariaLabel = element.getAttribute('aria-label') || '';
 			const commandId = element.getAttribute('data-explorer-command-id');
-			
+
 			// Generate canonical name and ID
 			const canonicalName = this.generateCanonicalName(element, ariaLabel);
 			let id = canonicalName;
@@ -382,10 +382,10 @@ export class ExplorerManager {
 				if (this.isReordering) return;
 
 				// Only trigger if there are actually new nodes added (not just reordered)
-				const hasNewNodes = mutations.some(mutation => 
-					mutation.addedNodes.length > 0 && 
-					Array.from(mutation.addedNodes).some(node => 
-						node instanceof HTMLElement && 
+				const hasNewNodes = mutations.some(mutation =>
+					mutation.addedNodes.length > 0 &&
+					Array.from(mutation.addedNodes).some(node =>
+						node instanceof HTMLElement &&
 						node.classList.contains('nav-action-button') &&
 						!node.hasAttribute('data-explorer-command-id') // Only external buttons (not our custom ones)
 					)
@@ -414,10 +414,10 @@ export class ExplorerManager {
 	 */
 	public reorder(): void {
 		this.isReordering = true;
-		
+
 		// Disconnect observers temporarily to prevent flickering
 		this.observers.forEach(observer => observer.disconnect());
-		
+
 		const explorers = this.plugin.app.workspace.getLeavesOfType('file-explorer');
 		explorers.forEach((leaf) => {
 			const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
@@ -431,7 +431,7 @@ export class ExplorerManager {
 			allButtons.forEach((button) => {
 				const ariaLabel = button.getAttribute('aria-label') || '';
 				const canonicalName = this.generateCanonicalName(button, ariaLabel);
-				
+
 				// For native buttons, use canonical name directly
 				if (canonicalName.startsWith('native-')) {
 					buttonMap.set(canonicalName, button);
@@ -635,10 +635,10 @@ export class ExplorerManager {
 	 */
 	public applyNativeIconOverrides(): void {
 		// Observers are already disconnected during reorder, so no need to set flag here
-		
+
 		const explorers = this.plugin.app.workspace.getLeavesOfType('file-explorer');
 		const iconOverrides = this.plugin.settings.nativeExplorerButtonIcons;
-		
+
 		// Map of aria-labels to default icons and icon keys
 		const defaultIcons: Record<string, { icon: string, key: 'newNote' | 'newFolder' | 'sortOrder' | 'autoReveal' | 'collapseAll' }> = {
 			'New note': { icon: 'lucide-edit', key: 'newNote' },
@@ -665,7 +665,7 @@ export class ExplorerManager {
 				const iconOverride = iconOverrides?.[iconKey];
 				const colorOverrides = this.plugin.settings.nativeExplorerButtonColors;
 				const color = colorOverrides?.[iconKey];
-				
+
 				// Always update the icon (either override or default)
 				button.empty();
 				if (iconOverride) {
@@ -675,7 +675,7 @@ export class ExplorerManager {
 					// No icon override - restore default icon
 					setIcon(button as HTMLElement, buttonInfo.icon);
 				}
-				
+
 				// Apply color if set
 				if (color) {
 					(button as HTMLElement).style.color = color;

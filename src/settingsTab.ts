@@ -69,12 +69,12 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
 				.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value) => {
-					this.plugin.settings.ribbonRevealOnHover = value;
-					void this.plugin.saveSettings();
-					this.plugin.refresh();
-				})
-			);
+					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value) => {
+						this.plugin.settings.ribbonRevealOnHover = value;
+						void this.plugin.saveSettings();
+						this.plugin.refresh();
+					})
+				);
 		});
 
 		// ========================================
@@ -144,13 +144,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						this.plugin.settings.helpButtonReplacement.enabled = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();
-						
+
 						// Save scroll position before re-rendering
 						const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
 						const scrollTop = scrollContainer?.scrollTop || 0;
-						
+
 						this.display(); // Re-render to show/hide options
-						
+
 						// Restore scroll position after a brief delay to allow rendering
 						requestAnimationFrame(() => {
 							if (scrollContainer) {
@@ -166,7 +166,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			// Use the exact same approach as CommandPickerModal - just look up by ID
 			const getCommandName = (commandId: string): string => {
 				if (!commandId) return 'Select command...';
-				
+
 				try {
 					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
 					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
@@ -201,13 +201,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.plugin.settings.helpButtonReplacement.commandId = commandId;
 								void this.plugin.saveSettings();
 								this.plugin.refresh();
-								
+
 								// Save scroll position before re-rendering
 								const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
 								const scrollTop = scrollContainer?.scrollTop || 0;
-								
+
 								this.display(); // Re-render to show updated command name
-								
+
 								// Restore scroll position after a brief delay to allow rendering
 								requestAnimationFrame(() => {
 									if (scrollContainer) {
@@ -247,13 +247,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.plugin.settings.helpButtonReplacement.iconId = iconId;
 								void this.plugin.saveSettings();
 								this.plugin.refresh();
-								
+
 								// Save scroll position before re-rendering
 								const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
 								const scrollTop = scrollContainer?.scrollTop || 0;
-								
+
 								this.display(); // Re-render to show updated icon name
-								
+
 								// Restore scroll position after a brief delay to allow rendering
 								requestAnimationFrame(() => {
 									if (scrollContainer) {
@@ -422,13 +422,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						this.plugin.settings.syncButtonReplacement.enabled = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();
-						
+
 						// Save scroll position before re-rendering
 						const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
 						const scrollTop = scrollContainer?.scrollTop || 0;
-						
+
 						this.display(); // Re-render to show/hide options
-						
+
 						// Restore scroll position after a brief delay to allow rendering
 						requestAnimationFrame(() => {
 							if (scrollContainer) {
@@ -444,7 +444,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			// Use the exact same approach as CommandPickerModal - just look up by ID
 			const getCommandName = (commandId: string): string => {
 				if (!commandId) return 'Select command...';
-				
+
 				try {
 					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
 					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
@@ -479,13 +479,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.plugin.settings.syncButtonReplacement.commandId = commandId;
 								void this.plugin.saveSettings();
 								this.plugin.refresh();
-								
+
 								// Save scroll position before re-rendering
 								const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
 								const scrollTop = scrollContainer?.scrollTop || 0;
-								
+
 								this.display(); // Re-render to show updated command name
-								
+
 								// Restore scroll position after a brief delay to allow rendering
 								requestAnimationFrame(() => {
 									if (scrollContainer) {
@@ -525,13 +525,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.plugin.settings.syncButtonReplacement.iconId = iconId;
 								void this.plugin.saveSettings();
 								this.plugin.refresh();
-								
+
 								// Save scroll position before re-rendering
 								const scrollContainer = containerEl.closest('.vertical-tab-content') || containerEl.closest('.settings-content') || containerEl.parentElement;
 								const scrollTop = scrollContainer?.scrollTop || 0;
-								
+
 								this.display(); // Re-render to show updated icon name
-								
+
 								// Restore scroll position after a brief delay to allow rendering
 								requestAnimationFrame(() => {
 									if (scrollContainer) {

@@ -9,7 +9,7 @@ import UITweakerPlugin from '../main';
 import { StatusBarItem, CommandIconPair } from '../types';
 import { isMarkdownView, isModeActive } from '../utils/commandUtils';
 import { IconPickerModal } from '../modals/IconPickerModal';
-import { setCssProps } from '../uiManager';
+import { setCssProps } from '../utils/cssUtils';
 
 export class StatusBarManager {
 	private plugin: UITweakerPlugin;
@@ -54,7 +54,7 @@ export class StatusBarManager {
 				if (this.isReordering) {
 					return;
 				}
-				
+
 				// Debounce observer callbacks to prevent excessive updates
 				if (observerTimeout) {
 					clearTimeout(observerTimeout);
@@ -85,12 +85,12 @@ export class StatusBarManager {
 		}
 		this.customActions.forEach((action) => action.remove());
 		this.customActions.clear();
-		
+
 		// Also clean up any buttons that might have been left behind (orphaned)
 		if (this.container) {
 			const managedButtons = this.container.querySelectorAll('[data-ui-tweaker-managed="true"]');
 			managedButtons.forEach(btn => btn.remove());
-			
+
 			// Restore visibility of any hidden native items
 			const hiddenItems = this.container.querySelectorAll('.ui-tweaker-status-bar-hidden');
 			hiddenItems.forEach(item => item.removeClass('ui-tweaker-status-bar-hidden'));
@@ -121,8 +121,8 @@ export class StatusBarManager {
 		const ignoredClasses = ['mod-clickable', 'status-bar-item', 'ui-tweaker-status-bar-item', 'ui-tweaker-status-bar-hidden'];
 
 		// Extract plugin identifier (stable)
-		const pluginClass = allClasses.find(cls => 
-			cls.includes('plugin-') || 
+		const pluginClass = allClasses.find(cls =>
+			cls.includes('plugin-') ||
 			cls.includes('obsidian-git') ||
 			cls.includes('-git') ||
 			(cls.startsWith('git-') && cls !== 'git-changes-status-bar')
@@ -133,25 +133,25 @@ export class StatusBarManager {
 			if (pluginClass.includes('obsidian-git') || pluginClass.startsWith('git-')) {
 				if (allClasses.some(cls => cls.startsWith('obsidian-git-statusbar-'))) return 'plugin-obsidian-git-status';
 				if (allClasses.includes('git-changes-status-bar')) return 'plugin-obsidian-git-changes';
-				
+
 				// Branch detection (for initial ID generation)
 				const textContent = element.textContent?.trim();
 				// Robust branch detection: short, alphanumeric with dashes/underscores, no colons
-				const looksLikeBranch = textContent && textContent.length > 0 && 
-					/^[a-z0-9][a-z0-9._\-/]*$/i.test(textContent) && 
-					textContent.length < 30 && 
-					!textContent.includes(':') && 
+				const looksLikeBranch = textContent && textContent.length > 0 &&
+					/^[a-z0-9][a-z0-9._\-/]*$/i.test(textContent) &&
+					textContent.length < 30 &&
+					!textContent.includes(':') &&
 					!/^[0-9]/.test(textContent) &&
 					!element.getAttribute('data-ui-tweaker-managed');
-				
+
 				if (looksLikeBranch) return 'plugin-obsidian-git-branch';
-				
+
 				return 'plugin-obsidian-git';
 			}
 
 			// Filter out dynamic state classes and ignored classes
-			const stableClasses = allClasses.filter(cls => 
-				!this.isDynamicStateClass(cls) && 
+			const stableClasses = allClasses.filter(cls =>
+				!this.isDynamicStateClass(cls) &&
 				!ignoredClasses.includes(cls) &&
 				cls !== pluginClass
 			);
@@ -163,8 +163,8 @@ export class StatusBarManager {
 		}
 
 		// No plugin identifier found - use filtered classes
-		const stableClasses = allClasses.filter(cls => 
-			!this.isDynamicStateClass(cls) && 
+		const stableClasses = allClasses.filter(cls =>
+			!this.isDynamicStateClass(cls) &&
 			!ignoredClasses.includes(cls)
 		);
 
@@ -184,40 +184,40 @@ export class StatusBarManager {
 		const parts = id.split(';');
 		parts.pop(); // Remove index
 		const fullName = parts.join(';');
-		
+
 		// For obsidian-git, migration to new stable IDs
 		if (fullName.includes('obsidian-git-statusbar-') || fullName === 'plugin-obsidian-git') {
 			// Smarter migration: check the saved item's name to distinguish between status and branch
 			// This handles cases where old IDs like 'plugin-obsidian-git;2' were used for branches
 			const savedItem = this.items.find(i => i.id === id);
-			if (savedItem && savedItem.name && 
-				/^[a-z0-9][a-z0-9._\-/]*$/i.test(savedItem.name) && 
-				savedItem.name.length < 30 && 
+			if (savedItem && savedItem.name &&
+				/^[a-z0-9][a-z0-9._\-/]*$/i.test(savedItem.name) &&
+				savedItem.name.length < 30 &&
 				!savedItem.name.includes('plugin-')) {
 				return 'plugin-obsidian-git-branch';
 			}
 			return 'plugin-obsidian-git-status';
 		}
-		
+
 		// For other cases, try to find plugin identifier in the name
 		// Look for "plugin-*" pattern
 		const pluginMatch = fullName.match(/^(plugin-[a-z0-9-]+)/i);
 		if (pluginMatch) {
 			return pluginMatch[1];
 		}
-		
+
 		// If no plugin identifier found, filter out dynamic state classes
 		// This is a fallback for edge cases
 		const nameParts = fullName.split('-');
 		const filteredParts: string[] = [];
 		let skipNext = false;
-		
+
 		for (let i = 0; i < nameParts.length; i++) {
 			if (skipNext) {
 				skipNext = false;
 				continue;
 			}
-			
+
 			// Check if this is part of a statusbar-* dynamic state class
 			if (nameParts[i] === 'statusbar' && i < nameParts.length - 1) {
 				const nextPart = nameParts[i + 1];
@@ -230,15 +230,15 @@ export class StatusBarManager {
 					continue;
 				}
 			}
-			
+
 			// Filter out other generic dynamic classes
 			if (this.isDynamicStateClass(nameParts[i])) {
 				continue;
 			}
-			
+
 			filteredParts.push(nameParts[i]);
 		}
-		
+
 		// Return filtered name or original if filtering removed everything
 		return filteredParts.length > 0 ? filteredParts.join('-') : fullName;
 	}
@@ -257,7 +257,7 @@ export class StatusBarManager {
 				const element = el as HTMLElement;
 				// Ignore our own custom items (they are managed separately)
 				if (element.classList.contains('ui-tweaker-status-bar-item')) return false;
-				
+
 				// CRITICAL FIX: Ignore orphaned managed buttons (e.g., from deleted data)
 				if (element.getAttribute('data-ui-tweaker-managed') === 'true') {
 					const id = element.getAttribute('data-ui-tweaker-status-bar-id');
@@ -266,7 +266,7 @@ export class StatusBarManager {
 						return false;
 					}
 				}
-				
+
 				// Process EVERY child of the status bar (like Status Bar Organizer)
 				// Many plugins add clickable icons without the 'status-bar-item' class
 				return true;
@@ -309,7 +309,7 @@ export class StatusBarManager {
 			const savedItem = savedItemsMap.get(id);
 			if (savedItem) {
 				matchedSavedIds.add(id);
-				
+
 				// Update display name if it's generic or if it's a branch (which changes)
 				let elementName = element.getAttribute('aria-label') || element.getAttribute('title') || element.textContent?.trim();
 				const isBranch = canonicalName === 'plugin-obsidian-git-branch';
@@ -358,7 +358,7 @@ export class StatusBarManager {
 	 */
 	public reorder(): void {
 		if (!this.container) return;
-		
+
 		// Set flag to prevent observer from triggering during reorder
 		this.isReordering = true;
 
@@ -383,7 +383,7 @@ export class StatusBarManager {
 			if (item.hidden) {
 				// Hide existing items
 				if (item.type === 'existing') {
-					const element = allExistingElements.find((el) => 
+					const element = allExistingElements.find((el) =>
 						el.getAttribute('data-ui-tweaker-status-bar-id') === item.id
 					);
 					if (element) {
@@ -397,7 +397,7 @@ export class StatusBarManager {
 			if (item.mdOnly && !isMarkdownView(activeLeaf)) {
 				// Hide if not markdown view
 				if (item.type === 'existing') {
-					const element = allExistingElements.find((el) => 
+					const element = allExistingElements.find((el) =>
 						el.getAttribute('data-ui-tweaker-status-bar-id') === item.id
 					);
 					if (element) {
@@ -428,7 +428,7 @@ export class StatusBarManager {
 				}
 			} else {
 				// Find existing element (may not exist if plugin isn't loaded)
-				const element = allExistingElements.find((el) => 
+				const element = allExistingElements.find((el) =>
 					el.getAttribute('data-ui-tweaker-status-bar-id') === item.id
 				);
 
@@ -462,7 +462,7 @@ export class StatusBarManager {
 		orderedElements.forEach((element, index) => {
 			setCssProps(element, { order: (index + 1).toString() });
 		});
-		
+
 		// Clear flag after a short delay to allow DOM to settle
 		setTimeout(() => {
 			this.isReordering = false;
@@ -480,7 +480,7 @@ export class StatusBarManager {
 
 		const btn = this.container.createDiv({
 			cls: 'ui-tweaker-status-bar-item status-bar-item mod-clickable',
-			attr: { 
+			attr: {
 				'aria-label': item.name,
 				'data-tooltip-position': 'top',
 				'data-ui-tweaker-status-bar-id': item.id,
@@ -555,7 +555,7 @@ export class StatusBarManager {
 
 		// Convert showOnFileTypes to mdOnly for StatusBarItem (StatusBarItem still uses mdOnly)
 		// If showOnFileTypes includes "md" or "mdx", set mdOnly to true
-		const hasMarkdownFilter = pair.showOnFileTypes && 
+		const hasMarkdownFilter = pair.showOnFileTypes &&
 			(pair.showOnFileTypes.includes('md') || pair.showOnFileTypes.includes('mdx'));
 		const mdOnly = hasMarkdownFilter ? true : false;
 
