@@ -10,6 +10,7 @@ import { TabBarTab } from './tabs/TabBarTab';
 import { StatusBarTab } from './tabs/StatusBarTab';
 import { ExplorerTab } from './tabs/ExplorerTab';
 import { MobileTab } from './tabs/MobileTab';
+import { PropertiesTab } from './tabs/PropertiesTab';
 
 export class UITweakerSettingTab extends PluginSettingTab {
 	plugin: UITweakerPlugin;
@@ -67,6 +68,11 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				id: 'explorer',
 				name: 'Explorer',
 				renderer: new ExplorerTab(this.app, this.plugin)
+			},
+			{
+				id: 'properties',
+				name: 'Properties',
+				renderer: new PropertiesTab(this.app, this.plugin)
 			},
 			{
 				id: 'mobile',

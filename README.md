@@ -233,3 +233,4 @@ npm run dev
 - [Meridian](https://github.com/mvahaste/meridian) theme for the auto-hide animations for the file explorer icons and nav bar auto-hide reveal.
 - [Adrenaline](https://github.com/Spekulucius/obsidian-adrenaline) theme for the auto-collapsing sidebar treatment.
 - [Lumines](https://github.com/danielkhmara/obsidian-lumines) theme for the additional hiding elements logic.
+- [Iconic](https://github.com/gfxholo/iconic) - the "Properties" section and icon management logic were inspired by this plugin.

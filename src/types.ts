@@ -22,6 +22,12 @@ export interface CommandIconPair {
 	useActiveClass?: boolean; // For explorer only: use is-active class instead of icon swap
 }
 
+export interface PropertyIconItem {
+	id: string; // Property name
+	icon?: string; // Icon ID or emoji
+	color?: string; // Custom color for icon
+}
+
 export interface StatusBarItem {
 	id: string; // Unique identifier (for custom commands: `custom-${commandId}`, for existing items: generated ID like `plugin-name;1`)
 	name: string; // Display name (editable for custom items)

@@ -2,7 +2,7 @@
  * Settings interface and defaults
  */
 
-import { UIVisibilityState, MobileNavPosition, CommandIconPair, StatusBarItem, ExplorerButtonItem } from './types';
+import { UIVisibilityState, MobileNavPosition, CommandIconPair, StatusBarItem, ExplorerButtonItem, PropertyIconItem } from './types';
 
 export interface UISettings {
 	// Auto-hide elements (Show/Hide/Reveal)
@@ -106,6 +106,11 @@ export interface UISettings {
 		autoReveal?: string;
 		collapseAll?: string;
 	};
+
+	// Property icon settings
+	propertyIconItems: PropertyIconItem[];
+	minimalPropertyIcons: boolean;
+	showPropertyMenuActions: boolean;
 }
 
 export const DEFAULT_SETTINGS: UISettings = {
@@ -208,4 +213,9 @@ export const DEFAULT_SETTINGS: UISettings = {
 		autoReveal: undefined,
 		collapseAll: undefined,
 	},
+
+	// Property icon settings
+	propertyIconItems: [],
+	minimalPropertyIcons: false,
+	showPropertyMenuActions: true,
 };

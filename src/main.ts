@@ -13,6 +13,8 @@ import { StatusBarManager } from './manager/StatusBarManager';
 import { ExplorerManager } from './manager/ExplorerManager';
 import { recordCommandExecution } from './utils/commandUtils';
 import { ButtonReplacer } from './utils/ButtonReplacer';
+import { PropertiesManager } from './manager/PropertiesManager';
+import MenuManager from './manager/MenuManager';
 
 export default class UITweakerPlugin extends Plugin {
 	settings: UISettings;
@@ -23,6 +25,8 @@ export default class UITweakerPlugin extends Plugin {
 	public tabBarManager?: TabBarManager;
 	public statusBarManager?: StatusBarManager;
 	public explorerManager?: ExplorerManager;
+	public propertiesManager?: PropertiesManager;
+	public menuManager: MenuManager;
 
 	get isMobile(): boolean {
 		return Platform.isMobile ||
@@ -32,6 +36,9 @@ export default class UITweakerPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+
+		// Initialize Menu Manager early to catch menus
+		this.menuManager = new MenuManager();
 
 		// Initialize UI manager
 		this.uiManager = new UIManager(this, this.settings);
@@ -54,6 +61,7 @@ export default class UITweakerPlugin extends Plugin {
 			this.settings.explorerCommands = [];
 		}
 		this.explorerManager = new ExplorerManager(this);
+		this.propertiesManager = new PropertiesManager(this);
 
 		// Register commands
 		registerCommands({
@@ -94,6 +102,9 @@ export default class UITweakerPlugin extends Plugin {
 		}
 		if (this.statusBarManager) {
 			this.statusBarManager.cleanup();
+		}
+		if (this.menuManager) {
+			this.menuManager.unload();
 		}
 
 		this.helpButtonReplacer?.uninstall();
@@ -198,6 +209,20 @@ export default class UITweakerPlugin extends Plugin {
 						}
 
 						delete pairWithOldProps.fileTypeFilter;
+						needsSave = true;
+					}
+				}
+				if (needsSave) {
+					await this.saveSettings();
+				}
+			}
+
+			// Migrate property icon IDs to lowercase
+			if (this.settings.propertyIconItems) {
+				let needsSave = false;
+				for (const item of this.settings.propertyIconItems) {
+					if (item.id !== item.id.toLowerCase()) {
+						item.id = item.id.toLowerCase();
 						needsSave = true;
 					}
 				}
