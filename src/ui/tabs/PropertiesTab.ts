@@ -23,7 +23,7 @@ export class PropertiesTab extends TabRenderer {
         }
 
         // General Settings
-        const topGroup = createSettingsGroup(container, '', 'ui-tweaker');
+        const topGroup = createSettingsGroup(container, undefined, 'ui-tweaker');
         topGroup.addSetting((setting) => {
             setting
                 .setName('Minimal property icons')

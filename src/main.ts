@@ -356,8 +356,11 @@ export default class UITweakerPlugin extends Plugin {
 					survivalObserver: true,
 					parentSelector: '.workspace-drawer.mod-right',
 					uniqueId: 'ui-tweaker-sync-replacement',
-					cssClass: 'ui-tweaker-sync-replacement',
+					cssClass: 'ui-tweaker-sync-replacement workspace-drawer-header-icon mod-raised',
 					handleTouch: true,
+					stripClasses: ['is-failed', 'is-error', 'is-warning', 'mod-error', 'mod-warning'],
+					fallbackParentSelector: '.workspace-drawer.mod-right .workspace-drawer-header',
+					fallbackInsertBehavior: 'end',
 					onAfterInstall: (custom, original) => {
 						if (original) {
 							setCssProps(original, { display: 'none' });

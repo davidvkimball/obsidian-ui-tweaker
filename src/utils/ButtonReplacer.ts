@@ -12,6 +12,9 @@ export interface ButtonReplacerOptions {
     handleTouch?: boolean;
     // Function to find the original button if selector is not enough
     findButton?: (parent: Element) => HTMLElement | null;
+    stripClasses?: string[];
+    fallbackParentSelector?: string;
+    fallbackInsertBehavior?: 'start' | 'end';
 }
 
 export class ButtonReplacer {
@@ -52,7 +55,12 @@ export class ButtonReplacer {
             originalBtn = parent.querySelector(this.selector) as HTMLElement;
         }
 
-        if (!originalBtn) return;
+        if (!originalBtn) {
+            if (this.options.fallbackParentSelector) {
+                this.tryFallbackInstall();
+            }
+            return;
+        }
 
         // Skip if already replaced and button is still valid
         if (this.customButton && this.customButton.parentElement && document.body.contains(this.customButton)) {
@@ -66,7 +74,14 @@ export class ButtonReplacer {
         const customButton = originalBtn.cloneNode(true) as HTMLElement;
         customButton.removeAttribute('aria-label');
         customButton.setAttribute(`data-${this.options.uniqueId}`, 'true');
-        customButton.classList.add(this.options.cssClass);
+        if (this.options.cssClass) {
+            this.options.cssClass.split(' ').filter(Boolean).forEach(cls => customButton.classList.add(cls));
+        }
+
+        // Strip classes that might affect color or state
+        if (this.options.stripClasses) {
+            this.options.stripClasses.forEach(cls => customButton.classList.remove(cls));
+        }
 
         // Clear existing handlers
         customButton.onclick = null;
@@ -108,6 +123,51 @@ export class ButtonReplacer {
 
         if (this.options.onAfterInstall) {
             this.options.onAfterInstall(customButton, originalBtn);
+        }
+    }
+
+    private tryFallbackInstall(): void {
+        const fallbackParent = document.querySelector(this.options.fallbackParentSelector!) as HTMLElement;
+        if (!fallbackParent) return;
+
+        // Skip if already exists
+        if (fallbackParent.querySelector(`[data-${this.options.uniqueId}]`)) return;
+
+        const customButton = document.createElement('div');
+        customButton.className = `clickable-icon ${this.options.cssClass}`;
+        customButton.setAttribute(`data-${this.options.uniqueId}`, 'true');
+
+        // Set icon
+        try {
+            setIcon(customButton, this.replacementIcon);
+        } catch (e) {
+            setIcon(customButton, 'wrench');
+        }
+
+        // Click handler
+        const handler = (evt: Event) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+            this.callback();
+        };
+
+        customButton.addEventListener('click', handler, this.options.useCapture ?? true);
+        if (this.options.handleTouch) {
+            customButton.addEventListener('touchstart', handler, this.options.useCapture ?? true);
+        }
+
+        // Insert
+        if (this.options.fallbackInsertBehavior === 'start') {
+            fallbackParent.prepend(customButton);
+        } else {
+            fallbackParent.appendChild(customButton);
+        }
+
+        this.customButton = customButton;
+        this.originalButton = null;
+
+        if (this.options.onAfterInstall) {
+            this.options.onAfterInstall(customButton, null);
         }
     }
 

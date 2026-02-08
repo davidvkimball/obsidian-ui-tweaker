@@ -14,7 +14,7 @@ export class MobileTab extends TabRenderer {
 		// ========================================
 		// Mobile
 		// ========================================
-		const mobileGroup = createSettingsGroup(container, 'Mobile', 'ui-tweaker');
+		const mobileGroup = createSettingsGroup(container, undefined, 'ui-tweaker');
 
 		this.addToggleSetting(mobileGroup, 'Hide "Mobile chevrons" icon', 'Hide "Mobile chevrons" icon (long-press flair) in mobile navbar.', 'mobileChevronsIcon');
 
@@ -115,16 +115,16 @@ export class MobileTab extends TabRenderer {
 							};
 						}
 						settings.syncButtonReplacement.enabled = value;
-						
+
 						void (async () => {
 							await this.saveSettings();
-							
+
 							// Refresh the current tab content while preserving scroll
 							// Defer the render to prevent the UI from getting "stuck"
 							setTimeout(() => {
 								const scrollPos = container.scrollTop;
 								this.render(container);
-								
+
 								// Restore scroll position after render
 								requestAnimationFrame(() => {
 									container.scrollTop = scrollPos;
@@ -139,7 +139,7 @@ export class MobileTab extends TabRenderer {
 		if (settings.syncButtonReplacement.enabled) {
 			const getCommandName = (commandId: string): string => {
 				if (!commandId) return 'Select command...';
-				
+
 				try {
 					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
 					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
@@ -173,7 +173,7 @@ export class MobileTab extends TabRenderer {
 								settings.syncButtonReplacement.commandId = commandId;
 								void (async () => {
 									await this.saveSettings();
-									
+
 									// Refresh the current tab content while preserving scroll
 									setTimeout(() => {
 										const scrollPos = container.scrollTop;
@@ -216,7 +216,7 @@ export class MobileTab extends TabRenderer {
 								settings.syncButtonReplacement.iconId = iconId;
 								void (async () => {
 									await this.saveSettings();
-									
+
 									// Refresh the current tab content while preserving scroll
 									setTimeout(() => {
 										const scrollPos = container.scrollTop;
