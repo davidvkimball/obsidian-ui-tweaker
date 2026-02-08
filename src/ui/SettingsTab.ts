@@ -1,8 +1,4 @@
-/**
- * Main Settings Tab with tab navigation
- */
-
-import { App, PluginSettingTab, Platform } from 'obsidian';
+import { App, PluginSettingTab, ButtonComponent } from 'obsidian';
 import UITweakerPlugin from '../main';
 import { TabRenderer } from './common/TabRenderer';
 import { HiderTab } from './tabs/HiderTab';
@@ -12,10 +8,22 @@ import { ExplorerTab } from './tabs/ExplorerTab';
 import { MobileTab } from './tabs/MobileTab';
 import { PropertiesTab } from './tabs/PropertiesTab';
 
+type TabId = 'hider' | 'status-bar' | 'tab-bar' | 'explorer' | 'properties' | 'mobile';
+
+interface TabDefinition {
+	id: TabId;
+	name: string;
+	renderer: TabRenderer;
+}
+
 export class UITweakerSettingTab extends PluginSettingTab {
 	plugin: UITweakerPlugin;
 	public icon = 'lucide-wrench';
 	public id = 'ui-tweaker';
+
+	private tabContentMap: Map<TabId, HTMLElement> = new Map();
+	private tabButtons: Map<TabId, ButtonComponent> = new Map();
+	private activeTabId: TabId | null = null;
 
 	constructor(app: App, plugin: UITweakerPlugin) {
 		super(app, plugin);
@@ -23,83 +31,89 @@ export class UITweakerSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		this.render();
-	}
-
-	render(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+		containerEl.addClass('ui-tweaker-settings-tab-root');
 
-		// On mobile, simplify: just show the Mobile tab directly (no tab navigation)
-		// This avoids CSS conflicts with Obsidian's app.css and provides a cleaner experience
-		// DON'T add ui-tweaker-settings class on mobile - let it use native Obsidian styling
-		if (Platform.isMobile || document.body.classList.contains('is-mobile')) {
-			const mobileTab = new MobileTab(this.app, this.plugin);
-			void mobileTab.render(containerEl);
-			return;
-		}
+		this.tabContentMap.clear();
+		this.tabButtons.clear();
 
-		// Desktop: Add the class for tab navigation styling
-		containerEl.addClass('ui-tweaker-settings');
-
-		// Desktop: Use tab navigation
-		const tabContainer = containerEl.createDiv('tab-container');
-		const tabNav = tabContainer.createDiv('tab-nav');
-		const tabContent = tabContainer.createDiv('tab-content');
-
-		// Tab definitions
-		const tabs: Array<{ id: string; name: string; renderer: TabRenderer }> = [
-			{
-				id: 'hider',
-				name: 'Hider',
-				renderer: new HiderTab(this.app, this.plugin)
-			},
-			{
-				id: 'status-bar',
-				name: 'Status bar',
-				renderer: new StatusBarTab(this.app, this.plugin)
-			},
-			{
-				id: 'tab-bar',
-				name: 'Tab bar',
-				renderer: new TabBarTab(this.app, this.plugin)
-			},
-			{
-				id: 'explorer',
-				name: 'Explorer',
-				renderer: new ExplorerTab(this.app, this.plugin)
-			},
-			{
-				id: 'properties',
-				name: 'Properties',
-				renderer: new PropertiesTab(this.app, this.plugin)
-			},
-			{
-				id: 'mobile',
-				name: 'Mobile',
-				renderer: new MobileTab(this.app, this.plugin)
-			}
+		const tabs: TabDefinition[] = [
+			{ id: 'hider', name: 'Hider', renderer: new HiderTab(this.app, this.plugin) },
+			{ id: 'status-bar', name: 'Status bar', renderer: new StatusBarTab(this.app, this.plugin) },
+			{ id: 'tab-bar', name: 'Tab bar', renderer: new TabBarTab(this.app, this.plugin) },
+			{ id: 'explorer', name: 'Explorer', renderer: new ExplorerTab(this.app, this.plugin) },
+			{ id: 'properties', name: 'Properties', renderer: new PropertiesTab(this.app, this.plugin) },
+			{ id: 'mobile', name: 'Mobile', renderer: new MobileTab(this.app, this.plugin) }
 		];
 
-		// Create tab buttons with clean styling
-		tabs.forEach((tab, index) => {
-			const button = tabNav.createEl('button', {
-				text: tab.name,
-				cls: `tab-button ${index === 0 ? 'active' : ''}`
-			});
+		const tabsWrapper = containerEl.createDiv('ui-tweaker-settings-tabs');
+		const navEl = tabsWrapper.createDiv('ui-tweaker-settings-tabs-nav');
+		navEl.setAttribute('role', 'tablist');
+		const contentWrapper = tabsWrapper.createDiv('ui-tweaker-settings-tabs-content');
 
-			button.addEventListener('click', () => {
-				// Remove active class from all buttons
-				tabNav.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-				// Add active class to clicked button
-				button.classList.add('active');
-				// Render tab content immediately
-				tabContent.empty();
-				void tab.renderer.render(tabContent);
+		tabs.forEach(tab => {
+			const buttonComponent = new ButtonComponent(navEl);
+			buttonComponent.setButtonText(tab.name);
+			buttonComponent.removeCta();
+			buttonComponent.buttonEl.addClass('ui-tweaker-settings-tab-button');
+			buttonComponent.buttonEl.addClass('clickable-icon');
+			buttonComponent.buttonEl.setAttribute('role', 'tab');
+			buttonComponent.buttonEl.setAttribute('aria-selected', 'false');
+			buttonComponent.onClick(() => {
+				void this.activateTab(tab.id, tabs, contentWrapper);
 			});
+			this.tabButtons.set(tab.id, buttonComponent);
 		});
 
-		// Render the first tab by default
-		void tabs[0].renderer.render(tabContent);
+		// Activate initial tab
+		const initialTabId = this.activeTabId && tabs.some(t => t.id === this.activeTabId)
+			? this.activeTabId
+			: tabs[0].id;
+
+		void this.activateTab(initialTabId, tabs, contentWrapper);
+	}
+
+	private async activateTab(
+		id: TabId,
+		tabs: TabDefinition[],
+		contentWrapper: HTMLElement
+	): Promise<void> {
+		const definition = tabs.find(tab => tab.id === id);
+		if (!definition) return;
+
+		// Lazy load tab content
+		if (!this.tabContentMap.has(id)) {
+			const tabContainer = contentWrapper.createDiv('ui-tweaker-settings-tab');
+			await definition.renderer.render(tabContainer);
+			this.tabContentMap.set(id, tabContainer);
+		}
+
+		// Deactivate previous tab
+		if (this.activeTabId && this.activeTabId !== id) {
+			const prevContent = this.tabContentMap.get(this.activeTabId);
+			if (prevContent) prevContent.removeClass('is-active');
+
+			const prevButton = this.tabButtons.get(this.activeTabId);
+			if (prevButton) {
+				prevButton.buttonEl.removeClass('is-active');
+				prevButton.buttonEl.setAttribute('aria-selected', 'false');
+				prevButton.removeCta();
+			}
+		}
+
+		// Activate new tab
+		const newContent = this.tabContentMap.get(id);
+		if (newContent) newContent.addClass('is-active');
+
+		const newButton = this.tabButtons.get(id);
+		if (newButton) {
+			newButton.buttonEl.addClass('is-active');
+			newButton.buttonEl.setAttribute('aria-selected', 'true');
+			newButton.setCta();
+		}
+
+		this.activeTabId = id;
+		contentWrapper.scrollTop = 0;
 	}
 }
