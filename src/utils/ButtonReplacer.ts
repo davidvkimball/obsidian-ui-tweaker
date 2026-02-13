@@ -206,31 +206,31 @@ export class ButtonReplacer {
     private setupObserver(): void {
         if (this.observer) this.observer.disconnect();
 
-        this.observer = new MutationObserver(() => {
-            const exists = this.customButton &&
-                this.customButton.parentElement &&
-                document.body.contains(this.customButton);
+        let mutationCount = 0;
+        let timer: number | null = null;
 
-            if (!exists) {
+        this.observer = new MutationObserver(() => {
+            mutationCount++;
+            if (timer) window.clearTimeout(timer);
+
+            // Aggressive startup mode: 0ms delay for first 20 mutations to ensure instant swap during reloads.
+            // After that, use a small debounce (100ms) for ongoing stability.
+            const delay = mutationCount < 20 ? 0 : 100;
+
+            if (delay === 0) {
                 this.tryInstall();
+            } else {
+                timer = window.setTimeout(() => this.tryInstall(), delay);
             }
         });
 
-        const target = this.options.parentSelector
-            ? document.querySelector(this.options.parentSelector)
-            : document.body;
-
-        if (target) {
-            this.observer.observe(target, {
-                childList: true,
-                subtree: true
-            });
-        } else {
-            // Fallback to body
-            this.observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-        }
+        // Always observe the document body for maximum reliability, even if parent selector is provided.
+        // This ensures the monitor survives parent element recreation.
+        this.observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'src', 'aria-label']
+        });
     }
 }

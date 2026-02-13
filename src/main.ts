@@ -295,10 +295,18 @@ export default class UITweakerPlugin extends Plugin {
 					uniqueId: 'ui-tweaker-help-replacement',
 					cssClass: 'ui-tweaker-help-replacement',
 					findButton: (parent) => {
-						const clickableIcons = Array.from(parent.querySelectorAll('.clickable-icon'));
-						for (const icon of clickableIcons) {
-							if (icon.querySelector('svg.help')) return icon as HTMLElement;
+						const selectors = [
+							'.workspace-drawer-vault-actions .clickable-icon svg.help',
+							'.workspace-sidedock-vault-profile .clickable-icon svg.help',
+							'.workspace-drawer .clickable-icon svg.help',
+							'.clickable-icon svg.help'
+						];
+
+						for (const selector of selectors) {
+							const svg = document.querySelector(selector);
+							if (svg && svg.parentElement) return svg.parentElement as HTMLElement;
 						}
+
 						return null;
 					}
 				}
