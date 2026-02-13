@@ -101,136 +101,91 @@ export class MobileTab extends TabRenderer {
 			};
 		}
 
+		const dependentSettings: HTMLElement[] = [];
+
 		group.addSetting((setting): void => {
 			setting
 				.setName('Replace sync button with custom action')
 				.setDesc('Replace the sync button in the mobile sidebar with a custom icon and command. This will hide the original sync button and show your custom button instead.')
 				.addToggle((toggle) =>
 					toggle.setValue(settings.syncButtonReplacement.enabled).onChange((value) => {
-						if (!settings.syncButtonReplacement) {
-							settings.syncButtonReplacement = {
-								enabled: true,
-								commandId: 'ui-tweaker:open-settings',
-								iconId: 'wrench',
-							};
-						}
 						settings.syncButtonReplacement.enabled = value;
 
-						void (async () => {
-							await this.saveSettings();
+						// Toggle visibility of dependent settings instantly
+						dependentSettings.forEach(el => {
+							el.style.display = value ? '' : 'none';
+						});
 
-							// Refresh the current tab content while preserving scroll
-							// Defer the render to prevent the UI from getting "stuck"
-							setTimeout(() => {
-								const scrollPos = container.scrollTop;
-								this.render(container);
-
-								// Restore scroll position after render
-								requestAnimationFrame(() => {
-									container.scrollTop = scrollPos;
-								});
-							}, 50);
-						})();
+						void this.saveSettings();
 					})
 				);
 		});
 
-		// Show command and icon pickers only if replacement is enabled
-		if (settings.syncButtonReplacement.enabled) {
-			const getCommandName = (commandId: string): string => {
-				if (!commandId) return 'Select command...';
+		const getCommandName = (commandId: string): string => {
+			if (!commandId) return 'Select command...';
 
-				try {
-					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
-					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
-						const commands = commandRegistry.listCommands();
-						const command = commands.find((cmd) => cmd && cmd.id === commandId);
-						if (command?.name) {
-							return command.name;
-						}
+			try {
+				const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
+				if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
+					const commands = commandRegistry.listCommands();
+					const command = commands.find((cmd) => cmd && cmd.id === commandId);
+					if (command?.name) {
+						return command.name;
 					}
-				} catch {
-					// Error getting command name
 				}
-				return 'Select command...';
-			};
+			} catch {
+				// Error getting command name
+			}
+			return 'Select command...';
+		};
 
-			const commandName = getCommandName(settings.syncButtonReplacement.commandId);
-			group.addSetting((setting): void => {
-				setting
-					.setName('Command')
-					.setDesc('Select the command to execute when the button is clicked')
-					.addButton((button) =>
-						button.setButtonText(commandName || 'Select command...').onClick(() => {
-							const modal = new CommandPickerModal(this.app, (commandId) => {
-								if (!settings.syncButtonReplacement) {
-									settings.syncButtonReplacement = {
-										enabled: true,
-										commandId: 'ui-tweaker:open-settings',
-										iconId: 'wrench',
-									};
-								}
-								settings.syncButtonReplacement.commandId = commandId;
-								void (async () => {
-									await this.saveSettings();
+		const getIconName = (iconId: string): string => {
+			if (!iconId) return '';
+			return iconId
+				.replace(/^lucide-/, '')
+				.split('-')
+				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+				.join(' ');
+		};
 
-									// Refresh the current tab content while preserving scroll
-									setTimeout(() => {
-										const scrollPos = container.scrollTop;
-										this.render(container);
-										requestAnimationFrame(() => {
-											container.scrollTop = scrollPos;
-										});
-									}, 50);
-								})();
-							});
-							modal.open();
-						})
-					);
-			});
+		// Command Setting
+		group.addSetting((setting): void => {
+			dependentSettings.push(setting.settingEl);
+			setting.settingEl.style.display = settings.syncButtonReplacement.enabled ? '' : 'none';
 
-			const getIconName = (iconId: string): string => {
-				if (!iconId) return '';
-				return iconId
-					.replace(/^lucide-/, '')
-					.split('-')
-					.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-					.join(' ');
-			};
+			setting
+				.setName('Command')
+				.setDesc('Select the command to execute when the button is clicked')
+				.addButton((button) =>
+					button.setButtonText(getCommandName(settings.syncButtonReplacement.commandId)).onClick(() => {
+						const modal = new CommandPickerModal(this.app, (commandId) => {
+							settings.syncButtonReplacement.commandId = commandId;
+							button.setButtonText(getCommandName(commandId));
+							void this.saveSettings();
+						});
+						modal.open();
+					})
+				);
+		});
 
-			const iconName = getIconName(settings.syncButtonReplacement.iconId);
-			group.addSetting((setting): void => {
-				setting
-					.setName('Icon')
-					.setDesc('Select the icon to display on the button')
-					.addButton((button) =>
-						button.setButtonText(iconName || 'Select icon...').onClick(() => {
-							const modal = new IconPickerModal(this.app, (iconId) => {
-								if (!settings.syncButtonReplacement) {
-									settings.syncButtonReplacement = {
-										enabled: true,
-										commandId: 'ui-tweaker:open-settings',
-										iconId: 'wrench',
-									};
-								}
-								settings.syncButtonReplacement.iconId = iconId;
-								void (async () => {
-									await this.saveSettings();
+		// Icon Setting
+		group.addSetting((setting): void => {
+			dependentSettings.push(setting.settingEl);
+			setting.settingEl.style.display = settings.syncButtonReplacement.enabled ? '' : 'none';
 
-									// Refresh the current tab content while preserving scroll
-									setTimeout(() => {
-										const scrollPos = container.scrollTop;
-										this.render(container);
-										requestAnimationFrame(() => {
-											container.scrollTop = scrollPos;
-										});
-									}, 50);
-								})();
-							});
-							modal.open();
-						})
-					);
-			});
-		}
+			setting
+				.setName('Icon')
+				.setDesc('Select the icon to display on the button')
+				.addButton((button) =>
+					button.setButtonText(getIconName(settings.syncButtonReplacement.iconId) || 'Select icon...').onClick(() => {
+						const modal = new IconPickerModal(this.app, (iconId) => {
+							settings.syncButtonReplacement.iconId = iconId;
+							button.setButtonText(getIconName(iconId));
+							void this.saveSettings();
+						});
+						modal.open();
+					})
+				);
+		});
 	}
 }

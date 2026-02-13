@@ -73,7 +73,7 @@ export class HiderTab extends TabRenderer {
 		this.addToggleSetting(navigationGroup, 'Hide tab bar', 'Hides the tab container at the top of the window.', 'tabBar');
 
 		this.addToggleSetting(navigationGroup, 'Make top of window draggable without tab bar', 'Enables window dragging from the top of the window when the tab bar is hidden. Only works when "Hide tab bar" is enabled.', 'enableWindowDragging');
-		
+
 		this.addToggleSetting(navigationGroup, 'Hide tab header when only one tab', 'Hide the tab bar automatically when only 1 tab is open.', 'tabBarHideWhenSingle');
 
 		// View header buttons
@@ -254,136 +254,91 @@ export class HiderTab extends TabRenderer {
 			};
 		}
 
+		const dependentSettings: HTMLElement[] = [];
+
 		group.addSetting((setting): void => {
 			setting
 				.setName('Replace help button with custom action')
 				.setDesc('Replace the help button with a custom icon and command. This will hide the original help button and show your custom button instead.')
 				.addToggle((toggle) =>
 					toggle.setValue(settings.helpButtonReplacement.enabled).onChange((value) => {
-						if (!settings.helpButtonReplacement) {
-							settings.helpButtonReplacement = {
-								enabled: true,
-								commandId: 'ui-tweaker:open-settings',
-								iconId: 'wrench',
-							};
-						}
 						settings.helpButtonReplacement.enabled = value;
-						
-						void (async () => {
-							await this.saveSettings();
-							
-							// Refresh the current tab content while preserving scroll
-							// Defer the render to prevent the UI from getting "stuck"
-							setTimeout(() => {
-								const scrollPos = container.scrollTop;
-								this.render(container);
-								
-								// Restore scroll position after render
-								requestAnimationFrame(() => {
-									container.scrollTop = scrollPos;
-								});
-							}, 50);
-						})();
+
+						// Toggle visibility of dependent settings instantly
+						dependentSettings.forEach(el => {
+							el.style.display = value ? '' : 'none';
+						});
+
+						void this.saveSettings();
 					})
 				);
 		});
 
-		// Show command and icon pickers only if replacement is enabled
-		if (settings.helpButtonReplacement.enabled) {
-			const getCommandName = (commandId: string): string => {
-				if (!commandId) return 'Select command...';
-				
-				try {
-					const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
-					if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
-						const commands = commandRegistry.listCommands();
-						const command = commands.find((cmd) => cmd && cmd.id === commandId);
-						if (command?.name) {
-							return command.name;
-						}
+		const getCommandName = (commandId: string): string => {
+			if (!commandId) return 'Select command...';
+
+			try {
+				const commandRegistry = (this.app as { commands?: { listCommands?: () => Array<{ id: string; name: string }> } }).commands;
+				if (commandRegistry && typeof commandRegistry.listCommands === 'function') {
+					const commands = commandRegistry.listCommands();
+					const command = commands.find((cmd) => cmd && cmd.id === commandId);
+					if (command?.name) {
+						return command.name;
 					}
-				} catch {
-					// Error getting command name
 				}
-				return 'Select command...';
-			};
+			} catch {
+				// Error getting command name
+			}
+			return 'Select command...';
+		};
 
-			const commandName = getCommandName(settings.helpButtonReplacement.commandId);
-			group.addSetting((setting): void => {
-				setting
-					.setName('Command')
-					.setDesc('Select the command to execute when the button is clicked')
-					.addButton((button) =>
-						button.setButtonText(commandName || 'Select command...').onClick(() => {
-							const modal = new CommandPickerModal(this.app, (commandId) => {
-								if (!settings.helpButtonReplacement) {
-									settings.helpButtonReplacement = {
-										enabled: true,
-										commandId: 'ui-tweaker:open-settings',
-										iconId: 'wrench',
-									};
-								}
-								settings.helpButtonReplacement.commandId = commandId;
-								void (async () => {
-									await this.saveSettings();
-									
-									// Refresh the current tab content while preserving scroll
-									setTimeout(() => {
-										const scrollPos = container.scrollTop;
-										this.render(container);
-										requestAnimationFrame(() => {
-											container.scrollTop = scrollPos;
-										});
-									}, 50);
-								})();
-							});
-							modal.open();
-						})
-					);
-			});
+		const getIconName = (iconId: string): string => {
+			if (!iconId) return '';
+			return iconId
+				.replace(/^lucide-/, '')
+				.split('-')
+				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+				.join(' ');
+		};
 
-			const getIconName = (iconId: string): string => {
-				if (!iconId) return '';
-				return iconId
-					.replace(/^lucide-/, '')
-					.split('-')
-					.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-					.join(' ');
-			};
+		// Command Setting
+		group.addSetting((setting): void => {
+			dependentSettings.push(setting.settingEl);
+			setting.settingEl.style.display = settings.helpButtonReplacement.enabled ? '' : 'none';
 
-			const iconName = getIconName(settings.helpButtonReplacement.iconId);
-			group.addSetting((setting): void => {
-				setting
-					.setName('Icon')
-					.setDesc('Select the icon to display on the button')
-					.addButton((button) =>
-						button.setButtonText(iconName || 'Select icon...').onClick(() => {
-							const modal = new IconPickerModal(this.app, (iconId) => {
-								if (!settings.helpButtonReplacement) {
-									settings.helpButtonReplacement = {
-										enabled: true,
-										commandId: 'ui-tweaker:open-settings',
-										iconId: 'wrench',
-									};
-								}
-								settings.helpButtonReplacement.iconId = iconId;
-								void (async () => {
-									await this.saveSettings();
-									
-									// Refresh the current tab content while preserving scroll
-									setTimeout(() => {
-										const scrollPos = container.scrollTop;
-										this.render(container);
-										requestAnimationFrame(() => {
-											container.scrollTop = scrollPos;
-										});
-									}, 50);
-								})();
-							});
-							modal.open();
-						})
-					);
-			});
-		}
+			setting
+				.setName('Command')
+				.setDesc('Select the command to execute when the button is clicked')
+				.addButton((button) =>
+					button.setButtonText(getCommandName(settings.helpButtonReplacement.commandId)).onClick(() => {
+						const modal = new CommandPickerModal(this.app, (commandId) => {
+							settings.helpButtonReplacement.commandId = commandId;
+							button.setButtonText(getCommandName(commandId));
+							void this.saveSettings();
+						});
+						modal.open();
+					})
+				);
+		});
+
+		// Icon Setting
+		group.addSetting((setting): void => {
+			dependentSettings.push(setting.settingEl);
+			setting.settingEl.style.display = settings.helpButtonReplacement.enabled ? '' : 'none';
+
+			setting
+				.setName('Icon')
+				.setDesc('Select the icon to display on the button')
+				.addButton((button) =>
+					button.setButtonText(getIconName(settings.helpButtonReplacement.iconId) || 'Select icon...').onClick(() => {
+						const modal = new IconPickerModal(this.app, (iconId) => {
+							settings.helpButtonReplacement.iconId = iconId;
+							button.setButtonText(getIconName(iconId));
+							void this.saveSettings();
+						});
+						modal.open();
+					})
+				);
+		});
 	}
 }
