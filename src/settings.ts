@@ -55,6 +55,7 @@ export interface UISettings {
 	swapMobileNewTabIcon: boolean;
 	hideMobileTitle: boolean;
 	hideMobileSyncIcon: boolean;
+	hideStatusBarMobile: boolean;
 
 	// Mobile navigation menu positions
 	navigateButtonPosition: MobileNavPosition;
@@ -164,6 +165,7 @@ export const DEFAULT_SETTINGS: UISettings = {
 	swapMobileNewTabIcon: false,
 	hideMobileTitle: false,
 	hideMobileSyncIcon: false,
+	hideStatusBarMobile: false,
 
 	// Mobile navigation menu positions
 	navigateButtonPosition: '1',

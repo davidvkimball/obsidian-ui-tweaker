@@ -36,6 +36,7 @@ export class MobileTab extends TabRenderer {
 		this.addToggleSetting(mobileGroup, 'Hide title', 'Hide the title in mobile view headers.', 'hideMobileTitle');
 
 		this.addToggleSetting(mobileGroup, 'Hide sync icon', 'Hide sync status icons in mobile interface.', 'hideMobileSyncIcon');
+		this.addToggleSetting(mobileGroup, 'Hide status bar', 'Hide the status bar on mobile devices.', 'hideStatusBarMobile');
 
 		// Replace sync button with custom action
 		this.renderSyncButtonReplacement(container, mobileGroup);

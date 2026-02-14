@@ -148,6 +148,7 @@ export class UIManager {
 		body.classList.toggle('swap-mobile-new-tab-icon', this.settings.swapMobileNewTabIcon);
 		body.classList.toggle('hide-mobile-title', this.settings.hideMobileTitle);
 		body.classList.toggle('hide-mobile-sync-icon', this.settings.hideMobileSyncIcon);
+		body.classList.toggle('hider-status-mobile', this.settings.hideStatusBarMobile);
 
 		// Mobile navigation menu positions
 		// Remove all existing order classes first
