@@ -3,9 +3,9 @@
  * Based on TabBarTab, but for explorer buttons with native CSS classes
  */
 
-import { setIcon } from 'obsidian';
+import { setIcon , SettingGroup} from 'obsidian';
 import { TabRenderer } from '../common/TabRenderer';
-import { createSettingsGroup } from '../../utils/settings-compat';
+
 import { CommandIconPair, ExplorerButtonItem } from '../../types';
 import { chooseNewCommand } from '../../utils/chooseCommand';
 import { IconPickerModal } from '../../modals/IconPickerModal';
@@ -71,12 +71,12 @@ export class ExplorerTab extends TabRenderer {
 			container.createEl('hr');
 		}
 
-		const addGroup = createSettingsGroup(container, undefined, 'ui-tweaker');
+		const addGroup = new SettingGroup(container);
 		addGroup.addSetting((setting): void => {
 			setting
 				.setName('Add command')
 				.setDesc('Add a new command button to the file explorer navigation area')
-				.addButton((button) => {
+				.addButton((button: any) => {
 					// Add icon to the button
 					const buttonEl = button.buttonEl;
 					const iconContainer = buttonEl.createSpan({ cls: 'ui-tweaker-add-icon' });
@@ -131,7 +131,7 @@ export class ExplorerTab extends TabRenderer {
 		// Clear container if re-rendering
 		container.empty();
 		const settings = this.getSettings();
-		const group = createSettingsGroup(container, 'Native explorer buttons', 'ui-tweaker');
+		const group = new SettingGroup(container).setHeading('Native explorer buttons');
 
 		// Use mainContainer for scroll position if provided, otherwise use container
 		const scrollContainer = mainContainer || container;
@@ -168,7 +168,7 @@ export class ExplorerTab extends TabRenderer {
 							})();
 						});
 						// Prevent collapse on click
-						button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+						button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 					});
 
 				// Color picker (only show if color is set, with reset button)
@@ -179,13 +179,13 @@ export class ExplorerTab extends TabRenderer {
 						const controlEl = setting.controlEl;
 
 						// Prevent collapse and scroll jumping on color picker clicks
-						controlEl.addEventListener('click', (e) => e.stopPropagation());
+						controlEl.addEventListener('click', (e: any) => e.stopPropagation());
 
 						// Add event handler to the actual color input element
 						setTimeout(() => {
 							const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 							if (colorInput) {
-								colorInput.addEventListener('click', (e) => e.stopPropagation());
+								colorInput.addEventListener('click', (e: any) => e.stopPropagation());
 							}
 						}, 0);
 
@@ -199,7 +199,7 @@ export class ExplorerTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', (e) => {
+							resetButton.addEventListener('click', (e: any) => {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
@@ -229,7 +229,7 @@ export class ExplorerTab extends TabRenderer {
 							}
 						}, 0);
 
-						colorPicker.onChange((value) => {
+						colorPicker.onChange((value: any) => {
 							void (async () => {
 								if (!settings.nativeExplorerButtonColors) {
 									settings.nativeExplorerButtonColors = {};
@@ -243,7 +243,7 @@ export class ExplorerTab extends TabRenderer {
 					});
 				} else {
 					// Show button to add color picker
-					setting.addButton((button) => {
+					setting.addButton((button: any) => {
 						button.setButtonText('Set color...').onClick(() => {
 							// Prevent scroll jumping
 							const scrollPos = scrollContainer.scrollTop;
@@ -265,12 +265,12 @@ export class ExplorerTab extends TabRenderer {
 							})();
 						});
 						// Prevent collapse on button click
-						button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+						button.buttonEl.addEventListener('click', (e: any) => e.stopPropagation());
 					});
 				}
 
 				// Icon override (always show icon picker button)
-				setting.addButton((button) => {
+				setting.addButton((button: any) => {
 					const currentIcon = iconOverride || 'Default';
 					button.setButtonText(currentIcon === 'Default' ? 'Set icon...' : currentIcon).onClick(() => {
 						const modal = new IconPickerModal(this.app, (iconId) => {
@@ -299,7 +299,7 @@ export class ExplorerTab extends TabRenderer {
 						modal.open();
 					});
 					// Prevent collapse on button click
-					button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+					button.buttonEl.addEventListener('click', (e: any) => e.stopPropagation());
 
 					// Add reset button if icon is set
 					if (iconOverride) {
@@ -313,7 +313,7 @@ export class ExplorerTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', (e) => {
+							resetButton.addEventListener('click', (e: any) => {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
@@ -358,7 +358,7 @@ export class ExplorerTab extends TabRenderer {
 
 	private renderButtonItem(container: HTMLElement, item: ExplorerButtonItem, index: number): void {
 		const settings = this.getSettings();
-		const group = createSettingsGroup(container, undefined, 'ui-tweaker');
+		const group = new SettingGroup(container);
 
 		// Store reference to other settings for collapsible functionality
 		const otherSettings: HTMLElement[] = [];
@@ -395,7 +395,7 @@ export class ExplorerTab extends TabRenderer {
 			// Completely prevent collapse on setting element - ONLY chevron can toggle (if present)
 			// For external buttons, prevent all collapse since there's no chevron
 			if (item.type === 'external') {
-				setting.settingEl.addEventListener('click', (e) => {
+				setting.settingEl.addEventListener('click', (e: any) => {
 					const target = e.target as HTMLElement;
 					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
 					if (!isExtraButton) {
@@ -406,7 +406,7 @@ export class ExplorerTab extends TabRenderer {
 					}
 				}, true);
 
-				setting.settingEl.addEventListener('click', (e) => {
+				setting.settingEl.addEventListener('click', (e: any) => {
 					const target = e.target as HTMLElement;
 					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
 					if (!isExtraButton) {
@@ -418,7 +418,7 @@ export class ExplorerTab extends TabRenderer {
 				}, false);
 			} else {
 				// For native and custom buttons, allow chevron to toggle
-				setting.settingEl.addEventListener('click', (e) => {
+				setting.settingEl.addEventListener('click', (e: any) => {
 					const target = e.target as HTMLElement;
 					const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
@@ -431,7 +431,7 @@ export class ExplorerTab extends TabRenderer {
 					}
 				}, true);
 
-				setting.settingEl.addEventListener('click', (e) => {
+				setting.settingEl.addEventListener('click', (e: any) => {
 					const target = e.target as HTMLElement;
 					const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 					const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
@@ -469,7 +469,7 @@ export class ExplorerTab extends TabRenderer {
 				setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
 
 				// Toggle on chevron click
-				chevronContainer.addEventListener('click', (e) => {
+				chevronContainer.addEventListener('click', (e: any) => {
 					e.stopPropagation();
 					e.stopImmediatePropagation();
 					e.preventDefault();
@@ -539,7 +539,7 @@ export class ExplorerTab extends TabRenderer {
 							})();
 						};
 
-						nameInput.addEventListener('keydown', (e) => {
+						nameInput.addEventListener('keydown', (e: any) => {
 							if (e.key === 'Enter') {
 								e.preventDefault();
 								saveName();
@@ -622,9 +622,9 @@ export class ExplorerTab extends TabRenderer {
 						setCssProps(button.extraSettingsEl, { display: 'none' });
 					}
 					// Prevent icon flickering on hover by not updating on hover
-					button.extraSettingsEl.addEventListener('mouseenter', (e) => e.stopPropagation());
-					button.extraSettingsEl.addEventListener('mouseleave', (e) => e.stopPropagation());
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('mouseenter', (e: any) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('mouseleave', (e: any) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move up
@@ -662,7 +662,7 @@ export class ExplorerTab extends TabRenderer {
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
 						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move down
@@ -700,7 +700,7 @@ export class ExplorerTab extends TabRenderer {
 						button.extraSettingsEl.addClass('ui-tweaker-disabled-button');
 						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				});
 
 			// Delete button (only for custom commands)
@@ -728,7 +728,7 @@ export class ExplorerTab extends TabRenderer {
 							this.render(container);
 						})();
 					});
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				});
 			}
 
@@ -753,7 +753,7 @@ export class ExplorerTab extends TabRenderer {
 							this.plugin.explorerManager?.reorder();
 						})();
 					});
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				});
 			}
 		});
@@ -774,12 +774,12 @@ export class ExplorerTab extends TabRenderer {
 							colorPicker.setValue(currentColor);
 
 							const controlEl = setting.controlEl;
-							controlEl.addEventListener('click', (e) => e.stopPropagation());
+							controlEl.addEventListener('click', (e: any) => e.stopPropagation());
 
 							setTimeout(() => {
 								const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 								if (colorInput) {
-									colorInput.addEventListener('click', (e) => e.stopPropagation());
+									colorInput.addEventListener('click', (e: any) => e.stopPropagation());
 								}
 							}, 0);
 
@@ -792,7 +792,7 @@ export class ExplorerTab extends TabRenderer {
 									});
 									setIcon(resetButton, 'lucide-rotate-cw');
 									setCssProps(resetButton, { marginRight: '0.5rem' });
-									resetButton.addEventListener('click', (e) => {
+									resetButton.addEventListener('click', (e: any) => {
 										e.stopPropagation();
 										e.stopImmediatePropagation();
 										e.preventDefault();
@@ -812,7 +812,7 @@ export class ExplorerTab extends TabRenderer {
 								}, 0);
 							}
 
-							colorPicker.onChange((value) => {
+							colorPicker.onChange((value: any) => {
 								void (async () => {
 									if (!settings.nativeExplorerButtonColors) {
 										settings.nativeExplorerButtonColors = {};
@@ -833,7 +833,7 @@ export class ExplorerTab extends TabRenderer {
 										});
 										setIcon(resetButton, 'lucide-rotate-cw');
 										setCssProps(resetButton, { marginRight: '0.5rem' });
-										resetButton.addEventListener('click', (e) => {
+										resetButton.addEventListener('click', (e: any) => {
 											e.stopPropagation();
 											e.stopImmediatePropagation();
 											e.preventDefault();
@@ -867,7 +867,7 @@ export class ExplorerTab extends TabRenderer {
 					setting
 						.setName('Icon override')
 						.setDesc('Override the default icon for this button')
-						.addButton((button) => {
+						.addButton((button: any) => {
 							const currentIcon = iconOverride || 'Default';
 							button.setButtonText(currentIcon === 'Default' ? 'Set icon...' : currentIcon).onClick(() => {
 								const modal = new IconPickerModal(this.app, (iconId) => {
@@ -887,7 +887,7 @@ export class ExplorerTab extends TabRenderer {
 								});
 								modal.open();
 							});
-							button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+							button.buttonEl.addEventListener('click', (e: any) => e.stopPropagation());
 
 							// Add reset button if icon override is set
 							if (hasIconOverride) {
@@ -901,7 +901,7 @@ export class ExplorerTab extends TabRenderer {
 									});
 									setIcon(resetButton, 'lucide-rotate-cw');
 									setCssProps(resetButton, { marginRight: '0.5rem' });
-									resetButton.addEventListener('click', (e) => {
+									resetButton.addEventListener('click', (e: any) => {
 										e.stopPropagation();
 										e.stopImmediatePropagation();
 										e.preventDefault();
@@ -934,7 +934,7 @@ export class ExplorerTab extends TabRenderer {
 					setting
 						.setName('Device mode')
 						.setDesc('Choose which devices this button appears on')
-						.addDropdown((dropdown) => {
+						.addDropdown((dropdown: any) => {
 							const appId = (this.app as { appId?: string }).appId || 'this-device';
 							dropdown
 								.addOption('any', 'All devices')
@@ -942,7 +942,7 @@ export class ExplorerTab extends TabRenderer {
 								.addOption('mobile', 'Mobile only')
 								.addOption(appId, 'This device')
 								.setValue(pair.mode || 'any')
-								.onChange((value) => {
+								.onChange((value: any) => {
 									void (async () => {
 										pair.mode = value;
 										item.mode = value;
@@ -951,7 +951,7 @@ export class ExplorerTab extends TabRenderer {
 										this.render(container);
 									})();
 								});
-							dropdown.selectEl.addEventListener('click', (e) => e.stopPropagation());
+							dropdown.selectEl.addEventListener('click', (e: any) => e.stopPropagation());
 						});
 				});
 
@@ -968,12 +968,12 @@ export class ExplorerTab extends TabRenderer {
 							colorPicker.setValue(currentColor);
 
 							const controlEl = setting.controlEl;
-							controlEl.addEventListener('click', (e) => e.stopPropagation());
+							controlEl.addEventListener('click', (e: any) => e.stopPropagation());
 
 							setTimeout(() => {
 								const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 								if (colorInput) {
-									colorInput.addEventListener('click', (e) => e.stopPropagation());
+									colorInput.addEventListener('click', (e: any) => e.stopPropagation());
 								}
 							}, 0);
 
@@ -986,7 +986,7 @@ export class ExplorerTab extends TabRenderer {
 									});
 									setIcon(resetButton, 'lucide-rotate-cw');
 									setCssProps(resetButton, { marginRight: '0.5rem' });
-									resetButton.addEventListener('click', (e) => {
+									resetButton.addEventListener('click', (e: any) => {
 										e.stopPropagation();
 										e.stopImmediatePropagation();
 										e.preventDefault();
@@ -1004,7 +1004,7 @@ export class ExplorerTab extends TabRenderer {
 								}, 0);
 							}
 
-							colorPicker.onChange((value) => {
+							colorPicker.onChange((value: any) => {
 								const newColor = value === '#000000' ? undefined : value;
 								pair.color = newColor;
 								item.color = newColor;
@@ -1031,7 +1031,7 @@ export class ExplorerTab extends TabRenderer {
 									});
 									setIcon(resetButton, 'lucide-rotate-cw');
 									setCssProps(resetButton, { marginRight: '0.5rem' });
-									resetButton.addEventListener('click', (e) => {
+									resetButton.addEventListener('click', (e: any) => {
 										e.stopPropagation();
 										e.stopImmediatePropagation();
 										e.preventDefault();
@@ -1067,7 +1067,7 @@ export class ExplorerTab extends TabRenderer {
 						.setName('Toggle icon')
 						.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
 						.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
-						.addButton((button) => {
+						.addButton((button: any) => {
 							const currentToggleIcon = pair.toggleIcon || 'None';
 							button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
 								const modal = new IconPickerModal(this.app, (iconId) => {
@@ -1086,7 +1086,7 @@ export class ExplorerTab extends TabRenderer {
 								});
 								modal.open();
 							});
-							button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+							button.buttonEl.addEventListener('click', (e: any) => e.stopPropagation());
 						});
 				});
 
@@ -1096,9 +1096,9 @@ export class ExplorerTab extends TabRenderer {
 					setting
 						.setName('Use active class instead of icon swap')
 						.setDesc('When toggled on, add is-active class instead of swapping icon (explorer only)')
-						.addToggle((toggle) => {
+						.addToggle((toggle: any) => {
 							toggle.setValue(pair.useActiveClass ?? false);
-							toggle.onChange((value) => {
+							toggle.onChange((value: any) => {
 								void (async () => {
 									pair.useActiveClass = value;
 									item.useActiveClass = value;
@@ -1107,7 +1107,7 @@ export class ExplorerTab extends TabRenderer {
 									this.render(container);
 								})();
 							});
-							toggle.toggleEl.addEventListener('click', (e) => e.stopPropagation());
+							toggle.toggleEl.addEventListener('click', (e: any) => e.stopPropagation());
 						});
 				});
 			}
@@ -1124,7 +1124,7 @@ export class ExplorerTab extends TabRenderer {
 
 	private renderCommandItem(container: HTMLElement, pair: CommandIconPair, index: number): void {
 		const settings = this.getSettings();
-		const group = createSettingsGroup(container, undefined, 'ui-tweaker');
+		const group = new SettingGroup(container);
 
 		// Store reference to other settings for collapsible functionality
 		const otherSettings: HTMLElement[] = [];
@@ -1134,7 +1134,7 @@ export class ExplorerTab extends TabRenderer {
 		group.addSetting((setting): void => {
 			// Completely prevent collapse on setting element - ONLY chevron can toggle
 			// Use capture phase to intercept ALL clicks before they reach Obsidian's handlers
-			setting.settingEl.addEventListener('click', (e) => {
+			setting.settingEl.addEventListener('click', (e: any) => {
 				const target = e.target as HTMLElement;
 				// Allow collapse if clicking on chevron icon OR on extra buttons (delete, move up/down, etc.)
 				// OR on name display/pencil icon for renaming
@@ -1151,7 +1151,7 @@ export class ExplorerTab extends TabRenderer {
 			}, true); // Capture phase - runs before other handlers
 
 			// Also prevent on bubble phase as backup
-			setting.settingEl.addEventListener('click', (e) => {
+			setting.settingEl.addEventListener('click', (e: any) => {
 				const target = e.target as HTMLElement;
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
@@ -1187,7 +1187,7 @@ export class ExplorerTab extends TabRenderer {
 			setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
 
 			// Toggle on chevron click - ONLY way to change collapse state
-			chevronContainer.addEventListener('click', (e) => {
+			chevronContainer.addEventListener('click', (e: any) => {
 				e.stopPropagation();
 				e.stopImmediatePropagation();
 				e.preventDefault();
@@ -1258,7 +1258,7 @@ export class ExplorerTab extends TabRenderer {
 					};
 
 					// Save on Enter
-					nameInput.addEventListener('keydown', (e) => {
+					nameInput.addEventListener('keydown', (e: any) => {
 						if (e.key === 'Enter') {
 							e.preventDefault();
 							saveName();
@@ -1316,7 +1316,7 @@ export class ExplorerTab extends TabRenderer {
 						modal.open();
 					});
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move up - always show, but disable when at top
@@ -1356,7 +1356,7 @@ export class ExplorerTab extends TabRenderer {
 						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move down - always show, but disable when at bottom
@@ -1396,7 +1396,7 @@ export class ExplorerTab extends TabRenderer {
 						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Delete - red/warning style
@@ -1417,7 +1417,7 @@ export class ExplorerTab extends TabRenderer {
 						})();
 					});
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
 				});
 		});
 
@@ -1427,7 +1427,7 @@ export class ExplorerTab extends TabRenderer {
 			setting
 				.setName('Device mode')
 				.setDesc('Choose which devices this button appears on')
-				.addDropdown((dropdown) => {
+				.addDropdown((dropdown: any) => {
 					const appId = (this.app as { appId?: string }).appId || 'this-device';
 					dropdown
 						.addOption('any', 'All devices')
@@ -1435,7 +1435,7 @@ export class ExplorerTab extends TabRenderer {
 						.addOption('mobile', 'Mobile only')
 						.addOption(appId, 'This device')
 						.setValue(pair.mode || 'any')
-						.onChange((value) => {
+						.onChange((value: any) => {
 							void (async () => {
 								pair.mode = value;
 								await this.saveSettings();
@@ -1444,7 +1444,7 @@ export class ExplorerTab extends TabRenderer {
 							})();
 						});
 					// Prevent collapse on click
-					dropdown.selectEl.addEventListener('click', (e) => e.stopPropagation());
+					dropdown.selectEl.addEventListener('click', (e: any) => e.stopPropagation());
 				});
 		});
 
@@ -1465,13 +1465,13 @@ export class ExplorerTab extends TabRenderer {
 					const controlEl = setting.controlEl;
 
 					// Prevent collapse on color picker clicks
-					controlEl.addEventListener('click', (e) => e.stopPropagation());
+					controlEl.addEventListener('click', (e: any) => e.stopPropagation());
 
 					// Add event handler to the actual color input element
 					setTimeout(() => {
 						const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 						if (colorInput) {
-							colorInput.addEventListener('click', (e) => e.stopPropagation());
+							colorInput.addEventListener('click', (e: any) => e.stopPropagation());
 						}
 					}, 0);
 
@@ -1488,7 +1488,7 @@ export class ExplorerTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', (e) => {
+							resetButton.addEventListener('click', (e: any) => {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
@@ -1518,7 +1518,7 @@ export class ExplorerTab extends TabRenderer {
 						}, 0);
 					}
 
-					colorPicker.onChange((value) => {
+					colorPicker.onChange((value: any) => {
 						// If set to black (#000000), treat as "no custom color" and remove it
 						const newColor = value === '#000000' ? undefined : value;
 						pair.color = newColor;
@@ -1545,7 +1545,7 @@ export class ExplorerTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', (e) => {
+							resetButton.addEventListener('click', (e: any) => {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
@@ -1595,7 +1595,7 @@ export class ExplorerTab extends TabRenderer {
 				.setName('Toggle icon')
 				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
 				.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
-				.addButton((button) => {
+				.addButton((button: any) => {
 					const currentToggleIcon = pair.toggleIcon || 'None';
 					button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
 						const modal = new IconPickerModal(this.app, (iconId) => {
@@ -1613,7 +1613,7 @@ export class ExplorerTab extends TabRenderer {
 						modal.open();
 					});
 					// Prevent collapse on click
-					button.buttonEl.addEventListener('click', (e) => e.stopPropagation());
+					button.buttonEl.addEventListener('click', (e: any) => e.stopPropagation());
 
 					// Add reset button if toggle icon is set
 					if (hasToggleIcon) {
@@ -1627,7 +1627,7 @@ export class ExplorerTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', (e) => {
+							resetButton.addEventListener('click', (e: any) => {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
@@ -1672,9 +1672,9 @@ export class ExplorerTab extends TabRenderer {
 			setting
 				.setName('Use active class instead of icon swap')
 				.setDesc('When toggled on, add is-active class instead of swapping icon (explorer only)')
-				.addToggle((toggle) => {
+				.addToggle((toggle: any) => {
 					toggle.setValue(pair.useActiveClass ?? false);
-					toggle.onChange((value) => {
+					toggle.onChange((value: any) => {
 						void (async () => {
 							pair.useActiveClass = value;
 							await this.saveSettings();
@@ -1683,7 +1683,7 @@ export class ExplorerTab extends TabRenderer {
 						})();
 					});
 					// Prevent collapse on click
-					toggle.toggleEl.addEventListener('click', (e) => e.stopPropagation());
+					toggle.toggleEl.addEventListener('click', (e: any) => e.stopPropagation());
 				});
 		});
 

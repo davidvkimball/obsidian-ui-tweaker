@@ -75,7 +75,7 @@ export class ExplorerManager {
 			const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
 			if (navButtonsContainer) {
 				const managedButtons = navButtonsContainer.querySelectorAll('[data-ui-tweaker-managed="true"]');
-				managedButtons.forEach(btn => btn.remove());
+				managedButtons.forEach((btn: any) => btn.remove());
 			}
 		});
 		this.buttons.clear();
@@ -428,7 +428,7 @@ export class ExplorerManager {
 			const buttonMap = new Map<string, HTMLElement>();
 
 			// Map buttons by ID
-			allButtons.forEach((button) => {
+			allButtons.forEach((button: any) => {
 				const ariaLabel = button.getAttribute('aria-label') || '';
 				const canonicalName = this.generateCanonicalName(button, ariaLabel);
 
@@ -498,7 +498,7 @@ export class ExplorerManager {
 			});
 
 			// Physically reorder DOM elements
-			orderedButtons.forEach((button) => {
+			orderedButtons.forEach((button: any) => {
 				if (button.parentElement === navButtonsContainer) {
 					navButtonsContainer.appendChild(button);
 				}
@@ -654,7 +654,7 @@ export class ExplorerManager {
 
 			// Find all native buttons (those without data-explorer-command-id)
 			const nativeButtons = navButtonsContainer.querySelectorAll('.nav-action-button:not([data-explorer-command-id])');
-			nativeButtons.forEach((button) => {
+			nativeButtons.forEach((button: any) => {
 				const ariaLabel = button.getAttribute('aria-label');
 				if (!ariaLabel) return;
 

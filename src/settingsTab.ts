@@ -2,13 +2,16 @@
  * Settings Tab - UI implementation
  */
 
-import { App, PluginSettingTab } from 'obsidian';
+import { App, PluginSettingTab , SettingGroup, Setting} from 'obsidian';
 import { UISettings } from './settings';
 import { UIVisibilityState } from './types';
 import { CommandPickerModal } from './modals/CommandPickerModal';
 import { IconPickerModal } from './modals/IconPickerModal';
 import UITweakerPlugin from './main';
-import { createSettingsGroup, SettingsContainer } from './utils/settings-compat';
+
+// MOCKED: SettingsContainer type
+type SettingsContainer = { addSetting: (cb: (setting: Setting) => void) => void };
+
 
 export class UITweakerSettingTab extends PluginSettingTab {
 	plugin: UITweakerPlugin;
@@ -26,7 +29,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Auto-hide elements
 		// ========================================
-		const generalGroup = createSettingsGroup(containerEl, undefined, 'ui-tweaker');
+		const generalGroup = new SettingGroup(containerEl);
 
 		this.addVisibilitySetting(
 			generalGroup,
@@ -68,8 +71,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
-				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value) => {
+				.addToggle((toggle: any) =>
+					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value: any) => {
 						this.plugin.settings.ribbonRevealOnHover = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();
@@ -80,7 +83,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Navigation
 		// ========================================
-		const navigationGroup = createSettingsGroup(containerEl, 'Navigation', 'ui-tweaker');
+		const navigationGroup = new SettingGroup(containerEl).setHeading('Navigation');
 
 		this.addToggleSetting(navigationGroup, 'Hide tab bar', 'Hides the tab container at the top of the window.', 'tabBar');
 
@@ -103,7 +106,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Vault profile area
 		// ========================================
-		const vaultProfileGroup = createSettingsGroup(containerEl, 'Vault profile area', 'ui-tweaker');
+		const vaultProfileGroup = new SettingGroup(containerEl).setHeading('Vault profile area');
 
 		this.addVisibilitySetting(
 			vaultProfileGroup,
@@ -132,8 +135,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Replace help button with custom action')
 				.setDesc('Replace the help button with a custom icon and command. This will hide the original help button and show your custom button instead.')
-				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange((value) => {
+				.addToggle((toggle: any) =>
+					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange((value: any) => {
 						if (!this.plugin.settings.helpButtonReplacement) {
 							this.plugin.settings.helpButtonReplacement = {
 								enabled: true,
@@ -188,7 +191,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Command')
 					.setDesc('Select the command to execute when the button is clicked')
-					.addButton((button) =>
+					.addButton((button: any) =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
 							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
@@ -234,7 +237,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Icon')
 					.setDesc('Select the icon to display on the button')
-					.addButton((button) =>
+					.addButton((button: any) =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
 							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
@@ -278,12 +281,12 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Vault switcher background transparency')
 				.setDesc('Adjust the transparency of the vault switcher background when hidden. Range: 0 (fully transparent) to 1 (fully opaque).')
-				.addSlider((slider) =>
+				.addSlider((slider: any) =>
 					slider
 						.setLimits(0, 1, 0.01)
 						.setValue(this.plugin.settings.vaultSwitcherBackgroundTransparency)
 						.setDynamicTooltip()
-						.onChange((value) => {
+						.onChange((value: any) => {
 							this.plugin.settings.vaultSwitcherBackgroundTransparency = value;
 							void this.plugin.saveSettings();
 							this.plugin.refresh();
@@ -294,7 +297,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Tab icons
 		// ========================================
-		const tabIconsGroup = createSettingsGroup(containerEl, 'Tab icons', 'ui-tweaker');
+		const tabIconsGroup = new SettingGroup(containerEl).setHeading('Tab icons');
 
 		this.addVisibilitySetting(
 			tabIconsGroup,
@@ -320,7 +323,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Status & UI elements
 		// ========================================
-		const statusUIGroup = createSettingsGroup(containerEl, 'Status & UI elements', 'ui-tweaker');
+		const statusUIGroup = new SettingGroup(containerEl).setHeading('Status & UI elements');
 
 		this.addToggleSetting(statusUIGroup, 'Hide status bar', 'Hides word count, character count and backlink count.', 'statusBar');
 
@@ -352,7 +355,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Search
 		// ========================================
-		const searchGroup = createSettingsGroup(containerEl, 'Search', 'ui-tweaker');
+		const searchGroup = new SettingGroup(containerEl).setHeading('Search');
 
 		this.addToggleSetting(searchGroup, 'Hide search suggestions', 'Hides suggestions in search pane.', 'searchSuggestions');
 
@@ -361,7 +364,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Properties
 		// ========================================
-		const propertiesGroup = createSettingsGroup(containerEl, 'Properties', 'ui-tweaker');
+		const propertiesGroup = new SettingGroup(containerEl).setHeading('Properties');
 
 		this.addToggleSetting(propertiesGroup, 'Hide properties in Reading view', 'Hides the properties section in Reading view.', 'propertiesInReadingView');
 
@@ -374,7 +377,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Mobile
 		// ========================================
-		const mobileGroup = createSettingsGroup(containerEl, 'Mobile', 'ui-tweaker');
+		const mobileGroup = new SettingGroup(containerEl).setHeading('Mobile');
 
 		this.addToggleSetting(mobileGroup, 'Hide "Mobile chevrons" icon', 'Hide "Mobile chevrons" icon (long-press flair) in mobile navbar.', 'mobileChevronsIcon');
 
@@ -410,8 +413,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Replace sync button with custom action')
 				.setDesc('Replace the sync button in the mobile sidebar with a custom icon and command. This will hide the original sync button and show your custom button instead.')
-				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange((value) => {
+				.addToggle((toggle: any) =>
+					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange((value: any) => {
 						if (!this.plugin.settings.syncButtonReplacement) {
 							this.plugin.settings.syncButtonReplacement = {
 								enabled: true,
@@ -466,7 +469,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Command')
 					.setDesc('Select the command to execute when the button is clicked')
-					.addButton((button) =>
+					.addButton((button: any) =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
 							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
@@ -512,7 +515,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Icon')
 					.setDesc('Select the icon to display on the button')
-					.addButton((button) =>
+					.addButton((button: any) =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
 							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
@@ -548,7 +551,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		// ========================================
 		// Mobile navigation menu
 		// ========================================
-		const mobileNavGroup = createSettingsGroup(containerEl, 'Mobile navigation menu', 'ui-tweaker');
+		const mobileNavGroup = new SettingGroup(containerEl).setHeading('Mobile navigation menu');
 
 		this.addPositionSetting(mobileNavGroup, '"Navigate back" button position', 'Select the position for the "Navigate back" button (default 1).', 'navigateButtonPosition');
 
@@ -568,7 +571,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addDropdown((dropdown) => {
+				.addDropdown((dropdown: any) => {
 					const currentValue = this.plugin.settings[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : 'show';
 					dropdown
@@ -576,7 +579,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.addOption('hide', 'Hide')
 						.addOption('reveal', 'Reveal')
 						.setValue(stringValue)
-						.onChange((value) => {
+						.onChange((value: any) => {
 							(this.plugin.settings[key] as UIVisibilityState) = value as UIVisibilityState;
 							void this.plugin.saveSettings();
 							this.plugin.refresh();
@@ -590,8 +593,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addToggle((toggle) =>
-					toggle.setValue(Boolean(this.plugin.settings[key])).onChange((value) => {
+				.addToggle((toggle: any) =>
+					toggle.setValue(Boolean(this.plugin.settings[key])).onChange((value: any) => {
 						(this.plugin.settings[key] as boolean) = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();
@@ -605,13 +608,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addDropdown((dropdown) => {
+				.addDropdown((dropdown: any) => {
 					for (let i = 1; i <= 6; i++) {
 						dropdown.addOption(String(i), String(i));
 					}
 					const currentValue = this.plugin.settings[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : '1';
-					dropdown.setValue(stringValue).onChange((value) => {
+					dropdown.setValue(stringValue).onChange((value: any) => {
 						(this.plugin.settings[key] as string) = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();

@@ -377,7 +377,7 @@ export default class UITweakerPlugin extends Plugin {
 					},
 					onBeforeUninstall: (custom) => {
 						const originals = document.querySelectorAll('[data-ui-tweaker-original-sync-hidden]');
-						originals.forEach(el => {
+						originals.forEach((el: any) => {
 							(el as HTMLElement).style.removeProperty('display');
 							el.removeAttribute('data-ui-tweaker-original-sync-hidden');
 						});

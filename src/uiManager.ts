@@ -222,7 +222,7 @@ export class UIManager {
 			if (!target) return;
 
 			// Clear all hover classes first
-			hoveredElements.forEach((el) => {
+			hoveredElements.forEach((el: any) => {
 				el.classList.remove('ui-tweaker-scrollbar-hover');
 			});
 			hoveredElements.clear();
@@ -250,7 +250,7 @@ export class UIManager {
 
 		// Clear hover when mouse leaves document
 		const handleMouseLeave = () => {
-			hoveredElements.forEach((el) => {
+			hoveredElements.forEach((el: any) => {
 				el.classList.remove('ui-tweaker-scrollbar-hover');
 			});
 			hoveredElements.clear();
@@ -264,7 +264,7 @@ export class UIManager {
 			document.removeEventListener('mousemove', handleMouseMove, true);
 			document.removeEventListener('mouseleave', handleMouseLeave, true);
 			// Remove all hover classes
-			hoveredElements.forEach((el) => {
+			hoveredElements.forEach((el: any) => {
 				el.classList.remove('ui-tweaker-scrollbar-hover');
 			});
 			hoveredElements.clear();

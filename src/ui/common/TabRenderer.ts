@@ -37,12 +37,12 @@ export abstract class TabRenderer {
 		return new Setting(container)
 			.setName(name)
 			.setDesc(description)
-			.addDropdown(dropdown => {
+			.addDropdown((dropdown: any) => {
 				Object.entries(options).forEach(([key, label]) => {
 					dropdown.addOption(key, label);
 				});
 				dropdown.setValue(value);
-				dropdown.onChange(async (value) => {
+				dropdown.onChange(async (value: any) => {
 					onChange(value);
 					await this.saveSettings();
 				});
@@ -60,9 +60,9 @@ export abstract class TabRenderer {
 		return new Setting(container)
 			.setName(name)
 			.setDesc(description)
-			.addToggle(toggle => {
+			.addToggle((toggle: any) => {
 				toggle.setValue(value);
-				toggle.onChange(async (value) => {
+				toggle.onChange(async (value: any) => {
 					onChange(value);
 					await this.saveSettings();
 				});
@@ -83,12 +83,12 @@ export abstract class TabRenderer {
 		return new Setting(container)
 			.setName(name)
 			.setDesc(description)
-			.addSlider(slider => {
+			.addSlider((slider: any) => {
 				slider
 					.setLimits(min, max, step)
 					.setValue(value)
 					.setDynamicTooltip()
-					.onChange(async (value) => {
+					.onChange(async (value: any) => {
 						onChange(value);
 						await this.saveSettings();
 					});

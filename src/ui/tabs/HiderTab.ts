@@ -1,13 +1,17 @@
+import { SettingGroup , Setting} from "obsidian";
 /**
  * Hider Tab - Auto-hide and visibility settings (excluding mobile and explorer buttons)
  */
 
 import { TabRenderer } from '../common/TabRenderer';
-import { createSettingsGroup, SettingsContainer } from '../../utils/settings-compat';
+
 import { CommandPickerModal } from '../../modals/CommandPickerModal';
 import { IconPickerModal } from '../../modals/IconPickerModal';
 import { UISettings } from '../../settings';
 import { UIVisibilityState } from '../../types';
+
+// MOCKED: SettingsContainer type
+type SettingsContainer = { addSetting: (cb: (setting: Setting) => void) => void };
 
 export class HiderTab extends TabRenderer {
 	render(container: HTMLElement): void {
@@ -15,7 +19,7 @@ export class HiderTab extends TabRenderer {
 		// ========================================
 		// Auto-hide elements
 		// ========================================
-		const generalGroup = createSettingsGroup(container, undefined, 'ui-tweaker');
+		const generalGroup = new SettingGroup(container);
 
 		this.addVisibilitySetting(
 			generalGroup,
@@ -57,8 +61,8 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
-				.addToggle((toggle) =>
-					toggle.setValue(this.getSettings().ribbonRevealOnHover).onChange((value) => {
+				.addToggle((toggle: any) =>
+					toggle.setValue(this.getSettings().ribbonRevealOnHover).onChange((value: any) => {
 						this.getSettings().ribbonRevealOnHover = value;
 						void this.saveSettings();
 					})
@@ -68,7 +72,7 @@ export class HiderTab extends TabRenderer {
 		// ========================================
 		// Navigation
 		// ========================================
-		const navigationGroup = createSettingsGroup(container, 'Navigation', 'ui-tweaker');
+		const navigationGroup = new SettingGroup(container).setHeading('Navigation');
 
 		this.addToggleSetting(navigationGroup, 'Hide tab bar', 'Hides the tab container at the top of the window.', 'tabBar');
 
@@ -86,7 +90,7 @@ export class HiderTab extends TabRenderer {
 		// ========================================
 		// Vault profile area
 		// ========================================
-		const vaultProfileGroup = createSettingsGroup(container, 'Vault profile area', 'ui-tweaker');
+		const vaultProfileGroup = new SettingGroup(container).setHeading('Vault profile area');
 
 		this.addVisibilitySetting(
 			vaultProfileGroup,
@@ -116,12 +120,12 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Vault switcher background transparency')
 				.setDesc('Adjust the transparency of the vault switcher background when hidden. Range: 0 (fully transparent) to 1 (fully opaque).')
-				.addSlider((slider) =>
+				.addSlider((slider: any) =>
 					slider
 						.setLimits(0, 1, 0.01)
 						.setValue(this.getSettings().vaultSwitcherBackgroundTransparency)
 						.setDynamicTooltip()
-						.onChange((value) => {
+						.onChange((value: any) => {
 							this.getSettings().vaultSwitcherBackgroundTransparency = value;
 							void this.saveSettings();
 						})
@@ -131,7 +135,7 @@ export class HiderTab extends TabRenderer {
 		// ========================================
 		// Tab icons
 		// ========================================
-		const tabIconsGroup = createSettingsGroup(container, 'Tab icons', 'ui-tweaker');
+		const tabIconsGroup = new SettingGroup(container).setHeading('Tab icons');
 
 		this.addVisibilitySetting(
 			tabIconsGroup,
@@ -157,7 +161,7 @@ export class HiderTab extends TabRenderer {
 		// ========================================
 		// Status & UI elements
 		// ========================================
-		const statusUIGroup = createSettingsGroup(container, 'Status & UI elements', 'ui-tweaker');
+		const statusUIGroup = new SettingGroup(container).setHeading('Status & UI elements');
 
 		this.addToggleSetting(statusUIGroup, 'Hide status bar', 'Hides word count, character count and backlink count.', 'statusBar');
 
@@ -189,7 +193,7 @@ export class HiderTab extends TabRenderer {
 		// ========================================
 		// Search
 		// ========================================
-		const searchGroup = createSettingsGroup(container, 'Search', 'ui-tweaker');
+		const searchGroup = new SettingGroup(container).setHeading('Search');
 
 		this.addToggleSetting(searchGroup, 'Hide search suggestions', 'Hides suggestions in search pane.', 'searchSuggestions');
 
@@ -198,7 +202,7 @@ export class HiderTab extends TabRenderer {
 		// ========================================
 		// Properties
 		// ========================================
-		const propertiesGroup = createSettingsGroup(container, 'Properties', 'ui-tweaker');
+		const propertiesGroup = new SettingGroup(container).setHeading('Properties');
 
 		this.addToggleSetting(propertiesGroup, 'Hide properties in Reading view', 'Hides the properties section in Reading view.', 'propertiesInReadingView');
 
@@ -214,7 +218,7 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addDropdown((dropdown) => {
+				.addDropdown((dropdown: any) => {
 					const currentValue = this.getSettings()[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : 'show';
 					dropdown
@@ -222,7 +226,7 @@ export class HiderTab extends TabRenderer {
 						.addOption('hide', 'Hide')
 						.addOption('reveal', 'Reveal')
 						.setValue(stringValue)
-						.onChange((value) => {
+						.onChange((value: any) => {
 							(this.getSettings()[key] as UIVisibilityState) = value as UIVisibilityState;
 							void this.saveSettings();
 						});
@@ -235,8 +239,8 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addToggle((toggle) =>
-					toggle.setValue(Boolean(this.getSettings()[key])).onChange((value) => {
+				.addToggle((toggle: any) =>
+					toggle.setValue(Boolean(this.getSettings()[key])).onChange((value: any) => {
 						(this.getSettings()[key] as boolean) = value;
 						void this.saveSettings();
 					})
@@ -260,12 +264,12 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Replace help button with custom action')
 				.setDesc('Replace the help button with a custom icon and command. This will hide the original help button and show your custom button instead.')
-				.addToggle((toggle) =>
-					toggle.setValue(settings.helpButtonReplacement.enabled).onChange((value) => {
+				.addToggle((toggle: any) =>
+					toggle.setValue(settings.helpButtonReplacement.enabled).onChange((value: any) => {
 						settings.helpButtonReplacement.enabled = value;
 
 						// Toggle visibility of dependent settings instantly
-						dependentSettings.forEach(el => {
+						dependentSettings.forEach((el: any) => {
 							el.style.display = value ? '' : 'none';
 						});
 
@@ -309,7 +313,7 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Command')
 				.setDesc('Select the command to execute when the button is clicked')
-				.addButton((button) =>
+				.addButton((button: any) =>
 					button.setButtonText(getCommandName(settings.helpButtonReplacement.commandId)).onClick(() => {
 						const modal = new CommandPickerModal(this.app, (commandId) => {
 							settings.helpButtonReplacement.commandId = commandId;
@@ -329,7 +333,7 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Icon')
 				.setDesc('Select the icon to display on the button')
-				.addButton((button) =>
+				.addButton((button: any) =>
 					button.setButtonText(getIconName(settings.helpButtonReplacement.iconId) || 'Select icon...').onClick(() => {
 						const modal = new IconPickerModal(this.app, (iconId) => {
 							settings.helpButtonReplacement.iconId = iconId;
