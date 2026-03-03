@@ -45,7 +45,7 @@ export class TabBarTab extends TabRenderer {
 			setting
 				.setName('Add command')
 				.setDesc('Add a new command button to the tab bar')
-				.addButton((button: any) => {
+				.addButton(button => {
 					// Add icon to the button
 					const buttonEl = button.buttonEl;
 					const iconContainer = buttonEl.createSpan({ cls: 'ui-tweaker-add-icon' });
@@ -79,7 +79,7 @@ export class TabBarTab extends TabRenderer {
 		group.addSetting((setting): void => {
 			// Completely prevent collapse on setting element - ONLY chevron can toggle
 			// Use capture phase to intercept ALL clicks before they reach Obsidian's handlers
-			setting.settingEl.addEventListener('click', (e: any) => {
+			setting.settingEl.addEventListener('click', e => {
 				const target = e.target as HTMLElement;
 				// Allow collapse if clicking on chevron icon OR on extra buttons (delete, move up/down, etc.)
 				// OR on name display/pencil icon for renaming
@@ -96,7 +96,7 @@ export class TabBarTab extends TabRenderer {
 			}, true); // Capture phase - runs before other handlers
 
 			// Also prevent on bubble phase as backup
-			setting.settingEl.addEventListener('click', (e: any) => {
+			setting.settingEl.addEventListener('click', e => {
 				const target = e.target as HTMLElement;
 				const isChevronClick = target.closest('.ui-tweaker-collapse-icon') !== null;
 				const isExtraButton = target.closest('.extra-setting-button') !== null || target.closest('.clickable-icon.extra-setting-button') !== null;
@@ -132,7 +132,7 @@ export class TabBarTab extends TabRenderer {
 			setIcon(chevronContainer, isExpanded ? 'chevrons-down-up' : 'chevrons-up-down');
 
 			// Toggle on chevron click - ONLY way to change collapse state
-			chevronContainer.addEventListener('click', (e: any) => {
+			chevronContainer.addEventListener('click', e => {
 				e.stopPropagation();
 				e.stopImmediatePropagation();
 				e.preventDefault();
@@ -203,7 +203,7 @@ export class TabBarTab extends TabRenderer {
 					};
 
 					// Save on Enter
-					nameInput.addEventListener('keydown', (e: any) => {
+					nameInput.addEventListener('keydown', e => {
 						if (e.key === 'Enter') {
 							e.preventDefault();
 							saveName();
@@ -261,7 +261,7 @@ export class TabBarTab extends TabRenderer {
 						modal.open();
 					});
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', e => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move up - always show, but disable when at top
@@ -301,7 +301,7 @@ export class TabBarTab extends TabRenderer {
 						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', e => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Move down - always show, but disable when at bottom
@@ -341,7 +341,7 @@ export class TabBarTab extends TabRenderer {
 						setCssProps(button.extraSettingsEl, { pointerEvents: 'none' });
 					}
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', e => e.stopPropagation());
 				})
 				.addExtraButton((button) => {
 					// Delete - red/warning style
@@ -359,7 +359,7 @@ export class TabBarTab extends TabRenderer {
 						})();
 					});
 					// Prevent collapse on click
-					button.extraSettingsEl.addEventListener('click', (e: any) => e.stopPropagation());
+					button.extraSettingsEl.addEventListener('click', e => e.stopPropagation());
 				});
 		});
 
@@ -369,7 +369,7 @@ export class TabBarTab extends TabRenderer {
 			setting
 				.setName('Device mode')
 				.setDesc('Choose which devices this command appears on')
-				.addDropdown((dropdown: any) => {
+				.addDropdown(dropdown => {
 					const appId = (this.app as { appId?: string }).appId || 'this-device';
 					dropdown
 						.addOption('any', 'All devices')
@@ -383,7 +383,7 @@ export class TabBarTab extends TabRenderer {
 						: appId;
 					dropdown.setValue(currentValue);
 
-					dropdown.onChange((value: any) => {
+					dropdown.onChange(value => {
 						void (async () => {
 							pair.mode = value;
 							await this.saveSettings();
@@ -392,7 +392,7 @@ export class TabBarTab extends TabRenderer {
 						})();
 					});
 					// Prevent collapse on click
-					dropdown.selectEl.addEventListener('click', (e: any) => e.stopPropagation());
+					dropdown.selectEl.addEventListener('click', e => e.stopPropagation());
 				});
 		});
 
@@ -413,13 +413,13 @@ export class TabBarTab extends TabRenderer {
 					const controlEl = setting.controlEl;
 
 					// Prevent collapse on color picker clicks
-					controlEl.addEventListener('click', (e: any) => e.stopPropagation());
+					controlEl.addEventListener('click', e => e.stopPropagation());
 
 					// Add event handler to the actual color input element
 					setTimeout(() => {
 						const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 						if (colorInput) {
-							colorInput.addEventListener('click', (e: any) => e.stopPropagation());
+							colorInput.addEventListener('click', e => e.stopPropagation());
 						}
 					}, 0);
 
@@ -436,7 +436,7 @@ export class TabBarTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', (e: any) => {
+							resetButton.addEventListener('click', e => {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
@@ -466,7 +466,7 @@ export class TabBarTab extends TabRenderer {
 						}, 0);
 					}
 
-					colorPicker.onChange((value: any) => {
+					colorPicker.onChange(value => {
 						// If set to black (#000000), treat as "no custom color" and remove it
 						if (value === '#000000') {
 							pair.color = undefined;
@@ -503,7 +503,7 @@ export class TabBarTab extends TabRenderer {
 				.setName('Toggle icon')
 				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
 				.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
-				.addButton((button: any) => {
+				.addButton(button => {
 					const currentToggleIcon = pair.toggleIcon || 'None';
 					button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
 						const modal = new IconPickerModal(this.app, (iconId) => {
@@ -521,7 +521,7 @@ export class TabBarTab extends TabRenderer {
 						modal.open();
 					});
 					// Prevent collapse on click
-					button.buttonEl.addEventListener('click', (e: any) => e.stopPropagation());
+					button.buttonEl.addEventListener('click', e => e.stopPropagation());
 
 					// Add reset button if toggle icon is set
 					if (hasToggleIcon) {
@@ -535,7 +535,7 @@ export class TabBarTab extends TabRenderer {
 							});
 							setIcon(resetButton, 'lucide-rotate-cw');
 							setCssProps(resetButton, { marginRight: '0.5rem' });
-							resetButton.addEventListener('click', (e: any) => {
+							resetButton.addEventListener('click', e => {
 								e.stopPropagation();
 								e.stopImmediatePropagation();
 								e.preventDefault();
@@ -580,10 +580,10 @@ export class TabBarTab extends TabRenderer {
 			setting
 				.setName('Show only on these file types')
 				.setDesc('Show button only on specified file types or views. Enter comma-separated file extensions (like "md,mdx") or view types for views without files (like "{{graph}}"). Leave empty to show on all. Use {{graph}} for graph view and {{empty}} for blank/new tabs.')
-				.addText((text: any) => {
+				.addText(text => {
 					text.setPlaceholder('Example: md, mdx');
 					text.setValue(pair.showOnFileTypes ?? '');
-					text.onChange((value: any) => {
+					text.onChange(value => {
 						void (async () => {
 							pair.showOnFileTypes = value.trim() || undefined;
 							await this.saveSettings();
@@ -591,8 +591,8 @@ export class TabBarTab extends TabRenderer {
 						})();
 					});
 					// Prevent collapse on click/focus
-					text.inputEl.addEventListener('click', (e: any) => e.stopPropagation());
-					text.inputEl.addEventListener('focus', (e: any) => e.stopPropagation());
+					text.inputEl.addEventListener('click', e => e.stopPropagation());
+					text.inputEl.addEventListener('focus', e => e.stopPropagation());
 				});
 		});
 
@@ -602,10 +602,10 @@ export class TabBarTab extends TabRenderer {
 			setting
 				.setName('Never show on these file types')
 				.setDesc('Hide button on specified file types or views. Enter comma-separated file extensions (like "jpg,png") or view types for views without files (like "{{graph}}"). Leave empty to allow all. Use {{graph}} for graph view and {{empty}} for blank/new tabs.')
-				.addText((text: any) => {
+				.addText(text => {
 					text.setPlaceholder('{{graph}},{{empty}}');
 					text.setValue(pair.hideOnFileTypes ?? '');
-					text.onChange((value: any) => {
+					text.onChange(value => {
 						void (async () => {
 							pair.hideOnFileTypes = value.trim() || undefined;
 							await this.saveSettings();
@@ -613,8 +613,8 @@ export class TabBarTab extends TabRenderer {
 						})();
 					});
 					// Prevent collapse on click/focus
-					text.inputEl.addEventListener('click', (e: any) => e.stopPropagation());
-					text.inputEl.addEventListener('focus', (e: any) => e.stopPropagation());
+					text.inputEl.addEventListener('click', e => e.stopPropagation());
+					text.inputEl.addEventListener('focus', e => e.stopPropagation());
 				});
 		});
 

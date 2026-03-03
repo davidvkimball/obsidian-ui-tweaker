@@ -58,7 +58,7 @@ export class StatusBarTab extends TabRenderer {
 			setting
 				.setName('Add command')
 				.setDesc('Add a new command button to the status bar')
-				.addButton((button: any) => {
+				.addButton(button => {
 					// Add icon to the button
 					const buttonEl = button.buttonEl;
 					const iconContainer = buttonEl.createSpan({ cls: 'ui-tweaker-add-icon' });
@@ -141,7 +141,7 @@ export class StatusBarTab extends TabRenderer {
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
 		const lockIcon = item.sticky === 'right' ? 'corner-right-down' : (item.sticky === 'left' ? 'corner-right-up' : 'unlock');
 		lockSpan.setAttribute('aria-label', item.sticky ? `Pinned to ${item.sticky === 'right' ? 'End' : 'Start'}` : 'Unlocked - click to pin to end');
-		lockSpan.addEventListener('click', (e: any) => {
+		lockSpan.addEventListener('click', e => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
 		});
@@ -216,7 +216,7 @@ export class StatusBarTab extends TabRenderer {
 				void this.saveSettings();
 			};
 
-			input.addEventListener('keydown', (e: any) => {
+			input.addEventListener('keydown', e => {
 				if (e.key === 'Enter') {
 					e.preventDefault();
 					saveName();
@@ -246,7 +246,7 @@ export class StatusBarTab extends TabRenderer {
 				attr: { 'aria-label': 'Reset to default color' }
 			});
 			setIcon(resetButton, 'rotate-cw');
-			resetButton.addEventListener('click', (e: any) => {
+			resetButton.addEventListener('click', e => {
 				e.stopPropagation();
 				item.color = undefined;
 				// Update preview icon
@@ -268,7 +268,7 @@ export class StatusBarTab extends TabRenderer {
 		const colorPickerEl = colorPickerContainer.createDiv();
 		const colorPicker = new ColorComponent(colorPickerEl);
 		colorPicker.setValue(item.color || '#000000');
-		colorPicker.onChange((value: any) => {
+		colorPicker.onChange(value => {
 			if (value === '#000000') {
 				item.color = undefined;
 			} else {
@@ -296,7 +296,7 @@ export class StatusBarTab extends TabRenderer {
 		// MD-only icon
 		const mdOnlySpan = entry.createSpan('ui-tweaker-status-bar-row-md-only');
 		mdOnlySpan.setAttribute('aria-label', item.mdOnly ? 'Only show on Markdown files (enabled)' : 'Only show on Markdown files (disabled)');
-		mdOnlySpan.addEventListener('click', (e: any) => {
+		mdOnlySpan.addEventListener('click', e => {
 			e.stopPropagation();
 			item.mdOnly = !item.mdOnly;
 			setIcon(mdOnlySpan, item.mdOnly ? 'file-check' : 'file-x');
@@ -318,7 +318,7 @@ export class StatusBarTab extends TabRenderer {
 		const lockSpan = entry.createSpan('ui-tweaker-status-bar-row-lock');
 		const lockIcon = item.sticky === 'right' ? 'corner-right-down' : (item.sticky === 'left' ? 'corner-right-up' : 'unlock');
 		lockSpan.setAttribute('aria-label', item.sticky ? `Pinned to ${item.sticky === 'right' ? 'End' : 'Start'}` : 'Unlocked - click to pin to end');
-		lockSpan.addEventListener('click', (e: any) => {
+		lockSpan.addEventListener('click', e => {
 			e.stopPropagation();
 			this.toggleLock(item, lockSpan, index, totalItems, rowsContainer, settings);
 		});
@@ -495,7 +495,7 @@ export class StatusBarTab extends TabRenderer {
 				cloned.removeAttribute('aria-label');
 				cloned.removeAttribute('title');
 				// Also remove from any children
-				cloned.querySelectorAll('[aria-label], [title]').forEach((el: any) => {
+				cloned.querySelectorAll('[aria-label], [title]').forEach(el => {
 					el.removeAttribute('aria-label');
 					el.removeAttribute('title');
 				});

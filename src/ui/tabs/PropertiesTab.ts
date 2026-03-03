@@ -24,13 +24,13 @@ export class PropertiesTab extends TabRenderer {
 
         // General Settings
         const topGroup = new SettingGroup(container);
-        topGroup.addSetting((setting: any) => {
+        topGroup.addSetting(setting => {
             setting
                 .setName('Minimal property icons')
                 .setDesc('Hide the default property type icon and only show your custom icon.')
-                .addToggle((toggle: any) => {
+                .addToggle(toggle => {
                     toggle.setValue(settings.minimalPropertyIcons)
-                        .onChange(async (value: any) => {
+                        .onChange(async value => {
                             settings.minimalPropertyIcons = value;
                             await this.saveSettings();
                             this.plugin.propertiesManager?.refresh();
@@ -38,13 +38,13 @@ export class PropertiesTab extends TabRenderer {
                 });
         });
 
-        topGroup.addSetting((setting: any) => {
+        topGroup.addSetting(setting => {
             setting
                 .setName('Right-click menu')
                 .setDesc('Add "Change icon" and "Remove icon" to the property context menu.')
-                .addToggle((toggle: any) => {
+                .addToggle(toggle => {
                     toggle.setValue(settings.showPropertyMenuActions)
-                        .onChange(async (value: any) => {
+                        .onChange(async value => {
                             settings.showPropertyMenuActions = value;
                             await this.saveSettings();
                         });
@@ -62,7 +62,7 @@ export class PropertiesTab extends TabRenderer {
         const allProperties = Array.from(new Set([...metadataProps, ...savedProps].map(p => p.toLowerCase()))).sort();
 
         if (allProperties.length === 0) {
-            container.createDiv('ui-tweaker-empty-state', (el: any) => {
+            container.createDiv('ui-tweaker-empty-state', el => {
                 el.createEl('p', { text: 'No properties found in your vault yet.' });
                 el.createEl('p', { text: 'Add some properties to your notes to see them here.', cls: 'sub-text' });
             });
@@ -142,7 +142,7 @@ export class PropertiesTab extends TabRenderer {
             if (item?.icon) {
                 const colorPicker = new ColorComponent(setting.controlEl);
                 colorPicker.setValue(item.color || '#000000');
-                colorPicker.onChange(async (value: any) => {
+                colorPicker.onChange(async value => {
                     const currentItem = settings.propertyIconItems.find(i => i.id.toLowerCase() === normalizedPropName);
                     if (!currentItem) return;
                     currentItem.color = value === '#000000' ? undefined : value;

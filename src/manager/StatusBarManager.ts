@@ -89,7 +89,7 @@ export class StatusBarManager {
 		// Also clean up any buttons that might have been left behind (orphaned)
 		if (this.container) {
 			const managedButtons = this.container.querySelectorAll('[data-ui-tweaker-managed="true"]');
-			managedButtons.forEach((btn: any) => btn.remove());
+			managedButtons.forEach(btn => btn.remove());
 
 			// Restore visibility of any hidden native items
 			const hiddenItems = this.container.querySelectorAll('.ui-tweaker-status-bar-hidden');
@@ -252,7 +252,7 @@ export class StatusBarManager {
 		if (!this.container) return;
 
 		// Get all existing status bar elements from DOM (in DOM order)
-		const existingElements = Array.from(this.container.children).filter((el: any) => {
+		const existingElements = Array.from(this.container.children).filter(el => {
 				const element = el as HTMLElement;
 				// Ignore our own custom items (they are managed separately)
 				if (element.classList.contains('ui-tweaker-status-bar-item')) return false;
@@ -366,7 +366,7 @@ export class StatusBarManager {
 		this.customActions.clear();
 
 		// Get all existing status bar items (excluding our custom ones)
-		const allExistingElements = Array.from(this.container.children).filter((el: any) => el.classList.contains('status-bar-item') && !el.classList.contains('ui-tweaker-status-bar-item')
+		const allExistingElements = Array.from(this.container.children).filter(el => el.classList.contains('status-bar-item') && !el.classList.contains('ui-tweaker-status-bar-item')
 		) as HTMLElement[];
 
 		// Separate items by sticky position
@@ -381,7 +381,7 @@ export class StatusBarManager {
 			if (item.hidden) {
 				// Hide existing items
 				if (item.type === 'existing') {
-					const element = allExistingElements.find((el: any) =>
+					const element = allExistingElements.find(el =>
 						el.getAttribute('data-ui-tweaker-status-bar-id') === item.id
 					);
 					if (element) {
@@ -395,7 +395,7 @@ export class StatusBarManager {
 			if (item.mdOnly && !isMarkdownView(activeLeaf)) {
 				// Hide if not markdown view
 				if (item.type === 'existing') {
-					const element = allExistingElements.find((el: any) =>
+					const element = allExistingElements.find(el =>
 						el.getAttribute('data-ui-tweaker-status-bar-id') === item.id
 					);
 					if (element) {
@@ -426,7 +426,7 @@ export class StatusBarManager {
 				}
 			} else {
 				// Find existing element (may not exist if plugin isn't loaded)
-				const element = allExistingElements.find((el: any) =>
+				const element = allExistingElements.find(el =>
 					el.getAttribute('data-ui-tweaker-status-bar-id') === item.id
 				);
 

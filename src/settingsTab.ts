@@ -71,8 +71,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
-				.addToggle((toggle: any) =>
-					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(this.plugin.settings.ribbonRevealOnHover).onChange(value => {
 						this.plugin.settings.ribbonRevealOnHover = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();
@@ -135,8 +135,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Replace help button with custom action')
 				.setDesc('Replace the help button with a custom icon and command. This will hide the original help button and show your custom button instead.')
-				.addToggle((toggle: any) =>
-					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(this.plugin.settings.helpButtonReplacement.enabled).onChange(value => {
 						if (!this.plugin.settings.helpButtonReplacement) {
 							this.plugin.settings.helpButtonReplacement = {
 								enabled: true,
@@ -191,7 +191,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Command')
 					.setDesc('Select the command to execute when the button is clicked')
-					.addButton((button: any) =>
+					.addButton(button =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
 							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
@@ -237,7 +237,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Icon')
 					.setDesc('Select the icon to display on the button')
-					.addButton((button: any) =>
+					.addButton(button =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
 							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.helpButtonReplacement) {
@@ -281,12 +281,12 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Vault switcher background transparency')
 				.setDesc('Adjust the transparency of the vault switcher background when hidden. Range: 0 (fully transparent) to 1 (fully opaque).')
-				.addSlider((slider: any) =>
+				.addSlider(slider =>
 					slider
 						.setLimits(0, 1, 0.01)
 						.setValue(this.plugin.settings.vaultSwitcherBackgroundTransparency)
 						.setDynamicTooltip()
-						.onChange((value: any) => {
+						.onChange(value => {
 							this.plugin.settings.vaultSwitcherBackgroundTransparency = value;
 							void this.plugin.saveSettings();
 							this.plugin.refresh();
@@ -413,8 +413,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName('Replace sync button with custom action')
 				.setDesc('Replace the sync button in the mobile sidebar with a custom icon and command. This will hide the original sync button and show your custom button instead.')
-				.addToggle((toggle: any) =>
-					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(this.plugin.settings.syncButtonReplacement.enabled).onChange(value => {
 						if (!this.plugin.settings.syncButtonReplacement) {
 							this.plugin.settings.syncButtonReplacement = {
 								enabled: true,
@@ -469,7 +469,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Command')
 					.setDesc('Select the command to execute when the button is clicked')
-					.addButton((button: any) =>
+					.addButton(button =>
 						button.setButtonText(commandName || 'Select command...').onClick(() => {
 							const modal = new CommandPickerModal(this.app, (commandId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
@@ -515,7 +515,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 				setting
 					.setName('Icon')
 					.setDesc('Select the icon to display on the button')
-					.addButton((button: any) =>
+					.addButton(button =>
 						button.setButtonText(iconName || 'Select icon...').onClick(() => {
 							const modal = new IconPickerModal(this.app, (iconId) => {
 								if (!this.plugin.settings.syncButtonReplacement) {
@@ -571,7 +571,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addDropdown((dropdown: any) => {
+				.addDropdown(dropdown => {
 					const currentValue = this.plugin.settings[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : 'show';
 					dropdown
@@ -579,7 +579,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						.addOption('hide', 'Hide')
 						.addOption('reveal', 'Reveal')
 						.setValue(stringValue)
-						.onChange((value: any) => {
+						.onChange(value => {
 							(this.plugin.settings[key] as UIVisibilityState) = value as UIVisibilityState;
 							void this.plugin.saveSettings();
 							this.plugin.refresh();
@@ -593,8 +593,8 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addToggle((toggle: any) =>
-					toggle.setValue(Boolean(this.plugin.settings[key])).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(Boolean(this.plugin.settings[key])).onChange(value => {
 						(this.plugin.settings[key] as boolean) = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();
@@ -608,13 +608,13 @@ export class UITweakerSettingTab extends PluginSettingTab {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addDropdown((dropdown: any) => {
+				.addDropdown(dropdown => {
 					for (let i = 1; i <= 6; i++) {
 						dropdown.addOption(String(i), String(i));
 					}
 					const currentValue = this.plugin.settings[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : '1';
-					dropdown.setValue(stringValue).onChange((value: any) => {
+					dropdown.setValue(stringValue).onChange(value => {
 						(this.plugin.settings[key] as string) = value;
 						void this.plugin.saveSettings();
 						this.plugin.refresh();

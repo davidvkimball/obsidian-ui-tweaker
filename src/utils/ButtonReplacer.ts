@@ -200,7 +200,7 @@ export class ButtonReplacer {
 
         // Clean up any stray ones
         const strays = document.querySelectorAll(`.${this.options.cssClass}`);
-        strays.forEach((el: any) => el.remove());
+        strays.forEach(el => el.remove());
     }
 
     private setupObserver(): void {

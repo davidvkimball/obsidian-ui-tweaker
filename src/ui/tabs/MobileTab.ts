@@ -68,8 +68,8 @@ export class MobileTab extends TabRenderer {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addToggle((toggle: any) =>
-					toggle.setValue(Boolean(this.getSettings()[key])).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(Boolean(this.getSettings()[key])).onChange(value => {
 						(this.getSettings()[key] as boolean) = value;
 						void this.saveSettings();
 					})
@@ -82,13 +82,13 @@ export class MobileTab extends TabRenderer {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addDropdown((dropdown: any) => {
+				.addDropdown(dropdown => {
 					for (let i = 1; i <= 6; i++) {
 						dropdown.addOption(String(i), String(i));
 					}
 					const currentValue = this.getSettings()[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : '1';
-					dropdown.setValue(stringValue).onChange((value: any) => {
+					dropdown.setValue(stringValue).onChange(value => {
 						(this.getSettings()[key] as string) = value;
 						void this.saveSettings();
 					});
@@ -112,12 +112,12 @@ export class MobileTab extends TabRenderer {
 			setting
 				.setName('Replace sync button with custom action')
 				.setDesc('Replace the sync button in the mobile sidebar with a custom icon and command. This will hide the original sync button and show your custom button instead.')
-				.addToggle((toggle: any) =>
-					toggle.setValue(settings.syncButtonReplacement.enabled).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(settings.syncButtonReplacement.enabled).onChange(value => {
 						settings.syncButtonReplacement.enabled = value;
 
 						// Toggle visibility of dependent settings instantly
-						dependentSettings.forEach((el: any) => {
+						dependentSettings.forEach(el => {
 							el.style.display = value ? '' : 'none';
 						});
 
@@ -161,7 +161,7 @@ export class MobileTab extends TabRenderer {
 			setting
 				.setName('Command')
 				.setDesc('Select the command to execute when the button is clicked')
-				.addButton((button: any) =>
+				.addButton(button =>
 					button.setButtonText(getCommandName(settings.syncButtonReplacement.commandId)).onClick(() => {
 						const modal = new CommandPickerModal(this.app, (commandId) => {
 							settings.syncButtonReplacement.commandId = commandId;
@@ -181,7 +181,7 @@ export class MobileTab extends TabRenderer {
 			setting
 				.setName('Icon')
 				.setDesc('Select the icon to display on the button')
-				.addButton((button: any) =>
+				.addButton(button =>
 					button.setButtonText(getIconName(settings.syncButtonReplacement.iconId) || 'Select icon...').onClick(() => {
 						const modal = new IconPickerModal(this.app, (iconId) => {
 							settings.syncButtonReplacement.iconId = iconId;

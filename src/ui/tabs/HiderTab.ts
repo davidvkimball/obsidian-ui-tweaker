@@ -61,8 +61,8 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Collapse ribbon')
 				.setDesc('Collapse the left ribbon to a thin strip until hover. Elegantly expands on hover.')
-				.addToggle((toggle: any) =>
-					toggle.setValue(this.getSettings().ribbonRevealOnHover).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(this.getSettings().ribbonRevealOnHover).onChange(value => {
 						this.getSettings().ribbonRevealOnHover = value;
 						void this.saveSettings();
 					})
@@ -120,12 +120,12 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Vault switcher background transparency')
 				.setDesc('Adjust the transparency of the vault switcher background when hidden. Range: 0 (fully transparent) to 1 (fully opaque).')
-				.addSlider((slider: any) =>
+				.addSlider(slider =>
 					slider
 						.setLimits(0, 1, 0.01)
 						.setValue(this.getSettings().vaultSwitcherBackgroundTransparency)
 						.setDynamicTooltip()
-						.onChange((value: any) => {
+						.onChange(value => {
 							this.getSettings().vaultSwitcherBackgroundTransparency = value;
 							void this.saveSettings();
 						})
@@ -218,7 +218,7 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addDropdown((dropdown: any) => {
+				.addDropdown(dropdown => {
 					const currentValue = this.getSettings()[key];
 					const stringValue = typeof currentValue === 'string' ? currentValue : 'show';
 					dropdown
@@ -226,7 +226,7 @@ export class HiderTab extends TabRenderer {
 						.addOption('hide', 'Hide')
 						.addOption('reveal', 'Reveal')
 						.setValue(stringValue)
-						.onChange((value: any) => {
+						.onChange(value => {
 							(this.getSettings()[key] as UIVisibilityState) = value as UIVisibilityState;
 							void this.saveSettings();
 						});
@@ -239,8 +239,8 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName(name)
 				.setDesc(desc)
-				.addToggle((toggle: any) =>
-					toggle.setValue(Boolean(this.getSettings()[key])).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(Boolean(this.getSettings()[key])).onChange(value => {
 						(this.getSettings()[key] as boolean) = value;
 						void this.saveSettings();
 					})
@@ -264,12 +264,12 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Replace help button with custom action')
 				.setDesc('Replace the help button with a custom icon and command. This will hide the original help button and show your custom button instead.')
-				.addToggle((toggle: any) =>
-					toggle.setValue(settings.helpButtonReplacement.enabled).onChange((value: any) => {
+				.addToggle(toggle =>
+					toggle.setValue(settings.helpButtonReplacement.enabled).onChange(value => {
 						settings.helpButtonReplacement.enabled = value;
 
 						// Toggle visibility of dependent settings instantly
-						dependentSettings.forEach((el: any) => {
+						dependentSettings.forEach(el => {
 							el.style.display = value ? '' : 'none';
 						});
 
@@ -313,7 +313,7 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Command')
 				.setDesc('Select the command to execute when the button is clicked')
-				.addButton((button: any) =>
+				.addButton(button =>
 					button.setButtonText(getCommandName(settings.helpButtonReplacement.commandId)).onClick(() => {
 						const modal = new CommandPickerModal(this.app, (commandId) => {
 							settings.helpButtonReplacement.commandId = commandId;
@@ -333,7 +333,7 @@ export class HiderTab extends TabRenderer {
 			setting
 				.setName('Icon')
 				.setDesc('Select the icon to display on the button')
-				.addButton((button: any) =>
+				.addButton(button =>
 					button.setButtonText(getIconName(settings.helpButtonReplacement.iconId) || 'Select icon...').onClick(() => {
 						const modal = new IconPickerModal(this.app, (iconId) => {
 							settings.helpButtonReplacement.iconId = iconId;
