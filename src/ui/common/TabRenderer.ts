@@ -101,9 +101,6 @@ export abstract class TabRenderer {
 	 */
 	protected renderResetButton(container: HTMLElement, keys: (keyof UISettings)[], onReset?: () => void | Promise<void>): void {
 		const resetContainer = container.createDiv('ui-tweaker-reset-container');
-		resetContainer.style.display = 'flex';
-		resetContainer.style.justifyContent = 'flex-end';
-		resetContainer.style.marginBottom = '1rem';
 
 		const setting = new Setting(resetContainer);
 		setting.setClass('ui-tweaker-reset-setting');
