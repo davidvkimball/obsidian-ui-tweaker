@@ -1,4 +1,4 @@
-import { SettingGroup , Setting} from "obsidian";
+import { SettingGroup, Setting } from "obsidian";
 /**
  * Mobile Tab - All mobile-specific settings
  */
@@ -15,6 +15,15 @@ type SettingsContainer = { addSetting: (cb: (setting: Setting) => void) => void 
 export class MobileTab extends TabRenderer {
 	render(container: HTMLElement): void {
 		container.empty();
+
+		this.renderResetButton(container, [
+			'mobileChevronsIcon', 'navigateBackButton', 'navigateForwardButton', 'quickSwitcherButton',
+			'mobileNewTabButton', 'openTabButton', 'ribbonMenuButton', 'swapMobileNewTabIcon',
+			'hideMobileTitle', 'hideMobileSyncIcon', 'hideStatusBarMobile', 'syncButtonReplacement',
+			'navigateButtonPosition', 'navigationButtonPosition', 'quickSwitcherPosition',
+			'newTabPosition', 'openTabsPosition', 'ribbonMenuPosition'
+		]);
+
 		// ========================================
 		// Mobile
 		// ========================================

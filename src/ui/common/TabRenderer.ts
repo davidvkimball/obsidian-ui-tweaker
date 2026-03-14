@@ -4,7 +4,7 @@
 
 import { App, Setting } from 'obsidian';
 import UITweakerPlugin from '../../main';
-import { UISettings } from '../../settings';
+import { UISettings, DEFAULT_SETTINGS } from '../../settings';
 
 export abstract class TabRenderer {
 	protected app: App;
@@ -96,4 +96,36 @@ export abstract class TabRenderer {
 			});
 	}
 
+	/**
+	 * Renders a "Reset to defaults" button at the top of the tab
+	 */
+	protected renderResetButton(container: HTMLElement, keys: (keyof UISettings)[], onReset?: () => void | Promise<void>): void {
+		const resetContainer = container.createDiv('ui-tweaker-reset-container');
+		resetContainer.style.display = 'flex';
+		resetContainer.style.justifyContent = 'flex-end';
+		resetContainer.style.marginBottom = '1rem';
+
+		const setting = new Setting(resetContainer);
+		setting.setClass('ui-tweaker-reset-setting');
+		setting.setName('Reset to default');
+
+		setting.addExtraButton(button => {
+			button.setIcon('rotate-ccw')
+				.setTooltip('Reset tab to defaults')
+				.onClick(async () => {
+					keys.forEach(key => {
+						// @ts-ignore - Indexing UISettings with dynamic keys
+						this.plugin.settings[key] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS[key]));
+					});
+
+					if (onReset) {
+						await onReset();
+					}
+
+					await this.saveSettings();
+					// Full re-render of this tab
+					await this.render(container);
+				});
+		});
+	}
 }

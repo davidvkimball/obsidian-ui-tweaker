@@ -1917,3 +1917,20 @@ div.ui-tweaker-status-bar-row-hidden:not(div.ui-tweaker-status-bar-row-disabled)
 .ui-tweaker-empty-state .sub-text {
 	font-size: 0.9em;
 }
+.ui-tweaker-reset-setting {
+	background-color: transparent !important;
+	border: none !important;
+	padding: 0 !important;
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+.ui-tweaker-reset-setting .setting-item-info {
+	flex: 0 0 auto !important;
+	margin-right: 8px;
+}
+
+.ui-tweaker-reset-setting .setting-item-name {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}

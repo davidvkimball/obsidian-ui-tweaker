@@ -24,6 +24,14 @@ export class StatusBarTab extends TabRenderer {
 	private container?: HTMLElement;
 	render(container: HTMLElement): void {
 		container.empty();
+
+		this.renderResetButton(container, ['statusBarItems'], async () => {
+			if (this.plugin.statusBarManager) {
+				this.plugin.statusBarManager.cleanup();
+				this.plugin.statusBarManager.reorder();
+			}
+		});
+
 		const settings = this.getSettings();
 		// Store container reference for re-renders
 		this.container = container;

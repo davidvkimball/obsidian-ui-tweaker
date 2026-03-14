@@ -22,6 +22,13 @@ export class TabBarTab extends TabRenderer {
 
 	render(container: HTMLElement): void {
 		container.empty();
+
+		this.renderResetButton(container, ['tabBarCommands'], async () => {
+			if (this.plugin.tabBarManager) {
+				this.plugin.tabBarManager.reorder();
+			}
+		});
+
 		const settings = this.getSettings();
 
 		// Ensure tabBarCommands exists

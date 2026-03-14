@@ -17,6 +17,8 @@ export class PropertiesTab extends TabRenderer {
         container.empty();
         const settings = this.getSettings();
 
+        this.renderResetButton(container, ['propertyIconItems', 'minimalPropertyIcons', 'showPropertyMenuActions']);
+
         // Ensure propertyIconItems exists
         if (!settings.propertyIconItems) {
             settings.propertyIconItems = [];

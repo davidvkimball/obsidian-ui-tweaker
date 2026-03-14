@@ -1,4 +1,4 @@
-import { SettingGroup , Setting} from "obsidian";
+import { SettingGroup, Setting } from "obsidian";
 /**
  * Hider Tab - Auto-hide and visibility settings (excluding mobile and explorer buttons)
  */
@@ -16,6 +16,18 @@ type SettingsContainer = { addSetting: (cb: (setting: Setting) => void) => void 
 export class HiderTab extends TabRenderer {
 	render(container: HTMLElement): void {
 		container.empty();
+
+		this.renderResetButton(container, [
+			'titleBar', 'fileExplorerNavHeader', 'otherNavHeaders', 'leftTabHeaders', 'rightTabHeaders',
+			'ribbonRevealOnHover', 'tabBar', 'enableWindowDragging', 'tabBarHideWhenSingle',
+			'readingModeButton', 'bookmarkedButton', 'searchSettingsButton', 'vaultSwitcher',
+			'helpButton', 'helpButtonReplacement', 'settingsButton', 'vaultSwitcherBackgroundTransparency',
+			'tabListIcon', 'newTabIcon', 'tabCloseButton', 'statusBar', 'scrollBars',
+			'leftSidebarToggleButton', 'rightSidebarToggleButton', 'tooltips', 'instructions',
+			'searchSuggestions', 'searchTermCounts', 'propertiesInReadingView', 'deemphasizeProperties',
+			'propertiesInHeading', 'addPropertyButton'
+		]);
+
 		// ========================================
 		// Auto-hide elements
 		// ========================================
