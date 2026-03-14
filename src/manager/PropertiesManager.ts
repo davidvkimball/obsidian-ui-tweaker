@@ -160,6 +160,8 @@ export class PropertiesManager {
 
     private restoreNativeIcon(el: HTMLElement, propName: string): void {
         el.style.removeProperty('color');
+        el.removeAttribute('data-ui-tweaker-applied-icon');
+        el.removeAttribute('data-ui-tweaker-applied-color');
 
         // Try to read from our saved attribute
         const savedIcon = el.getAttribute('data-ui-tweaker-native-icon');
@@ -297,6 +299,32 @@ export class PropertiesManager {
     }
 
     private applyIcon(el: HTMLElement, icon: string, color?: string): void {
+        const isLucide = icon.startsWith('lucide-') || icon.match(/^[a-z0-9-]+$/);
+        const targetColor = color || '';
+
+        // Check if we need to do anything. If Obsidian overwrote it, the SVG inside won't have our tag.
+        let needsUpdate = false;
+
+        const appliedIcon = el.getAttribute('data-ui-tweaker-applied-icon');
+        const appliedColor = el.getAttribute('data-ui-tweaker-applied-color') || '';
+
+        if (appliedIcon !== icon || appliedColor !== targetColor) {
+            needsUpdate = true;
+        } else {
+            if (isLucide) {
+                const svg = el.querySelector('svg');
+                if (!svg || !svg.hasAttribute('data-ui-tweaker-custom-icon')) {
+                    needsUpdate = true; // Obsidian overwrote it
+                }
+            } else {
+                if (!el.classList.contains('ui-tweaker-emoji-icon') || el.textContent !== icon) {
+                    needsUpdate = true; // Obsidian overwrote it
+                }
+            }
+        }
+
+        if (!needsUpdate) return;
+
         // Save the native icon BEFORE we overwrite it, if not already saved
         if (!el.hasAttribute('data-ui-tweaker-native-icon')) {
             const svg = el.querySelector('svg');
@@ -310,21 +338,18 @@ export class PropertiesManager {
             }
         }
 
-        const isLucide = icon.startsWith('lucide-') || icon.match(/^[a-z0-9-]+$/);
-
         if (isLucide) {
-            const iconName = icon.startsWith('lucide-') ? icon.substring(7) : icon;
-            const currentIcon = el.querySelector(`.lucide-${iconName}`);
-            if (!currentIcon) {
-                el.empty();
-                setIcon(el, icon);
+            el.empty();
+            setIcon(el, icon);
+            el.removeClass('ui-tweaker-emoji-icon');
+            const newSvg = el.querySelector('svg');
+            if (newSvg) {
+                newSvg.setAttribute('data-ui-tweaker-custom-icon', 'true');
             }
         } else {
-            if (el.textContent !== icon) {
-                el.empty();
-                el.textContent = icon;
-                el.addClass('ui-tweaker-emoji-icon');
-            }
+            el.empty();
+            el.textContent = icon;
+            el.addClass('ui-tweaker-emoji-icon');
         }
 
         if (color) {
@@ -332,5 +357,8 @@ export class PropertiesManager {
         } else {
             el.style.removeProperty('color');
         }
+
+        el.setAttribute('data-ui-tweaker-applied-icon', icon);
+        el.setAttribute('data-ui-tweaker-applied-color', targetColor);
     }
 }
