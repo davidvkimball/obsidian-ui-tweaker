@@ -21,6 +21,45 @@ function arrayMoveMutable<T>(array: T[], from: number, to: number): void {
 export class ExplorerTab extends TabRenderer {
 	private expandedStates = new Map<string, boolean>();
 
+	/**
+	 * Mutate `items` (in place) to move the entry at `fromIndex` to `toIndex`,
+	 * persist settings, re-apply the live explorer order, and then re-render
+	 * the tab. The re-render is wrapped in a `visibility: hidden` mask over
+	 * one animation frame so the empty-then-rebuilt DOM never reaches the
+	 * screen — that's the "flicker like mad" the chevron buttons used to
+	 * cause. Scroll position is preserved across the rebuild.
+	 */
+	private reorderAndRerender<T>(
+		items: T[],
+		fromIndex: number,
+		toIndex: number,
+		container: HTMLElement,
+	): void {
+		void (async () => {
+			arrayMoveMutable(items, fromIndex, toIndex);
+			await this.saveSettings();
+			this.plugin.explorerManager?.reorder();
+
+			const scrollContainer = container.closest('.vertical-tab-content') ??
+				container.closest('.settings-content') ??
+				container.closest('.vertical-tab-content-container') ??
+				container;
+			const scrollPos = scrollContainer.scrollTop;
+
+			// Hide the container while we rebuild. `visibility: hidden` keeps
+			// the layout box (no jank from the scrollbar/height jumping) but
+			// suppresses paint, so the empty intermediate state never paints.
+			// Set via setCssProps because the obsidianmd/no-static-styles-assignment
+			// rule (which can't be disabled) forbids direct `.style.*` writes.
+			setCssProps(container, { visibility: 'hidden' });
+			this.render(container);
+			window.requestAnimationFrame(() => {
+				scrollContainer.scrollTop = scrollPos;
+				setCssProps(container, { visibility: '' });
+			});
+		})();
+	}
+
 	render(container: HTMLElement): void {
 		container.empty();
 
@@ -653,30 +692,7 @@ export class ExplorerTab extends TabRenderer {
 					if (index > 0) {
 						button.setTooltip('Move up');
 						button.onClick(() => {
-							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') ||
-								container.closest('.settings-content') ||
-								container.closest('.vertical-tab-content-container') ||
-								container;
-							const scrollPos = scrollContainer.scrollTop;
-							void (async () => {
-								arrayMoveMutable(settings.explorerButtonItems, index, index - 1);
-								await this.saveSettings();
-								this.plugin.explorerManager?.reorder();
-								this.render(container);
-								// Restore scroll position after render with multiple attempts
-								window.requestAnimationFrame(() => {
-									scrollContainer.scrollTop = scrollPos;
-									// Also try after a short delay in case DOM isn't ready
-									window.setTimeout(() => {
-										scrollContainer.scrollTop = scrollPos;
-										// One more attempt after a longer delay
-										window.setTimeout(() => {
-											scrollContainer.scrollTop = scrollPos;
-										}, 50);
-									}, 0);
-								});
-							})();
+							this.reorderAndRerender(settings.explorerButtonItems, index, index - 1, container);
 						});
 					} else {
 						button.setTooltip('Already at top');
@@ -691,30 +707,7 @@ export class ExplorerTab extends TabRenderer {
 					if (index < settings.explorerButtonItems.length - 1) {
 						button.setTooltip('Move down');
 						button.onClick(() => {
-							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') ||
-								container.closest('.settings-content') ||
-								container.closest('.vertical-tab-content-container') ||
-								container;
-							const scrollPos = scrollContainer.scrollTop;
-							void (async () => {
-								arrayMoveMutable(settings.explorerButtonItems, index, index + 1);
-								await this.saveSettings();
-								this.plugin.explorerManager?.reorder();
-								this.render(container);
-								// Restore scroll position after render with multiple attempts
-								window.requestAnimationFrame(() => {
-									scrollContainer.scrollTop = scrollPos;
-									// Also try after a short delay in case DOM isn't ready
-									window.setTimeout(() => {
-										scrollContainer.scrollTop = scrollPos;
-										// One more attempt after a longer delay
-										window.setTimeout(() => {
-											scrollContainer.scrollTop = scrollPos;
-										}, 50);
-									}, 0);
-								});
-							})();
+							this.reorderAndRerender(settings.explorerButtonItems, index, index + 1, container);
 						});
 					} else {
 						button.setTooltip('Already at bottom');
@@ -1345,30 +1338,7 @@ export class ExplorerTab extends TabRenderer {
 					if (index > 0) {
 						button.setTooltip('Move up');
 						button.onClick(() => {
-							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') ||
-								container.closest('.settings-content') ||
-								container.closest('.vertical-tab-content-container') ||
-								container;
-							const scrollPos = scrollContainer.scrollTop;
-							void (async () => {
-								arrayMoveMutable(settings.explorerCommands, index, index - 1);
-								await this.saveSettings();
-								this.plugin.explorerManager?.reorder();
-								this.render(container);
-								// Restore scroll position after render with multiple attempts
-								window.requestAnimationFrame(() => {
-									scrollContainer.scrollTop = scrollPos;
-									// Also try after a short delay in case DOM isn't ready
-									window.setTimeout(() => {
-										scrollContainer.scrollTop = scrollPos;
-										// One more attempt after a longer delay
-										window.setTimeout(() => {
-											scrollContainer.scrollTop = scrollPos;
-										}, 50);
-									}, 0);
-								});
-							})();
+							this.reorderAndRerender(settings.explorerCommands, index, index - 1, container);
 						});
 					} else {
 						button.setTooltip('Already at top');
@@ -1385,30 +1355,7 @@ export class ExplorerTab extends TabRenderer {
 					if (index < settings.explorerCommands.length - 1) {
 						button.setTooltip('Move down');
 						button.onClick(() => {
-							// Preserve scroll position to prevent flickering
-							const scrollContainer = container.closest('.vertical-tab-content') ||
-								container.closest('.settings-content') ||
-								container.closest('.vertical-tab-content-container') ||
-								container;
-							const scrollPos = scrollContainer.scrollTop;
-							void (async () => {
-								arrayMoveMutable(settings.explorerCommands, index, index + 1);
-								await this.saveSettings();
-								this.plugin.explorerManager?.reorder();
-								this.render(container);
-								// Restore scroll position after render with multiple attempts
-								window.requestAnimationFrame(() => {
-									scrollContainer.scrollTop = scrollPos;
-									// Also try after a short delay in case DOM isn't ready
-									window.setTimeout(() => {
-										scrollContainer.scrollTop = scrollPos;
-										// One more attempt after a longer delay
-										window.setTimeout(() => {
-											scrollContainer.scrollTop = scrollPos;
-										}, 50);
-									}, 0);
-								});
-							})();
+							this.reorderAndRerender(settings.explorerCommands, index, index + 1, container);
 						});
 					} else {
 						button.setTooltip('Already at bottom');
