@@ -406,8 +406,12 @@ body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .mod-root .workspace-tabs
 		max-height 0.3s ease;
 }
 
-/* Only apply overflow: hidden when there's actually a single tab */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .mod-root .workspace-tabs:not(.mod-stacked):not( :has(.workspace-tab-header:nth-of-type(2))) .workspace-tab-header-container {
+/* Only apply overflow: hidden when there's actually a single tab.
+   `.ui-tweaker-single-tab` is added to `.workspace-tabs` containers from
+   uiManager.markSingleTabContainers(), replacing the old
+   `.ui-tweaker-single-tab` selector that was
+   flagged for `:has()` performance. */
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .mod-root .workspace-tabs.ui-tweaker-single-tab:not(.mod-stacked) .workspace-tab-header-container {
 	max-height: 0;
 	opacity: 0;
 	overflow: hidden;
@@ -429,28 +433,28 @@ body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .view-header .view-header
 }
 
 /* Windows: Offset view-actions when right sidebar is collapsed and it's a single tab pane */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-windows.is-right-sidebar-collapsed .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header .view-actions {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-windows.is-right-sidebar-collapsed .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header .view-actions {
 	padding-right: var(--view-actions-right-offset);
 }
 
 /* macOS: Offset view-header-left when left sidebar is collapsed and it's a single tab pane */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-macos.is-left-sidebar-collapsed .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header .view-header-left {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-macos.is-left-sidebar-collapsed .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header .view-header-left {
 	padding-left: var(--view-header-left-offset);
 }
 
 /* Make view-header draggable when tab bar is hidden (single tab) */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header {
 	position: relative;
 	-webkit-app-region: drag;
 }
 
 /* Windows: Exclude right side from dragging when right sidebar is collapsed */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-windows.is-right-sidebar-collapsed .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-windows.is-right-sidebar-collapsed .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header {
 	-webkit-app-region: no-drag;
 }
 
 /* Create draggable pseudo-element for Windows */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-windows.is-right-sidebar-collapsed .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header::before {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-windows.is-right-sidebar-collapsed .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header::before {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -463,12 +467,12 @@ body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-windows
 }
 
 /* macOS: Exclude left side from dragging when left sidebar is collapsed */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-macos.is-left-sidebar-collapsed .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-macos.is-left-sidebar-collapsed .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header {
 	-webkit-app-region: no-drag;
 }
 
 /* Create draggable pseudo-element for macOS */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-macos.is-left-sidebar-collapsed .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header::before {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-macos.is-left-sidebar-collapsed .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header::before {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -481,12 +485,12 @@ body:not(.is-mobile).auto-hide-tab-bar-when-single-tab.auto-hide-tab-bar-macos.i
 }
 
 /* Make interactive elements in view-header non-draggable and above pseudo-element */
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header .view-action,
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header .view-header-title,
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header button,
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header .clickable-icon,
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header .view-header-left,
-body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked):not(:has(.workspace-tab-header:nth-of-type(2))) .view-header .view-actions {
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header .view-action,
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header .view-header-title,
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header button,
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header .clickable-icon,
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header .view-header-left,
+body:not(.is-mobile).auto-hide-tab-bar-when-single-tab .workspace-tabs:not(.mod-stacked).ui-tweaker-single-tab .view-header .view-actions {
 	position: relative;
 	z-index: 1;
 	-webkit-app-region: no-drag;
@@ -727,24 +731,12 @@ body:not(.is-mobile).hide-tab-close-button-reveal .workspace-tab-header-inner-cl
    Desktop Hide Buttons
    ======================================== */
 
-.hide-button-new-note .clickable-icon.nav-action-button:has(.svg-icon.lucide-edit) {
-	display: none;
-}
-
-.hide-button-new-folder .clickable-icon.nav-action-button:has(.svg-icon.lucide-folder-plus) {
-	display: none;
-}
-
-.hide-button-sort-order .clickable-icon.nav-action-button:has(.svg-icon.lucide-sort-asc) {
-	display: none;
-}
-
-.hide-button-auto-reveal .clickable-icon.nav-action-button:has(.svg-icon.lucide-gallery-vertical) {
-	display: none;
-}
-
-.hide-button-collapse-all .clickable-icon.nav-action-button:has(.svg-icon.lucide-chevrons-up-down),
-.hide-button-collapse-all .clickable-icon.nav-action-button:has(.svg-icon.lucide-chevrons-down-up) {
+/* Buttons whose icon matches one of the configured hide settings (new note,
+   new folder, sort order, auto-reveal, collapse all, reading mode, bookmark,
+   search settings, mobile chevrons) get the `ui-tweaker-hidden-button`
+   marker class added by `uiManager.applyIconButtonHides()`. The doubled
+   class lifts specificity above Obsidian's default rules. */
+.ui-tweaker-hidden-button.ui-tweaker-hidden-button {
 	display: none;
 }
 
@@ -762,26 +754,15 @@ body:not(.is-mobile).hide-tab-close-button-reveal .workspace-tab-header-inner-cl
 /* Colors are applied via inline styles in ExplorerManager.ts when custom colors are set */
 /* No CSS rules here to avoid interfering with default icon styling */
 
-.hide-button-reading-mode .view-header .clickable-icon.view-action:has(.svg-icon.lucide-book-open),
-.hide-button-reading-mode .view-header .clickable-icon.view-action:has(.svg-icon.lucide-edit-3) {
-	display: none;
-}
-
-.hide-button-bookmarked .view-header .clickable-icon.view-action:has(.svg-icon.lucide-bookmark) {
-	display: none;
-}
-
-.hide-button-search-settings .search-row .clickable-icon:has(.svg-icon.lucide-sliders-horizontal) {
-	display: none;
-}
+/* Reading-mode, bookmarked, and search-settings button hides are handled by
+   the unified `.ui-tweaker-hidden-button` rule above; uiManager tags the
+   right buttons based on settings. */
 
 /* ========================================
    Mobile Hide Icons
    ======================================== */
 
-.hide-icon-mobile-chevrons .mobile-navbar .navbar-action-flair:has(.svg-icon.lucide-chevrons-up-down) {
-	display: none;
-}
+/* Mobile chevrons icon hide is also driven by `.ui-tweaker-hidden-button`. */
 
 /* ========================================
    Mobile Hide Buttons
@@ -1158,8 +1139,10 @@ body:not(.is-mobile).hider-tabs-neutral .workspace-leaf-content[data-type="markd
    Help Button Replacement
    ======================================== */
 
-/* Hide help button when replacement is enabled or when helpButton is set to "hide" */
-body.ui-tweaker-hide-help-button .workspace-drawer-vault-actions .clickable-icon:has(svg.help) {
+/* Hide help button when replacement is enabled or when helpButton is set to
+   "hide". `uiManager.markHelpButton()` tags the actual button with this
+   marker class so we don't need `:has(svg.help)`. */
+body .ui-tweaker-hidden-help-button.ui-tweaker-hidden-help-button {
 	display: none;
 }
 
@@ -1214,9 +1197,11 @@ body.ui-tweaker-sync-replacement-enabled .workspace-drawer.mod-right .workspace-
    Tab Navigation - Matching Astro Modular Settings
    ======================================== */
 
-/* Override parent padding to get full width, then apply padding to children */
-.vertical-tab-content:has(.ui-tweaker-settings),
-.vertical-tab-container:has(.ui-tweaker-settings) {
+/* Override parent padding to get full width, then apply padding to children.
+   `SettingsTab.display()` tags the enclosing `.vertical-tab-content` and
+   `.vertical-tab-container` with this marker class; `SettingsTab.hide()`
+   strips it when the user moves to another settings tab. */
+.ui-tweaker-settings-tab-host {
 	padding: 0;
 	margin: 0;
 }

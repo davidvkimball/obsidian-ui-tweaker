@@ -43,6 +43,7 @@ export default class UITweakerPlugin extends Plugin {
 		// Initialize UI manager
 		this.uiManager = new UIManager(this, this.settings);
 		this.uiManager.applyStyles();
+		this.uiManager.registerWorkspaceHooks();
 
 		// Initialize Tab Bar Manager
 		if (!this.settings.tabBarCommands) {

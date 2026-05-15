@@ -139,6 +139,10 @@ export class UIManager {
 
 		// Mobile-specific
 		body.classList.toggle('hide-icon-mobile-chevrons', this.settings.mobileChevronsIcon);
+
+		// Refresh the DOM marker classes (single-tab containers, icon-button
+		// hides, help button hide) that replaced :has() selectors in styles.css.
+		this.applyDynamicMarkers();
 		body.classList.toggle('hide-button-mobile-navbar-action-back', this.settings.navigateBackButton);
 		body.classList.toggle('hide-button-mobile-navbar-action-forward', this.settings.navigateForwardButton);
 		body.classList.toggle('hide-button-mobile-navbar-action-quick-switcher', this.settings.quickSwitcherButton);
@@ -295,6 +299,11 @@ export class UIManager {
 
 			activeDocument.body.classList.toggle('is-right-sidebar-collapsed', rightSidebarCollapsed);
 			activeDocument.body.classList.toggle('is-left-sidebar-collapsed', leftSidebarCollapsed);
+
+			// Re-mark single-tab containers, icon-button hides and the help
+			// button. DOM mutations can have added/removed tabs, opened new
+			// views with their own header buttons, etc.
+			this.applyDynamicMarkers();
 		};
 
 		// Debounce function
@@ -360,6 +369,139 @@ export class UIManager {
 				attributeFilter: ['class']
 			});
 		}
+	}
+
+	/**
+	 * Subscribe to workspace events so that marker classes get reapplied when
+	 * new views open or the layout shifts (which creates fresh view-header
+	 * buttons). Idempotent via a flag — only attaches listeners once.
+	 */
+	private workspaceHooksRegistered = false;
+	public registerWorkspaceHooks(): void {
+		if (this.workspaceHooksRegistered) return;
+		this.workspaceHooksRegistered = true;
+
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('layout-change', () => {
+				this.applyDynamicMarkers();
+			})
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.workspace.on('file-open', () => {
+				// New view-headers can carry their own reading-mode / bookmark
+				// buttons that need marking.
+				this.applyDynamicMarkers();
+			})
+		);
+
+		// Run once after the workspace has finished its first layout pass so
+		// we tag the buttons that exist at startup.
+		this.plugin.app.workspace.onLayoutReady(() => {
+			this.applyDynamicMarkers();
+		});
+	}
+
+	/**
+	 * Refresh the marker classes that replaced :has() selectors. The
+	 * `:has()` rule is performance-flagged by the scorecard and shows up in
+	 * lint warnings, so any CSS rule that used to look like
+	 *   `.workspace-tabs:not(:has(...))`   or   `.foo:has(.bar)`
+	 * is now expressed as a marker class added/removed here.
+	 *
+	 * Called from `applyStyles()` (settings change) and from the
+	 * MutationObserver in `setupTabObserver()` (DOM change).
+	 */
+	private applyDynamicMarkers(): void {
+		this.markSingleTabContainers();
+		this.applyIconButtonHides();
+		this.markHelpButton();
+	}
+
+	/**
+	 * Tag `.workspace-tabs` containers that have exactly one tab header so the
+	 * auto-hide-tab-bar feature can target them with a simple class selector.
+	 */
+	private markSingleTabContainers(): void {
+		const containers = activeDocument.querySelectorAll<HTMLElement>(
+			'.workspace-tabs:not(.mod-stacked)'
+		);
+		containers.forEach((container) => {
+			const headerCount = container.querySelectorAll(
+				':scope > .workspace-tab-header-container > .workspace-tab-header'
+			).length;
+			const fallbackHeaderCount = headerCount > 0
+				? headerCount
+				: container.querySelectorAll('.workspace-tab-header').length;
+			container.classList.toggle('ui-tweaker-single-tab', fallbackHeaderCount <= 1);
+		});
+	}
+
+	/**
+	 * Configuration for the icon-based button hides. Each entry pairs a
+	 * setting key with a CSS selector for the candidate buttons and the
+	 * `lucide-*` icon class(es) inside them; matching buttons receive the
+	 * `ui-tweaker-hidden-button` marker, which is what styles.css now keys on.
+	 */
+	private static readonly ICON_BUTTON_HIDES: readonly {
+		settingKey: keyof UISettings;
+		containerSelector: string;
+		icons: readonly string[];
+	}[] = [
+		{ settingKey: 'newNoteButton', containerSelector: '.clickable-icon.nav-action-button', icons: ['lucide-edit'] },
+		{ settingKey: 'newFolderButton', containerSelector: '.clickable-icon.nav-action-button', icons: ['lucide-folder-plus'] },
+		{ settingKey: 'sortOrderButton', containerSelector: '.clickable-icon.nav-action-button', icons: ['lucide-sort-asc'] },
+		{ settingKey: 'autoRevealButton', containerSelector: '.clickable-icon.nav-action-button', icons: ['lucide-gallery-vertical'] },
+		{ settingKey: 'collapseAllButton', containerSelector: '.clickable-icon.nav-action-button', icons: ['lucide-chevrons-up-down', 'lucide-chevrons-down-up'] },
+		{ settingKey: 'readingModeButton', containerSelector: '.view-header .clickable-icon.view-action', icons: ['lucide-book-open', 'lucide-edit-3'] },
+		{ settingKey: 'bookmarkedButton', containerSelector: '.view-header .clickable-icon.view-action', icons: ['lucide-bookmark'] },
+		{ settingKey: 'searchSettingsButton', containerSelector: '.search-row .clickable-icon', icons: ['lucide-sliders-horizontal'] },
+		{ settingKey: 'mobileChevronsIcon', containerSelector: '.mobile-navbar .navbar-action-flair', icons: ['lucide-chevrons-up-down'] },
+	];
+
+	private applyIconButtonHides(): void {
+		// Clear stale markers first so a setting that flipped from on to off
+		// stops hiding its target on the next pass.
+		const tagged = activeDocument.querySelectorAll('.ui-tweaker-hidden-button');
+		tagged.forEach((el) => el.classList.remove('ui-tweaker-hidden-button'));
+
+		for (const rule of UIManager.ICON_BUTTON_HIDES) {
+			const enabled = Boolean(this.settings[rule.settingKey]);
+			if (!enabled) continue;
+
+			const candidates = activeDocument.querySelectorAll<HTMLElement>(rule.containerSelector);
+			candidates.forEach((candidate) => {
+				const matches = rule.icons.some((icon) =>
+					candidate.querySelector(`.svg-icon.${icon}`) !== null
+				);
+				if (matches) {
+					candidate.classList.add('ui-tweaker-hidden-button');
+				}
+			});
+		}
+	}
+
+	/**
+	 * When the help-button hide flag is on (set in main.ts via the
+	 * `ui-tweaker-hide-help-button` body class), find the actual help button
+	 * and tag it. Replaces the old `body.ui-tweaker-hide-help-button
+	 * .clickable-icon:has(svg.help)` rule.
+	 */
+	private markHelpButton(): void {
+		// Clear stale markers
+		const stale = activeDocument.querySelectorAll('.ui-tweaker-hidden-help-button');
+		stale.forEach((el) => el.classList.remove('ui-tweaker-hidden-help-button'));
+
+		if (!activeDocument.body.classList.contains('ui-tweaker-hide-help-button')) return;
+
+		const candidateSvgs = activeDocument.querySelectorAll<SVGElement>(
+			'.workspace-drawer-vault-actions .clickable-icon svg.help'
+		);
+		candidateSvgs.forEach((svg) => {
+			const parent = svg.parentElement;
+			if (parent && parent.classList.contains('clickable-icon')) {
+				parent.classList.add('ui-tweaker-hidden-help-button');
+			}
+		});
 	}
 
 	/**
