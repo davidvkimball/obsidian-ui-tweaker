@@ -2,7 +2,7 @@
  * Main plugin file
  */
 
-import { Plugin, Notice, Platform, Command, Editor, MarkdownView, MarkdownFileInfo } from 'obsidian';
+import { Plugin, Notice, Platform, Command } from 'obsidian';
 import { UISettings, DEFAULT_SETTINGS } from './settings';
 import { UIManager } from './uiManager';
 import { setCssProps } from './utils/cssUtils';
@@ -30,8 +30,8 @@ export default class UITweakerPlugin extends Plugin {
 
 	get isMobile(): boolean {
 		return Platform.isMobile ||
-			document.body.classList.contains('is-mobile') ||
-			document.body.classList.contains('emulate-mobile');
+			activeDocument.body.classList.contains('is-mobile') ||
+			activeDocument.body.classList.contains('emulate-mobile');
 	}
 
 	async onload() {
@@ -89,7 +89,7 @@ export default class UITweakerPlugin extends Plugin {
 			this.setupSyncButtonReplacement();
 		} else {
 			// Make sure class is removed on desktop
-			document.body.classList.remove('ui-tweaker-hide-sync-button');
+			activeDocument.body.classList.remove('ui-tweaker-hide-sync-button');
 		}
 	}
 
@@ -117,8 +117,8 @@ export default class UITweakerPlugin extends Plugin {
 		this.wrappedCommands.clear();
 
 		// Cleanup CSS classes
-		document.body.classList.remove('ui-tweaker-hide-help-button');
-		document.body.classList.remove('ui-tweaker-hide-sync-button');
+		activeDocument.body.classList.remove('ui-tweaker-hide-help-button');
+		activeDocument.body.classList.remove('ui-tweaker-hide-sync-button');
 	}
 
 	async loadSettings() {
@@ -253,7 +253,7 @@ export default class UITweakerPlugin extends Plugin {
 			this.setupSyncButtonReplacement();
 		} else {
 			// Make sure class is removed on desktop
-			document.body.classList.remove('ui-tweaker-hide-sync-button');
+			activeDocument.body.classList.remove('ui-tweaker-hide-sync-button');
 			this.syncButtonReplacer?.uninstall();
 		}
 	}
@@ -303,8 +303,8 @@ export default class UITweakerPlugin extends Plugin {
 						];
 
 						for (const selector of selectors) {
-							const svg = document.querySelector(selector);
-							if (svg && svg.parentElement) return svg.parentElement as HTMLElement;
+							const svg = activeDocument.querySelector(selector);
+							if (svg && svg.parentElement) return svg.parentElement;
 						}
 
 						return null;
@@ -324,7 +324,7 @@ export default class UITweakerPlugin extends Plugin {
 		const shouldHideHelpButton = this.settings.helpButton === 'hide' || this.settings.helpButtonReplacement?.enabled;
 
 		// Use CSS class instead of style element
-		document.body.classList.toggle('ui-tweaker-hide-help-button', shouldHideHelpButton);
+		activeDocument.body.classList.toggle('ui-tweaker-hide-help-button', shouldHideHelpButton);
 	}
 
 	private setupSyncButtonReplacement() {
@@ -376,7 +376,7 @@ export default class UITweakerPlugin extends Plugin {
 						}
 					},
 					onBeforeUninstall: (custom) => {
-						const originals = document.querySelectorAll('[data-ui-tweaker-original-sync-hidden]');
+						const originals = activeDocument.querySelectorAll('[data-ui-tweaker-original-sync-hidden]');
 						originals.forEach(el => {
 							(el as HTMLElement).style.removeProperty('display');
 							el.removeAttribute('data-ui-tweaker-original-sync-hidden');
@@ -409,7 +409,7 @@ export default class UITweakerPlugin extends Plugin {
 		// Hide sync button if replacement is enabled AND we're on mobile
 		// Use CSS class instead of style element
 		const shouldHide = (this.settings.syncButtonReplacement?.enabled ?? false) && this.isMobile;
-		document.body.classList.toggle('ui-tweaker-hide-sync-button', shouldHide);
+		activeDocument.body.classList.toggle('ui-tweaker-hide-sync-button', shouldHide);
 	}
 
 	/**
@@ -428,7 +428,7 @@ export default class UITweakerPlugin extends Plugin {
 
 		// Watch for theme changes on body element (class attribute changes)
 		const bodyObserver = new MutationObserver(refreshToggleStates);
-		bodyObserver.observe(document.body, {
+		bodyObserver.observe(activeDocument.body, {
 			attributes: true,
 			attributeFilter: ['class']
 		});
@@ -439,7 +439,7 @@ export default class UITweakerPlugin extends Plugin {
 		);
 
 		// Watch for CSS class changes on workspace container (ribbon, sidebars)
-		const workspaceEl = document.querySelector('.workspace');
+		const workspaceEl = activeDocument.querySelector('.workspace');
 		if (workspaceEl) {
 			const workspaceObserver = new MutationObserver(refreshToggleStates);
 			workspaceObserver.observe(workspaceEl, {
@@ -470,7 +470,7 @@ export default class UITweakerPlugin extends Plugin {
 		if (!commandsObj?.commands) return;
 
 		const refreshToggleStates = () => {
-			setTimeout(() => {
+			window.setTimeout(() => {
 				if (this.explorerManager) {
 					this.explorerManager.refreshToggleStates();
 				}
@@ -507,7 +507,7 @@ export default class UITweakerPlugin extends Plugin {
 			// Wrap the appropriate callback
 			if (command.checkCallback) {
 				const original = command.checkCallback;
-				command.checkCallback = (checking: boolean) => {
+				command.checkCallback = (checking: boolean): boolean | void => {
 					const result = original(checking);
 					if (!checking) {
 						recordCommandExecution(id);
@@ -520,18 +520,19 @@ export default class UITweakerPlugin extends Plugin {
 				});
 			} else if (command.callback) {
 				const original = command.callback;
+				// `callback` is documented as `() => any` by Obsidian, but its
+				// return value isn't consumed anywhere — drop it on the floor.
 				command.callback = () => {
-					const result = original();
+					original();
 					recordCommandExecution(id);
 					refreshToggleStates();
-					return result;
 				};
 				this.wrappedCommands.set(id, {
 					restore: () => { command.callback = original; }
 				});
 			} else if (command.editorCheckCallback) {
 				const original = command.editorCheckCallback;
-				command.editorCheckCallback = (checking, editor, ctx) => {
+				command.editorCheckCallback = (checking, editor, ctx): boolean | void => {
 					const result = original(checking, editor, ctx);
 					if (!checking) {
 						recordCommandExecution(id);
@@ -545,10 +546,9 @@ export default class UITweakerPlugin extends Plugin {
 			} else if (command.editorCallback) {
 				const original = command.editorCallback;
 				command.editorCallback = (editor, ctx) => {
-					const result = original(editor, ctx);
+					original(editor, ctx);
 					recordCommandExecution(id);
 					refreshToggleStates();
-					return result;
 				};
 				this.wrappedCommands.set(id, {
 					restore: () => { command.editorCallback = original; }

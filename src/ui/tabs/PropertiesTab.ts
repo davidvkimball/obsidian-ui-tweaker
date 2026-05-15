@@ -2,11 +2,20 @@
  * Properties Tab - Custom icons and colors for properties
  */
 
-import { setIcon, ColorComponent, Setting , SettingGroup} from 'obsidian';
+import { setIcon, ColorComponent, Setting, SettingGroup } from 'obsidian';
 import { TabRenderer } from '../common/TabRenderer';
-import { PropertyIconItem } from '../../types';
 import { IconPickerModal } from '../../modals/IconPickerModal';
 import { setCssProps } from '../../utils/cssUtils';
+
+/**
+ * Minimal shape of Obsidian's private metadataTypeManager.properties map,
+ * used here just to enumerate known properties.
+ */
+interface AppWithMetadataTypeManager {
+    metadataTypeManager?: {
+        properties?: Record<string, unknown>;
+    };
+}
 
 
 export class PropertiesTab extends TabRenderer {
@@ -43,7 +52,7 @@ export class PropertiesTab extends TabRenderer {
         topGroup.addSetting(setting => {
             setting
                 .setName('Right-click menu')
-                .setDesc('Add "Change icon" and "Remove icon" to the property context menu.')
+                .setDesc('Add icon and remove-icon actions to the property context menu.')
                 .addToggle(toggle => {
                     toggle.setValue(settings.showPropertyMenuActions)
                         .onChange(async value => {
@@ -56,7 +65,9 @@ export class PropertiesTab extends TabRenderer {
         const propGroup = new SettingGroup(container).setHeading('Property Icons');
 
         // Get all properties currently defined or in use
-        const metadataProps = Object.keys((this.app as any).metadataTypeManager?.properties || {});
+        const metadataProps = Object.keys(
+            (this.app as unknown as AppWithMetadataTypeManager).metadataTypeManager?.properties ?? {}
+        );
         const savedProps = settings.propertyIconItems.map(i => i.id);
 
         // Normalize all to lowercase for the unique set, but we'll display them as stored if possible
@@ -76,10 +87,10 @@ export class PropertiesTab extends TabRenderer {
         });
     }
 
-    private renderPropertySetting(group: any, propName: string): void {
+    private renderPropertySetting(group: SettingGroup, propName: string): void {
         const settings = this.getSettings();
         const normalizedPropName = propName.toLowerCase();
-        let item = settings.propertyIconItems.find(i => i.id.toLowerCase() === normalizedPropName);
+        const item = settings.propertyIconItems.find(i => i.id.toLowerCase() === normalizedPropName);
 
         group.addSetting((setting: Setting) => {
             setting.setName(propName);
@@ -114,27 +125,32 @@ export class PropertiesTab extends TabRenderer {
 
                 button.setTooltip(item?.icon ? `Icon: ${item.icon} (click to change)` : 'Add icon');
                 button.onClick(() => {
-                    const modal = new IconPickerModal(this.app, async (iconId) => {
-                        let currentItem = settings.propertyIconItems.find(i => i.id.toLowerCase() === normalizedPropName);
-                        if (!currentItem) {
-                            currentItem = { id: normalizedPropName };
-                            settings.propertyIconItems.push(currentItem);
-                        }
+                    const modal = new IconPickerModal(this.app, (iconId) => {
+                        // Modal callback is `(iconId) => void`; do the async save
+                        // work in a fire-and-forget IIFE so we don't return a
+                        // Promise where void is expected.
+                        void (async () => {
+                            let currentItem = settings.propertyIconItems.find(i => i.id.toLowerCase() === normalizedPropName);
+                            if (!currentItem) {
+                                currentItem = { id: normalizedPropName };
+                                settings.propertyIconItems.push(currentItem);
+                            }
 
-                        if (iconId) {
-                            currentItem.icon = iconId;
-                        } else {
-                            currentItem.icon = undefined;
-                        }
+                            if (iconId) {
+                                currentItem.icon = iconId;
+                            } else {
+                                currentItem.icon = undefined;
+                            }
 
-                        // Cleanup if empty
-                        if (!currentItem.icon && !currentItem.color) {
-                            settings.propertyIconItems = settings.propertyIconItems.filter(i => i.id.toLowerCase() !== normalizedPropName);
-                        }
+                            // Cleanup if empty
+                            if (!currentItem.icon && !currentItem.color) {
+                                settings.propertyIconItems = settings.propertyIconItems.filter(i => i.id.toLowerCase() !== normalizedPropName);
+                            }
 
-                        await this.saveSettings();
-                        if (this.container) this.render(this.container);
-                        this.plugin.propertiesManager?.refresh();
+                            await this.saveSettings();
+                            if (this.container) this.render(this.container);
+                            this.plugin.propertiesManager?.refresh();
+                        })();
                     });
                     modal.open();
                 });

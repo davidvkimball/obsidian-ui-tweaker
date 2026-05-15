@@ -149,7 +149,7 @@ export function isCommandChecked(id: string, plugin: UITweakerPlugin): boolean {
 	if (id === 'theme:toggle-light-dark') {
 		// Check theme state directly from DOM
 		// Obsidian uses 'theme-dark' class on body for dark mode
-		const isDark = document.body.classList.contains('theme-dark');
+		const isDark = activeDocument.body.classList.contains('theme-dark');
 		// Sync tracked state with actual state
 		commandToggleTracker.syncState(id, isDark);
 		return isDark;

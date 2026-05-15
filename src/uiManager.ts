@@ -46,7 +46,7 @@ export class UIManager {
 	}
 
 	applyStyles() {
-		const body = document.body;
+		const body = activeDocument.body;
 
 		// Auto-hide elements with Show/Hide/Reveal
 		this.applyVisibilityState(body, 'auto-hide-title-bar', this.settings.titleBar, true);
@@ -229,7 +229,7 @@ export class UIManager {
 
 			// Find scrollable containers and check if mouse is near the scrollbar area
 			let element: HTMLElement | null = target;
-			while (element && element !== document.body && element !== document.documentElement) {
+			while (element && element !== activeDocument.body && element !== activeDocument.documentElement) {
 				if (isScrollable(element)) {
 					const rect = element.getBoundingClientRect();
 					const scrollbarArea = 25; // Width of area near edges where scrollbar would be
@@ -256,13 +256,13 @@ export class UIManager {
 			hoveredElements.clear();
 		};
 
-		document.addEventListener('mousemove', handleMouseMove, true);
-		document.addEventListener('mouseleave', handleMouseLeave, true);
+		activeDocument.addEventListener('mousemove', handleMouseMove, true);
+		activeDocument.addEventListener('mouseleave', handleMouseLeave, true);
 
 		// Store cleanup function
 		this.revealListeners.set('scrollbar-reveal', () => {
-			document.removeEventListener('mousemove', handleMouseMove, true);
-			document.removeEventListener('mouseleave', handleMouseLeave, true);
+			activeDocument.removeEventListener('mousemove', handleMouseMove, true);
+			activeDocument.removeEventListener('mouseleave', handleMouseLeave, true);
 			// Remove all hover classes
 			hoveredElements.forEach(el => {
 				el.classList.remove('ui-tweaker-scrollbar-hover');
@@ -293,15 +293,15 @@ export class UIManager {
 			const rightSidebarCollapsed = (workspace.rightSplit as unknown as CollapsibleSplit)?.collapsed !== false;
 			const leftSidebarCollapsed = (workspace.leftSplit as unknown as CollapsibleSplit)?.collapsed !== false;
 
-			document.body.classList.toggle('is-right-sidebar-collapsed', rightSidebarCollapsed);
-			document.body.classList.toggle('is-left-sidebar-collapsed', leftSidebarCollapsed);
+			activeDocument.body.classList.toggle('is-right-sidebar-collapsed', rightSidebarCollapsed);
+			activeDocument.body.classList.toggle('is-left-sidebar-collapsed', leftSidebarCollapsed);
 		};
 
 		// Debounce function
 		let checkTimeout: number | null = null;
 		const debouncedCheck = () => {
 			if (checkTimeout) {
-				clearTimeout(checkTimeout);
+				window.clearTimeout(checkTimeout);
 			}
 			checkTimeout = window.setTimeout(() => {
 				checkSidebars();
@@ -310,14 +310,14 @@ export class UIManager {
 		};
 
 		// Initial check
-		setTimeout(checkSidebars, 100);
+		window.setTimeout(checkSidebars, 100);
 
 		// Watch for changes in workspace
 		this.tabObserver = new MutationObserver(() => {
 			debouncedCheck();
 		});
 
-		const workspace = document.querySelector('.workspace');
+		const workspace = activeDocument.querySelector('.workspace');
 		if (workspace) {
 			this.tabObserver.observe(workspace, {
 				childList: true,
@@ -338,7 +338,7 @@ export class UIManager {
 		);
 
 		// Watch for class changes on workspace element (sidebar toggles)
-		const workspaceEl = document.querySelector('.workspace');
+		const workspaceEl = activeDocument.querySelector('.workspace');
 		if (workspaceEl) {
 			this.sidebarObserver = new MutationObserver((mutations) => {
 				let shouldCheck = false;
@@ -377,10 +377,10 @@ export class UIManager {
 		}
 
 		// Remove all sidebar related classes
-		document.body.classList.remove('is-right-sidebar-collapsed', 'is-left-sidebar-collapsed');
+		activeDocument.body.classList.remove('is-right-sidebar-collapsed', 'is-left-sidebar-collapsed');
 
 		// Remove OS-specific classes
-		document.body.classList.remove('auto-hide-tab-bar-windows', 'auto-hide-tab-bar-macos', 'auto-hide-tab-bar-neutral');
+		activeDocument.body.classList.remove('auto-hide-tab-bar-windows', 'auto-hide-tab-bar-macos', 'auto-hide-tab-bar-neutral');
 	}
 
 	cleanup() {
@@ -390,7 +390,7 @@ export class UIManager {
 		this.revealListeners.clear();
 
 		// Remove all classes
-		const body = document.body;
+		const body = activeDocument.body;
 		const classesToRemove: string[] = [];
 		body.classList.forEach((className) => {
 			if (className.startsWith('ui-tweaker-') ||

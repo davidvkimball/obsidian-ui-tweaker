@@ -36,7 +36,7 @@ export class TabBarManager {
 		);
 
 		this.plugin.app.workspace.onLayoutReady(() =>
-			setTimeout(() => this.addButtonsToAllLeaves(), 100)
+			window.setTimeout(() => this.addButtonsToAllLeaves(), 100)
 		);
 	}
 
@@ -90,7 +90,7 @@ export class TabBarManager {
 				void commands.executeCommandById(id);
 				// Update toggle state after command execution
 				// The interceptor will also refresh, but we update this button immediately for responsiveness
-				setTimeout(() => {
+				window.setTimeout(() => {
 					this.updateButtonToggleState(buttonIcon, pair);
 					// Also update all other buttons for this command
 					this.updateAllButtonsForCommand(id);
@@ -155,7 +155,7 @@ export class TabBarManager {
 	}
 
 	private addButtonsToAllLeaves(refresh = false): void {
-		requestAnimationFrame(() => {
+		window.requestAnimationFrame(() => {
 			this.plugin.app.workspace.iterateAllLeaves((leaf) => {
 				this.addButtonsToLeaf(leaf, refresh);
 			});
@@ -163,7 +163,7 @@ export class TabBarManager {
 	}
 
 	private removeButtonsFromAllLeaves(): void {
-		requestAnimationFrame(() =>
+		window.requestAnimationFrame(() =>
 			this.plugin.app.workspace.iterateAllLeaves((leaf) =>
 				this.removeButtonsFromLeaf(leaf)
 			)

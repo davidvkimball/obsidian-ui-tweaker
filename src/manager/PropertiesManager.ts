@@ -7,6 +7,26 @@ import UITweakerPlugin from '../main';
 import { setCssProps } from '../utils/cssUtils';
 import { IconPickerModal } from '../modals/IconPickerModal';
 
+/**
+ * Shape of the private Obsidian APIs we touch. None of these are in the
+ * public obsidian.d.ts; declared here as `*Like` so the no-unsafe-* rules
+ * don't fire at every access site.
+ */
+interface MetadataTypeManagerLike {
+    getAssignedType?: (propName: string) => string | undefined;
+    properties?: Record<string, { type?: string }>;
+    types?: Record<string, string>;
+}
+
+interface AppWithMetadataTypeManager {
+    metadataTypeManager?: MetadataTypeManagerLike;
+}
+
+interface ViewWithRefresh {
+    refresh?: () => void;
+    metadataEditor?: { render?: () => void };
+}
+
 export class PropertiesManager {
     private plugin: UITweakerPlugin;
     private observers: MutationObserver[] = [];
@@ -177,7 +197,7 @@ export class PropertiesManager {
     }
 
     private getPropertyType(propName: string): string {
-        const typeManager = (this.plugin.app as any).metadataTypeManager;
+        const typeManager = (this.plugin.app as unknown as AppWithMetadataTypeManager).metadataTypeManager;
         const lowerName = propName.toLowerCase();
 
         // Hardcoded overrides for common native properties
@@ -191,14 +211,15 @@ export class PropertiesManager {
                 if (type) return type;
             }
 
-            const props = typeManager.properties || {};
+            const props = typeManager.properties ?? {};
             // Try to find exact match or case-insensitive match
             const key = Object.keys(props).find(k => k.toLowerCase() === lowerName);
-            if (key) return props[key].type || 'text';
+            if (key) return props[key].type ?? 'text';
 
             // Check types map directly
-            if (typeManager.types && typeManager.types[propName]) {
-                return typeManager.types[propName];
+            const types = typeManager.types;
+            if (types && types[propName]) {
+                return types[propName];
             }
         }
         return 'text';
@@ -224,7 +245,7 @@ export class PropertiesManager {
         }
     }
 
-    private handleContextMenu(evt: MouseEvent, propEl: HTMLElement): void {
+    private handleContextMenu(_evt: MouseEvent, propEl: HTMLElement): void {
         const keyInput = propEl.querySelector('.metadata-property-key-input') as HTMLInputElement;
         const keyText = propEl.querySelector('.tree-item-inner-text') || propEl.querySelector('.metadata-property-key-text');
         const propName = (keyInput?.value || keyText?.textContent)?.trim();
@@ -243,21 +264,26 @@ export class PropertiesManager {
             item.setTitle(setting?.icon ? 'Change icon' : 'Add icon')
                 .setIcon('lucide-image-plus')
                 .onClick(() => {
-                    const modal = new IconPickerModal(this.plugin.app, async (iconId) => {
-                        let currentItem = this.plugin.settings.propertyIconItems.find(i => i.id.toLowerCase() === normalizedPropName);
-                        if (!currentItem) {
-                            currentItem = { id: normalizedPropName };
-                            this.plugin.settings.propertyIconItems.push(currentItem);
-                        }
-                        currentItem.icon = iconId || undefined;
+                    const modal = new IconPickerModal(this.plugin.app, (iconId) => {
+                        // The modal callback is `(iconId) => void`; do the async
+                        // save work in a fire-and-forget IIFE so we don't return
+                        // a Promise where void is expected.
+                        void (async () => {
+                            let currentItem = this.plugin.settings.propertyIconItems.find(i => i.id.toLowerCase() === normalizedPropName);
+                            if (!currentItem) {
+                                currentItem = { id: normalizedPropName };
+                                this.plugin.settings.propertyIconItems.push(currentItem);
+                            }
+                            currentItem.icon = iconId || undefined;
 
-                        // Cleanup if empty
-                        if (!currentItem.icon && !currentItem.color) {
-                            this.plugin.settings.propertyIconItems = this.plugin.settings.propertyIconItems.filter(i => i.id.toLowerCase() !== normalizedPropName);
-                        }
+                            // Cleanup if empty
+                            if (!currentItem.icon && !currentItem.color) {
+                                this.plugin.settings.propertyIconItems = this.plugin.settings.propertyIconItems.filter(i => i.id.toLowerCase() !== normalizedPropName);
+                            }
 
-                        await this.plugin.saveSettings();
-                        this.refresh();
+                            await this.plugin.saveSettings();
+                            this.refresh();
+                        })();
                     });
                     modal.open();
                 });
@@ -285,12 +311,12 @@ export class PropertiesManager {
     private triggerViewUpdate(container: HTMLElement): void {
         this.plugin.app.workspace.iterateAllLeaves(leaf => {
             if (leaf.view.containerEl.contains(container)) {
-                const view = leaf.view as any;
+                const view = leaf.view as unknown as ViewWithRefresh;
                 if (leaf.getViewState().type === 'all-properties' && view.refresh) {
                     view.refresh();
                 } else {
                     const metadataEditor = view.metadataEditor;
-                    if (metadataEditor && metadataEditor.render) {
+                    if (metadataEditor?.render) {
                         metadataEditor.render();
                     }
                 }

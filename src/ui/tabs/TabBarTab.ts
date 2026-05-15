@@ -23,7 +23,7 @@ export class TabBarTab extends TabRenderer {
 	render(container: HTMLElement): void {
 		container.empty();
 
-		this.renderResetButton(container, ['tabBarCommands'], async () => {
+		this.renderResetButton(container, ['tabBarCommands'], () => {
 			if (this.plugin.tabBarManager) {
 				this.plugin.tabBarManager.reorder();
 			}
@@ -121,7 +121,7 @@ export class TabBarTab extends TabRenderer {
 			setCssProps(nameEl, { display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' });
 
 			// Add chevrons-up-down icon to the LEFT of the name (before name container)
-			const chevronContainer = document.createElement('div');
+			const chevronContainer = activeDocument.createElement('div');
 			chevronContainer.className = 'ui-tweaker-collapse-icon';
 			setCssProps(chevronContainer, {
 				cursor: 'default',
@@ -288,13 +288,13 @@ export class TabBarTab extends TabRenderer {
 								this.plugin.tabBarManager?.reorder();
 								this.render(container);
 								// Restore scroll position after render with multiple attempts
-								requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
 									scrollContainer.scrollTop = scrollPos;
 									// Also try after a short delay in case DOM isn't ready
-									setTimeout(() => {
+									window.setTimeout(() => {
 										scrollContainer.scrollTop = scrollPos;
 										// One more attempt after a longer delay
-										setTimeout(() => {
+										window.setTimeout(() => {
 											scrollContainer.scrollTop = scrollPos;
 										}, 50);
 									}, 0);
@@ -328,13 +328,13 @@ export class TabBarTab extends TabRenderer {
 								this.plugin.tabBarManager?.reorder();
 								this.render(container);
 								// Restore scroll position after render with multiple attempts
-								requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
 									scrollContainer.scrollTop = scrollPos;
 									// Also try after a short delay in case DOM isn't ready
-									setTimeout(() => {
+									window.setTimeout(() => {
 										scrollContainer.scrollTop = scrollPos;
 										// One more attempt after a longer delay
-										setTimeout(() => {
+										window.setTimeout(() => {
 											scrollContainer.scrollTop = scrollPos;
 										}, 50);
 									}, 0);
@@ -423,7 +423,7 @@ export class TabBarTab extends TabRenderer {
 					controlEl.addEventListener('click', e => e.stopPropagation());
 
 					// Add event handler to the actual color input element
-					setTimeout(() => {
+					window.setTimeout(() => {
 						const colorInput = controlEl.querySelector('input[type="color"]') as HTMLInputElement;
 						if (colorInput) {
 							colorInput.addEventListener('click', e => e.stopPropagation());
@@ -433,7 +433,7 @@ export class TabBarTab extends TabRenderer {
 					// Add reset button to the left of color picker if color has been set
 					// Use setTimeout to ensure color picker is added first, then insert reset button before it
 					if (hasColor) {
-						setTimeout(() => {
+						window.setTimeout(() => {
 							// Find the color picker element (it's typically the last child or has a specific class)
 							const colorPickerEl = controlEl.querySelector('.color-picker') || controlEl.lastElementChild;
 
@@ -509,7 +509,7 @@ export class TabBarTab extends TabRenderer {
 			setting
 				.setName('Toggle icon')
 				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
-				.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
+				.setTooltip('Plugin developer note: commands with check-callback signatures work automatically. See the readme for compatibility details.')
 				.addButton(button => {
 					const currentToggleIcon = pair.toggleIcon || 'None';
 					button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
@@ -532,7 +532,7 @@ export class TabBarTab extends TabRenderer {
 
 					// Add reset button if toggle icon is set
 					if (hasToggleIcon) {
-						setTimeout(() => {
+						window.setTimeout(() => {
 							const controlEl = setting.controlEl;
 							const buttonEl = controlEl.querySelector('button') || controlEl.lastElementChild;
 
@@ -560,10 +560,10 @@ export class TabBarTab extends TabRenderer {
 									this.plugin.tabBarManager?.reorder();
 									this.render(container);
 									// Restore scroll position after render with multiple attempts
-									requestAnimationFrame(() => {
+									window.requestAnimationFrame(() => {
 										scrollContainer.scrollTop = scrollPos;
 										// Also try after a short delay in case DOM isn't ready
-										setTimeout(() => {
+										window.setTimeout(() => {
 											scrollContainer.scrollTop = scrollPos;
 										}, 0);
 									});
@@ -626,7 +626,7 @@ export class TabBarTab extends TabRenderer {
 		});
 
 		// After all settings are added, apply collapse state from Map
-		setTimeout(() => {
+		window.setTimeout(() => {
 			const savedExpanded = this.expandedStates.get(pair.id) ?? false;
 			otherSettings.forEach(settingEl => {
 				setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });

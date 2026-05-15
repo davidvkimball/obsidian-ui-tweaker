@@ -23,7 +23,7 @@ export async function chooseNewCommand(plugin: UITweakerPlugin): Promise<Command
 			const command = commands?.commands?.[commandId];
 			
 			// Close command modal first
-			setTimeout(() => {
+			window.setTimeout(() => {
 				commandModal.close();
 			}, 0);
 			
@@ -34,7 +34,7 @@ export async function chooseNewCommand(plugin: UITweakerPlugin): Promise<Command
 				iconModal.close();
 				
 				// Step 3: Choose custom name
-				setTimeout(() => {
+				window.setTimeout(() => {
 					let nameSelected = false;
 					const nameModal = new NamePickerModal(plugin.app, displayName, (customName) => {
 						nameSelected = true;
@@ -50,7 +50,7 @@ export async function chooseNewCommand(plugin: UITweakerPlugin): Promise<Command
 					});
 					
 					nameModal.onClose = () => {
-						setTimeout(() => {
+						window.setTimeout(() => {
 							if (!nameSelected && iconSelected && commandSelected) {
 								reject(new Error('No name selected'));
 							}
@@ -63,21 +63,21 @@ export async function chooseNewCommand(plugin: UITweakerPlugin): Promise<Command
 			
 			iconModal.onClose = () => {
 				// Use setTimeout to allow onSelect to set iconSelected first
-				setTimeout(() => {
+				window.setTimeout(() => {
 					if (!iconSelected && commandSelected) {
 						reject(new Error('No icon selected'));
 					}
 				}, 0);
 			};
 			
-			setTimeout(() => {
+			window.setTimeout(() => {
 				iconModal.open();
 			}, 100);
 		});
 		
 		commandModal.onClose = () => {
 			// Use setTimeout to allow onChooseItem to set commandSelected first
-			setTimeout(() => {
+			window.setTimeout(() => {
 				if (!commandSelected) {
 					reject(new Error('No command selected'));
 				}

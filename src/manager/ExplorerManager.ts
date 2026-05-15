@@ -52,7 +52,7 @@ export class ExplorerManager {
 			this.reorder();
 
 			// Set up mutation observer for external button detection (after explorers are ready)
-			setTimeout(() => {
+			window.setTimeout(() => {
 				this.setupMutationObserver();
 			}, 100);
 
@@ -145,7 +145,7 @@ export class ExplorerManager {
 				void commands.executeCommandById(pair.id);
 				// Update toggle state after command execution
 				// The interceptor will also refresh, but we update this button immediately for responsiveness
-				setTimeout(() => {
+				window.setTimeout(() => {
 					this.updateButtonToggleState(button, pair);
 					// Also update all other buttons for this command
 					this.updateAllButtonsForCommand(pair.id);
@@ -377,7 +377,7 @@ export class ExplorerManager {
 			const navButtonsContainer = explorer.view?.containerEl?.querySelector('div.nav-buttons-container') as HTMLElement;
 			if (!navButtonsContainer) return;
 
-			let observerTimeout: ReturnType<typeof setTimeout> | null = null;
+			let observerTimeout: number | null = null;
 			const observer = new MutationObserver((mutations) => {
 				if (this.isReordering) return;
 
@@ -385,7 +385,7 @@ export class ExplorerManager {
 				const hasNewNodes = mutations.some(mutation =>
 					mutation.addedNodes.length > 0 &&
 					Array.from(mutation.addedNodes).some(node =>
-						node instanceof HTMLElement &&
+						node.instanceOf(HTMLElement) &&
 						node.classList.contains('nav-action-button') &&
 						!node.hasAttribute('data-explorer-command-id') // Only external buttons (not our custom ones)
 					)
@@ -394,9 +394,9 @@ export class ExplorerManager {
 				if (!hasNewNodes) return; // Skip if no new external buttons
 
 				if (observerTimeout) {
-					clearTimeout(observerTimeout);
+					window.clearTimeout(observerTimeout);
 				}
-				observerTimeout = setTimeout(() => {
+				observerTimeout = window.setTimeout(() => {
 					if (!this.isReordering) {
 						this.consolidateSettingsAndElements();
 						this.reorder();
@@ -509,7 +509,7 @@ export class ExplorerManager {
 		});
 
 		// Reconnect observers after a delay to allow DOM to settle
-		setTimeout(() => {
+		window.setTimeout(() => {
 			this.isReordering = false;
 			// Clear old observers array (they're already disconnected)
 			this.observers = [];

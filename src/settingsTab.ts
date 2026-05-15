@@ -155,7 +155,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						this.display(); // Re-render to show/hide options
 
 						// Restore scroll position after a brief delay to allow rendering
-						requestAnimationFrame(() => {
+						window.requestAnimationFrame(() => {
 							if (scrollContainer) {
 								scrollContainer.scrollTop = scrollTop;
 							}
@@ -212,7 +212,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.display(); // Re-render to show updated command name
 
 								// Restore scroll position after a brief delay to allow rendering
-								requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
 									if (scrollContainer) {
 										scrollContainer.scrollTop = scrollTop;
 									}
@@ -258,7 +258,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.display(); // Re-render to show updated icon name
 
 								// Restore scroll position after a brief delay to allow rendering
-								requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
 									if (scrollContainer) {
 										scrollContainer.scrollTop = scrollTop;
 									}
@@ -433,7 +433,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 						this.display(); // Re-render to show/hide options
 
 						// Restore scroll position after a brief delay to allow rendering
-						requestAnimationFrame(() => {
+						window.requestAnimationFrame(() => {
 							if (scrollContainer) {
 								scrollContainer.scrollTop = scrollTop;
 							}
@@ -490,7 +490,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.display(); // Re-render to show updated command name
 
 								// Restore scroll position after a brief delay to allow rendering
-								requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
 									if (scrollContainer) {
 										scrollContainer.scrollTop = scrollTop;
 									}
@@ -536,7 +536,7 @@ export class UITweakerSettingTab extends PluginSettingTab {
 								this.display(); // Re-render to show updated icon name
 
 								// Restore scroll position after a brief delay to allow rendering
-								requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
 									if (scrollContainer) {
 										scrollContainer.scrollTop = scrollTop;
 									}

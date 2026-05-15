@@ -110,9 +110,15 @@ export abstract class TabRenderer {
 			button.setIcon('rotate-ccw')
 				.setTooltip('Reset tab to defaults')
 				.onClick(async () => {
+					// Indexing UISettings with dynamic keys: writing to
+					// `settings[key]` where `key` is `keyof UISettings`
+					// resolves to `never` in strict mode. Treat the
+					// settings bag as a string-keyed record for the
+					// dynamic assignment — the runtime shape is correct
+					// by construction (each key reads its own default).
+					const settingsBag = this.plugin.settings as unknown as Record<string, unknown>;
 					keys.forEach(key => {
-						// @ts-ignore - Indexing UISettings with dynamic keys
-						this.plugin.settings[key] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS[key]));
+						settingsBag[key] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS[key])) as unknown;
 					});
 
 					if (onReset) {

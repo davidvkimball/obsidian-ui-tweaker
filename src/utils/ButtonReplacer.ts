@@ -43,8 +43,8 @@ export class ButtonReplacer {
 
     private tryInstall(): void {
         const parent = this.options.parentSelector
-            ? document.querySelector(this.options.parentSelector)
-            : document.body;
+            ? activeDocument.querySelector(this.options.parentSelector)
+            : activeDocument.body;
 
         if (!parent) return;
 
@@ -52,7 +52,7 @@ export class ButtonReplacer {
         if (this.options.findButton) {
             originalBtn = this.options.findButton(parent);
         } else {
-            originalBtn = parent.querySelector(this.selector) as HTMLElement;
+            originalBtn = parent.querySelector(this.selector);
         }
 
         if (!originalBtn) {
@@ -63,7 +63,7 @@ export class ButtonReplacer {
         }
 
         // Skip if already replaced and button is still valid
-        if (this.customButton && this.customButton.parentElement && document.body.contains(this.customButton)) {
+        if (this.customButton && this.customButton.parentElement && activeDocument.body.contains(this.customButton)) {
             return;
         }
 
@@ -127,20 +127,20 @@ export class ButtonReplacer {
     }
 
     private tryFallbackInstall(): void {
-        const fallbackParent = document.querySelector(this.options.fallbackParentSelector!) as HTMLElement;
+        const fallbackParent = activeDocument.querySelector(this.options.fallbackParentSelector!) as HTMLElement;
         if (!fallbackParent) return;
 
         // Skip if already exists
         if (fallbackParent.querySelector(`[data-${this.options.uniqueId}]`)) return;
 
-        const customButton = document.createElement('div');
+        const customButton = activeDocument.createElement('div');
         customButton.className = `clickable-icon ${this.options.cssClass}`;
         customButton.setAttribute(`data-${this.options.uniqueId}`, 'true');
 
         // Set icon
         try {
             setIcon(customButton, this.replacementIcon);
-        } catch (e) {
+        } catch {
             setIcon(customButton, 'wrench');
         }
 
@@ -173,7 +173,7 @@ export class ButtonReplacer {
 
     uninstall(): void {
         if (this.installTimeout) {
-            clearTimeout(this.installTimeout);
+            window.clearTimeout(this.installTimeout);
             this.installTimeout = null;
         }
 
@@ -199,7 +199,7 @@ export class ButtonReplacer {
         }
 
         // Clean up any stray ones
-        const strays = document.querySelectorAll(`.${this.options.cssClass}`);
+        const strays = activeDocument.querySelectorAll(`.${this.options.cssClass}`);
         strays.forEach(el => el.remove());
     }
 
@@ -226,7 +226,7 @@ export class ButtonReplacer {
 
         // Always observe the document body for maximum reliability, even if parent selector is provided.
         // This ensures the monitor survives parent element recreation.
-        this.observer.observe(document.body, {
+        this.observer.observe(activeDocument.body, {
             childList: true,
             subtree: true,
             attributes: true,

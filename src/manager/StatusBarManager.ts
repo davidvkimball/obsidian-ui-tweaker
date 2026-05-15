@@ -48,13 +48,13 @@ export class StatusBarManager {
 
 			// Watch for new status bar items (like Status Bar Organizer does)
 			// Use a debounce to prevent excessive re-renders during settings changes
-			let observerTimeout: ReturnType<typeof setTimeout> | null = null;
+			let observerTimeout: number | null = null;
 			this.observer = new MutationObserver((mutations) => {
 				// Check if any added node is a new status bar item from another plugin
 				let hasNewItems = false;
 				mutations.forEach(m => {
 					m.addedNodes.forEach(n => {
-						if (n instanceof HTMLElement && 
+						if (n.instanceOf(HTMLElement) && 
 							!n.hasAttribute('data-ui-tweaker-status-bar-id') && 
 							!n.classList.contains('ui-tweaker-status-bar-item') &&
 							!n.classList.contains('ui-tweaker-status-bar-row-drag')) {
@@ -71,13 +71,13 @@ export class StatusBarManager {
 
 				// Debounce observer callbacks to prevent excessive updates
 				if (observerTimeout) {
-					clearTimeout(observerTimeout);
+					window.clearTimeout(observerTimeout);
 				}
 				
 				const runObserver = () => {
 					// If still reordering, reschedule to avoid dropping the new item
 					if (this.isReordering) {
-						observerTimeout = setTimeout(runObserver, 50);
+						observerTimeout = window.setTimeout(runObserver, 50);
 						return;
 					}
 					
@@ -85,7 +85,7 @@ export class StatusBarManager {
 					this.reorder();
 				};
 				
-				observerTimeout = setTimeout(runObserver, 200);
+				observerTimeout = window.setTimeout(runObserver, 200);
 			});
 			this.observer.observe(this.container, { childList: true, subtree: false });
 
@@ -485,7 +485,7 @@ export class StatusBarManager {
 		});
 
 		// Clear flag after a short delay to allow DOM to settle
-		setTimeout(() => {
+		window.setTimeout(() => {
 			this.isReordering = false;
 		}, 50);
 	}

@@ -1,6 +1,19 @@
 import { Menu, MenuItem } from 'obsidian';
 
 /**
+ * Shape of the private parts of Obsidian's `Menu` / `MenuItem` we touch
+ * for section reordering. Not in the public API; declared here so the
+ * unsafe-any rules don't fire at every access site.
+ */
+interface MenuWithSections {
+    sections?: string[];
+}
+
+interface MenuItemWithSection {
+    section?: string;
+}
+
+/**
  * Intercepts context menus to add custom items.
  * Uses a Proxy on Menu.prototype.showAtPosition to catch menus as they open.
  */
@@ -11,20 +24,24 @@ export default class MenuManager {
     private showAtPositionProxy: typeof Menu.prototype.showAtPosition;
 
     constructor() {
-        const manager = this;
+        // We're intentionally reading the unbound prototype method so we can
+        // restore it later and wrap it through a Proxy. The Proxy's `apply`
+        // trap below re-applies the original with the correct Menu instance
+        // as `thisArg`, so there's no actual unbound-method risk here.
+        // eslint-disable-next-line @typescript-eslint/unbound-method -- See comment above; Proxy.apply re-binds `this` per call.
+        const originalShowAtPosition = Menu.prototype.showAtPosition;
+        this.showAtPositionOriginal = originalShowAtPosition;
 
-        // Store original method
-        this.showAtPositionOriginal = Menu.prototype.showAtPosition;
-
-        // Catch menus as they open
-        // We use a proxy to intercept the call to showAtPosition
-        this.showAtPositionProxy = new Proxy(Menu.prototype.showAtPosition, {
-            apply(target, thisArg: Menu, argArray: any[]) {
-                manager.menu = thisArg;
-                if (manager.queuedActions.length > 0) {
-                    manager.runQueuedActions();
+        // Catch menus as they open via a Proxy on showAtPosition. Arrow
+        // function inside the proxy handler keeps `this` bound to the manager
+        // without the `const manager = this` alias the lint rule rejects.
+        this.showAtPositionProxy = new Proxy(originalShowAtPosition, {
+            apply: (target, thisArg: Menu, argArray: unknown[]): void => {
+                this.menu = thisArg;
+                if (this.queuedActions.length > 0) {
+                    this.runQueuedActions();
                 }
-                return target.apply(thisArg, argArray);
+                (target as (this: Menu, ...args: unknown[]) => void).apply(thisArg, argArray);
             }
         });
 
@@ -66,14 +83,14 @@ export default class MenuManager {
             this.menu.addItem((item: MenuItem) => {
                 callback(item);
 
-                // Section management (Private API)
-                const menu = this.menu as any;
-                const itemInternal = item as any;
-
-                if (!menu || !itemInternal.section) return;
-
-                const sections: string[] = menu.sections || [];
+                // Section management (private Obsidian API)
+                const menu = this.menu as unknown as MenuWithSections | null;
+                const itemInternal = item as unknown as MenuItemWithSection;
                 const currentSection = itemInternal.section;
+
+                if (!menu || !currentSection) return;
+
+                const sections: string[] = menu.sections ?? [];
 
                 let index = 0;
                 for (const preSection of preSections) {

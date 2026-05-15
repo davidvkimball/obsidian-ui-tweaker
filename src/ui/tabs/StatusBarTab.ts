@@ -25,7 +25,7 @@ export class StatusBarTab extends TabRenderer {
 	render(container: HTMLElement): void {
 		container.empty();
 
-		this.renderResetButton(container, ['statusBarItems'], async () => {
+		this.renderResetButton(container, ['statusBarItems'], () => {
 			if (this.plugin.statusBarManager) {
 				this.plugin.statusBarManager.cleanup();
 				this.plugin.statusBarManager.reorder();
@@ -85,7 +85,7 @@ export class StatusBarTab extends TabRenderer {
 
 								// Re-render and restore scroll
 								this.render(container);
-								requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
 									if (scrollContainer) {
 										scrollContainer.scrollTop = scrollTop;
 									}
@@ -205,7 +205,7 @@ export class StatusBarTab extends TabRenderer {
 		// Make title editable on click
 		titleSpan.addEventListener('dblclick', () => {
 			const currentName = item.name;
-			const input = document.createElement('input');
+			const input = activeDocument.createElement('input');
 			input.type = 'text';
 			input.value = currentName;
 			input.addClass('mod-text-input');
@@ -453,7 +453,7 @@ export class StatusBarTab extends TabRenderer {
 		const stationaryRow = entry;
 		stationaryRow.addClass('ui-tweaker-status-bar-row-clone');
 
-		const movableRow = document.createElement('div');
+		const movableRow = activeDocument.createElement('div');
 		movableRow.addClass('ui-tweaker-status-bar-row');
 		movableRow.addClass('ui-tweaker-status-bar-row-drag');
 		// Ensure grid structure is maintained
