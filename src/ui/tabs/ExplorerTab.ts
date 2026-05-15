@@ -1127,13 +1127,18 @@ export class ExplorerTab extends TabRenderer {
 			}
 		}
 
-		// Apply collapse state
-		window.setTimeout(() => {
-			const savedExpanded = this.expandedStates.get(item.id) ?? false;
-			otherSettings.forEach(settingEl => {
-				setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
-			});
-		}, 0);
+		// Apply collapse state synchronously. The previous `setTimeout(0)`
+		// here deferred this to the next macrotask, which meant the rebuild
+		// painted with every group fully expanded for one frame before
+		// collapsing back — that's what caused the "flicker like mad" the
+		// chevron arrows produced during reorder. By the time we reach this
+		// point, every entry in `otherSettings` has already been pushed
+		// synchronously by the addSetting callbacks above, so the DOM
+		// elements are present and we can apply the saved state immediately.
+		const savedExpanded = this.expandedStates.get(item.id) ?? false;
+		otherSettings.forEach(settingEl => {
+			setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
+		});
 	}
 
 	private renderCommandItem(container: HTMLElement, pair: CommandIconPair, index: number): void {
@@ -1655,12 +1660,12 @@ export class ExplorerTab extends TabRenderer {
 				});
 		});
 
-		// After all settings are added, apply collapse state from Map
-		window.setTimeout(() => {
-			const savedExpanded = this.expandedStates.get(pair.id) ?? false;
-			otherSettings.forEach(settingEl => {
-				setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
-			});
-		}, 0);
+		// After all settings are added, apply collapse state synchronously
+		// (no setTimeout) so the rebuild doesn't paint fully-expanded for
+		// one frame before collapsing — see the same fix in renderButtonItem.
+		const savedExpanded = this.expandedStates.get(pair.id) ?? false;
+		otherSettings.forEach(settingEl => {
+			setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
+		});
 	}
 }
