@@ -49,9 +49,23 @@ export class StatusBarManager {
 			// Watch for new status bar items (like Status Bar Organizer does)
 			// Use a debounce to prevent excessive re-renders during settings changes
 			let observerTimeout: ReturnType<typeof setTimeout> | null = null;
-			this.observer = new MutationObserver(() => {
-				// Don't trigger if we're currently reordering (prevents infinite loops)
-				if (this.isReordering) {
+			this.observer = new MutationObserver((mutations) => {
+				// Check if any added node is a new status bar item from another plugin
+				let hasNewItems = false;
+				mutations.forEach(m => {
+					m.addedNodes.forEach(n => {
+						if (n instanceof HTMLElement && 
+							!n.hasAttribute('data-ui-tweaker-status-bar-id') && 
+							!n.classList.contains('ui-tweaker-status-bar-item') &&
+							!n.classList.contains('ui-tweaker-status-bar-row-drag')) {
+							hasNewItems = true;
+						}
+					});
+				});
+
+				// Don't trigger if we're currently reordering (prevents infinite loops), 
+				// EXCEPT if we detected a genuinely new item added by another plugin at the exact same time
+				if (this.isReordering && !hasNewItems) {
 					return;
 				}
 
@@ -59,13 +73,19 @@ export class StatusBarManager {
 				if (observerTimeout) {
 					clearTimeout(observerTimeout);
 				}
-				observerTimeout = setTimeout(() => {
-					// Only detect and reorder if we're not in the middle of a reorder operation
-					if (!this.isReordering) {
-						this.consolidateSettingsAndElements();
-						this.reorder();
+				
+				const runObserver = () => {
+					// If still reordering, reschedule to avoid dropping the new item
+					if (this.isReordering) {
+						observerTimeout = setTimeout(runObserver, 50);
+						return;
 					}
-				}, 200);
+					
+					this.consolidateSettingsAndElements();
+					this.reorder();
+				};
+				
+				observerTimeout = setTimeout(runObserver, 200);
 			});
 			this.observer.observe(this.container, { childList: true, subtree: false });
 
@@ -120,35 +140,28 @@ export class StatusBarManager {
 	private generateCanonicalName(element: HTMLElement, allClasses: string[]): string {
 		const ignoredClasses = ['mod-clickable', 'status-bar-item', 'ui-tweaker-status-bar-item', 'ui-tweaker-status-bar-hidden'];
 
+		// Check for Obsidian Git classes first
+		const isGit = allClasses.some(c => c.includes('git') || c.includes('obsidian-git'));
+		const text = (element.textContent || '').toLowerCase() + ' ' + (element.getAttribute('aria-label') || '').toLowerCase();
+		
+		if (isGit || text.includes('commit') || text.includes('sync') || text.includes('uninitialized') || text.includes('✓')) {
+			// Try to be specific if the class tells us what it is
+			if (allClasses.some(c => c.includes('branch'))) return 'plugin-obsidian-git-branch';
+			if (allClasses.some(c => c.includes('sync') || c.includes('status'))) return 'plugin-obsidian-git-status';
+			
+			// If we can't tell from the class, use text as a hint, but fallback to a stable generic git ID
+			if (text.includes('branch') || text.includes('master') || text.includes('main')) return 'plugin-obsidian-git-branch';
+			if (text.includes('commit') || text.includes('sync') || text.includes('✓') || text.includes('uninitialized')) return 'plugin-obsidian-git-status';
+			
+			return 'plugin-obsidian-git';
+		}
+
 		// Extract plugin identifier (stable)
 		const pluginClass = allClasses.find(cls =>
-			cls.includes('plugin-') ||
-			cls.includes('obsidian-git') ||
-			cls.includes('-git') ||
-			(cls.startsWith('git-') && cls !== 'git-changes-status-bar')
+			cls.includes('plugin-')
 		);
 
 		if (pluginClass) {
-			// For obsidian-git, use simplified identifiers to handle dynamic class changes
-			if (pluginClass.includes('obsidian-git') || pluginClass.startsWith('git-')) {
-				if (allClasses.some(cls => cls.startsWith('obsidian-git-statusbar-'))) return 'plugin-obsidian-git-status';
-				if (allClasses.includes('git-changes-status-bar')) return 'plugin-obsidian-git-changes';
-
-				// Branch detection (for initial ID generation)
-				const textContent = element.textContent?.trim();
-				// Robust branch detection: short, alphanumeric with dashes/underscores, no colons
-				const looksLikeBranch = textContent && textContent.length > 0 &&
-					/^[a-z0-9][a-z0-9._\-/]*$/i.test(textContent) &&
-					textContent.length < 30 &&
-					!textContent.includes(':') &&
-					!/^[0-9]/.test(textContent) &&
-					!element.getAttribute('data-ui-tweaker-managed');
-
-				if (looksLikeBranch) return 'plugin-obsidian-git-branch';
-
-				return 'plugin-obsidian-git';
-			}
-
 			// Filter out dynamic state classes and ignored classes
 			const stableClasses = allClasses.filter(cls =>
 				!this.isDynamicStateClass(cls) &&
@@ -170,6 +183,13 @@ export class StatusBarManager {
 
 		if (stableClasses.length > 0) {
 			return stableClasses.join('-');
+		}
+
+		// Fallback to text content hash or generic name
+		const textContentString = element.textContent?.trim() || '';
+		if (textContentString) {
+			const safeText = textContentString.replace(/[^a-z0-9]/gi, '-').substring(0, 15);
+			if (safeText) return `status-item-${safeText}`;
 		}
 
 		return 'status-bar-item';
@@ -366,8 +386,11 @@ export class StatusBarManager {
 		this.customActions.clear();
 
 		// Get all existing status bar items (excluding our custom ones)
-		const allExistingElements = Array.from(this.container.children).filter(el => el.classList.contains('status-bar-item') && !el.classList.contains('ui-tweaker-status-bar-item')
-		) as HTMLElement[];
+		const allExistingElements = Array.from(this.container.children).filter(el => {
+			const element = el as HTMLElement;
+			// Exclude our custom items, but include EVERYTHING else (some plugins don't use 'status-bar-item' class)
+			return !element.classList.contains('ui-tweaker-status-bar-item');
+		}) as HTMLElement[];
 
 		// Separate items by sticky position
 		const leftSticky: HTMLElement[] = [];
