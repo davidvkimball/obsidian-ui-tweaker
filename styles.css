@@ -1197,14 +1197,10 @@ body.ui-tweaker-sync-replacement-enabled .workspace-drawer.mod-right .workspace-
    Tab Navigation - Matching Astro Modular Settings
    ======================================== */
 
-/* Override parent padding to get full width, then apply padding to children.
-   `SettingsTab.display()` tags the enclosing `.vertical-tab-content` and
-   `.vertical-tab-container` with this marker class; `SettingsTab.hide()`
-   strips it when the user moves to another settings tab. */
-.ui-tweaker-settings-tab-host {
-	padding: 0;
-	margin: 0;
-}
+/* (Removed: the original `:has(.ui-tweaker-settings)` rule that lived here
+   was dead code — the JS never adds a `.ui-tweaker-settings` class to any
+   element, only `.ui-tweaker-settings-tab-root`. Obsidian's own padding on
+   `.vertical-tab-content` is what the settings UI has been relying on. */
 
 .ui-tweaker-settings {
 	font-family: var(--font-family);

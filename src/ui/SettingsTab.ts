@@ -35,14 +35,6 @@ export class UITweakerSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.addClass('ui-tweaker-settings-tab-root');
 
-		// Tag the surrounding `.vertical-tab-content` / `.vertical-tab-container`
-		// elements so styles.css can target them without `:has()`. We clean
-		// these up in `hide()` so the markers don't outlive our tab.
-		const tabContent = containerEl.closest('.vertical-tab-content');
-		if (tabContent) tabContent.classList.add('ui-tweaker-settings-tab-host');
-		const tabContainer = containerEl.closest('.vertical-tab-container');
-		if (tabContainer) tabContainer.classList.add('ui-tweaker-settings-tab-host');
-
 		this.tabContentMap.clear();
 		this.tabButtons.clear();
 
@@ -123,13 +115,5 @@ export class UITweakerSettingTab extends PluginSettingTab {
 
 		this.activeTabId = id;
 		contentWrapper.scrollTop = 0;
-	}
-
-	hide(): void {
-		// Strip the marker classes we added in `display()`. Without this,
-		// switching to another plugin's settings tab would leave Obsidian's
-		// `.vertical-tab-content` styled as if our settings were still open.
-		const hosts = activeDocument.querySelectorAll('.ui-tweaker-settings-tab-host');
-		hosts.forEach((el) => el.classList.remove('ui-tweaker-settings-tab-host'));
 	}
 }
