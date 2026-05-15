@@ -625,12 +625,16 @@ export class TabBarTab extends TabRenderer {
 				});
 		});
 
-		// After all settings are added, apply collapse state from Map
-		window.setTimeout(() => {
-			const savedExpanded = this.expandedStates.get(pair.id) ?? false;
-			otherSettings.forEach(settingEl => {
-				setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
-			});
-		}, 0);
+		// Apply collapse state synchronously. The previous `setTimeout(0)`
+		// here deferred the pass to the next macrotask, so the rebuild
+		// painted every group fully expanded for one frame before
+		// collapsing — same "flicker like mad" the Explorer tab had on
+		// chevron reorder. By the time we reach this point, the addSetting
+		// callbacks above have already populated `otherSettings`, so we
+		// can apply the saved state immediately.
+		const savedExpanded = this.expandedStates.get(pair.id) ?? false;
+		otherSettings.forEach(settingEl => {
+			setCssProps(settingEl, { display: savedExpanded ? '' : 'none' });
+		});
 	}
 }
