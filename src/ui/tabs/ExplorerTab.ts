@@ -1080,7 +1080,7 @@ export class ExplorerTab extends TabRenderer {
 					setting
 						.setName('Toggle icon')
 						.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
-						.setTooltip('Plugin developer note: commands with check-callback signatures work automatically. See the readme for compatibility details.')
+						.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
 						.addButton(button => {
 							const currentToggleIcon = pair.toggleIcon || 'None';
 							button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {
@@ -1567,7 +1567,7 @@ export class ExplorerTab extends TabRenderer {
 			setting
 				.setName('Toggle icon')
 				.setDesc('Icon to show when command is toggled on (leave empty to disable toggle). Commands with check callback work automatically. See readme for plugin developer compatibility notes.')
-				.setTooltip('Plugin developer note: commands with check-callback signatures work automatically. See the readme for compatibility details.')
+				.setTooltip('For plugin developers: Commands with checkCallback work automatically. See https://github.com/davidvkimball/obsidian-ui-tweaker#toggle-icon-feature-compatibility for details.')
 				.addButton(button => {
 					const currentToggleIcon = pair.toggleIcon || 'None';
 					button.setButtonText(currentToggleIcon === 'None' ? 'Set toggle icon...' : currentToggleIcon).onClick(() => {

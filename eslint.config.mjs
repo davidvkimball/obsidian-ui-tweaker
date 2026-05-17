@@ -57,6 +57,16 @@ export default defineConfig([
       "no-console": ["error", { "allow": ["warn", "error", "debug"] }],
       // Require await in async functions (matches Obsidian bot)
       "@typescript-eslint/require-await": "error",
+      // obsidianmd/ui/sentence-case can't be disabled via inline comments
+      // (bot policy). It false-positives on the developer tooltip (an
+      // intentional GitHub docs URL + the literal API term `checkCallback`)
+      // and on the properties description that quotes the literal menu
+      // labels "Change icon" / "Remove icon". Ignore just those via the
+      // rule's own option instead of degrading the strings; the rule stays
+      // active for genuine casing mistakes elsewhere.
+      "obsidianmd/ui/sentence-case": ["error", {
+        ignoreRegex: ["https?://", "Change icon"]
+      }],
     },
   },
   {

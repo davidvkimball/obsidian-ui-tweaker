@@ -52,7 +52,7 @@ export class PropertiesTab extends TabRenderer {
         topGroup.addSetting(setting => {
             setting
                 .setName('Right-click menu')
-                .setDesc('Add icon and remove-icon actions to the property context menu.')
+                .setDesc('Add "Change icon" and "Remove icon" to the property context menu.')
                 .addToggle(toggle => {
                     toggle.setValue(settings.showPropertyMenuActions)
                         .onChange(async value => {
