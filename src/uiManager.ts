@@ -25,6 +25,14 @@ export class UIManager {
 		this.settings = settings;
 	}
 
+	// The main app window's document. Obsidian 1.13 opens Settings in a separate
+	// window, so `this.doc` (the focused window) points at the Settings
+	// window while a setting is being changed — which would apply our classes to
+	// the wrong document. The workspace container always lives in the main window.
+	private get doc(): Document {
+		return this.plugin.app.workspace.containerEl.ownerDocument;
+	}
+
 	updateSettings(settings: UISettings) {
 		this.settings = settings;
 		this.applyStyles();
@@ -46,7 +54,7 @@ export class UIManager {
 	}
 
 	applyStyles() {
-		const body = activeDocument.body;
+		const body = this.doc.body;
 
 		// Auto-hide elements with Show/Hide/Reveal
 		this.applyVisibilityState(body, 'auto-hide-title-bar', this.settings.titleBar, true);
@@ -233,7 +241,7 @@ export class UIManager {
 
 			// Find scrollable containers and check if mouse is near the scrollbar area
 			let element: HTMLElement | null = target;
-			while (element && element !== activeDocument.body && element !== activeDocument.documentElement) {
+			while (element && element !== this.doc.body && element !== this.doc.documentElement) {
 				if (isScrollable(element)) {
 					const rect = element.getBoundingClientRect();
 					const scrollbarArea = 25; // Width of area near edges where scrollbar would be
@@ -260,13 +268,13 @@ export class UIManager {
 			hoveredElements.clear();
 		};
 
-		activeDocument.addEventListener('mousemove', handleMouseMove, true);
-		activeDocument.addEventListener('mouseleave', handleMouseLeave, true);
+		this.doc.addEventListener('mousemove', handleMouseMove, true);
+		this.doc.addEventListener('mouseleave', handleMouseLeave, true);
 
 		// Store cleanup function
 		this.revealListeners.set('scrollbar-reveal', () => {
-			activeDocument.removeEventListener('mousemove', handleMouseMove, true);
-			activeDocument.removeEventListener('mouseleave', handleMouseLeave, true);
+			this.doc.removeEventListener('mousemove', handleMouseMove, true);
+			this.doc.removeEventListener('mouseleave', handleMouseLeave, true);
 			// Remove all hover classes
 			hoveredElements.forEach(el => {
 				el.classList.remove('ui-tweaker-scrollbar-hover');
@@ -297,8 +305,8 @@ export class UIManager {
 			const rightSidebarCollapsed = (workspace.rightSplit as unknown as CollapsibleSplit)?.collapsed !== false;
 			const leftSidebarCollapsed = (workspace.leftSplit as unknown as CollapsibleSplit)?.collapsed !== false;
 
-			activeDocument.body.classList.toggle('is-right-sidebar-collapsed', rightSidebarCollapsed);
-			activeDocument.body.classList.toggle('is-left-sidebar-collapsed', leftSidebarCollapsed);
+			this.doc.body.classList.toggle('is-right-sidebar-collapsed', rightSidebarCollapsed);
+			this.doc.body.classList.toggle('is-left-sidebar-collapsed', leftSidebarCollapsed);
 
 			// Re-mark single-tab containers, icon-button hides and the help
 			// button. DOM mutations can have added/removed tabs, opened new
@@ -326,7 +334,7 @@ export class UIManager {
 			debouncedCheck();
 		});
 
-		const workspace = activeDocument.querySelector('.workspace');
+		const workspace = this.doc.querySelector('.workspace');
 		if (workspace) {
 			this.tabObserver.observe(workspace, {
 				childList: true,
@@ -347,7 +355,7 @@ export class UIManager {
 		);
 
 		// Watch for class changes on workspace element (sidebar toggles)
-		const workspaceEl = activeDocument.querySelector('.workspace');
+		const workspaceEl = this.doc.querySelector('.workspace');
 		if (workspaceEl) {
 			this.sidebarObserver = new MutationObserver((mutations) => {
 				let shouldCheck = false;
@@ -422,7 +430,7 @@ export class UIManager {
 	 * auto-hide-tab-bar feature can target them with a simple class selector.
 	 */
 	private markSingleTabContainers(): void {
-		const containers = activeDocument.querySelectorAll<HTMLElement>(
+		const containers = this.doc.querySelectorAll<HTMLElement>(
 			'.workspace-tabs:not(.mod-stacked)'
 		);
 		containers.forEach((container) => {
@@ -461,14 +469,14 @@ export class UIManager {
 	private applyIconButtonHides(): void {
 		// Clear stale markers first so a setting that flipped from on to off
 		// stops hiding its target on the next pass.
-		const tagged = activeDocument.querySelectorAll('.ui-tweaker-hidden-button');
+		const tagged = this.doc.querySelectorAll('.ui-tweaker-hidden-button');
 		tagged.forEach((el) => el.classList.remove('ui-tweaker-hidden-button'));
 
 		for (const rule of UIManager.ICON_BUTTON_HIDES) {
 			const enabled = Boolean(this.settings[rule.settingKey]);
 			if (!enabled) continue;
 
-			const candidates = activeDocument.querySelectorAll<HTMLElement>(rule.containerSelector);
+			const candidates = this.doc.querySelectorAll<HTMLElement>(rule.containerSelector);
 			candidates.forEach((candidate) => {
 				const matches = rule.icons.some((icon) =>
 					candidate.querySelector(`.svg-icon.${icon}`) !== null
@@ -488,12 +496,12 @@ export class UIManager {
 	 */
 	private markHelpButton(): void {
 		// Clear stale markers
-		const stale = activeDocument.querySelectorAll('.ui-tweaker-hidden-help-button');
+		const stale = this.doc.querySelectorAll('.ui-tweaker-hidden-help-button');
 		stale.forEach((el) => el.classList.remove('ui-tweaker-hidden-help-button'));
 
-		if (!activeDocument.body.classList.contains('ui-tweaker-hide-help-button')) return;
+		if (!this.doc.body.classList.contains('ui-tweaker-hide-help-button')) return;
 
-		const candidateSvgs = activeDocument.querySelectorAll<SVGElement>(
+		const candidateSvgs = this.doc.querySelectorAll<SVGElement>(
 			'.workspace-drawer-vault-actions .clickable-icon svg.help'
 		);
 		candidateSvgs.forEach((svg) => {
@@ -519,10 +527,10 @@ export class UIManager {
 		}
 
 		// Remove all sidebar related classes
-		activeDocument.body.classList.remove('is-right-sidebar-collapsed', 'is-left-sidebar-collapsed');
+		this.doc.body.classList.remove('is-right-sidebar-collapsed', 'is-left-sidebar-collapsed');
 
 		// Remove OS-specific classes
-		activeDocument.body.classList.remove('auto-hide-tab-bar-windows', 'auto-hide-tab-bar-macos', 'auto-hide-tab-bar-neutral');
+		this.doc.body.classList.remove('auto-hide-tab-bar-windows', 'auto-hide-tab-bar-macos', 'auto-hide-tab-bar-neutral');
 	}
 
 	cleanup() {
@@ -532,7 +540,7 @@ export class UIManager {
 		this.revealListeners.clear();
 
 		// Remove all classes
-		const body = activeDocument.body;
+		const body = this.doc.body;
 		const classesToRemove: string[] = [];
 		body.classList.forEach((className) => {
 			if (className.startsWith('ui-tweaker-') ||

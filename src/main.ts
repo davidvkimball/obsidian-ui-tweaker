@@ -28,10 +28,19 @@ export default class UITweakerPlugin extends Plugin {
 	public propertiesManager?: PropertiesManager;
 	public menuManager: MenuManager;
 
+	// The main app window's document. Obsidian 1.13 opens Settings in a separate
+	// window, so `activeDocument` (the focused window) points at the Settings
+	// window while a setting is being changed — which would apply our body
+	// classes and button swaps to the wrong document. The workspace container
+	// always lives in the main window.
+	get doc(): Document {
+		return this.app.workspace.containerEl.ownerDocument;
+	}
+
 	get isMobile(): boolean {
 		return Platform.isMobile ||
-			activeDocument.body.classList.contains('is-mobile') ||
-			activeDocument.body.classList.contains('emulate-mobile');
+			this.doc.body.classList.contains('is-mobile') ||
+			this.doc.body.classList.contains('emulate-mobile');
 	}
 
 	async onload() {
@@ -90,7 +99,7 @@ export default class UITweakerPlugin extends Plugin {
 			this.setupSyncButtonReplacement();
 		} else {
 			// Make sure class is removed on desktop
-			activeDocument.body.classList.remove('ui-tweaker-hide-sync-button');
+			this.doc.body.classList.remove('ui-tweaker-hide-sync-button');
 		}
 	}
 
@@ -118,8 +127,8 @@ export default class UITweakerPlugin extends Plugin {
 		this.wrappedCommands.clear();
 
 		// Cleanup CSS classes
-		activeDocument.body.classList.remove('ui-tweaker-hide-help-button');
-		activeDocument.body.classList.remove('ui-tweaker-hide-sync-button');
+		this.doc.body.classList.remove('ui-tweaker-hide-help-button');
+		this.doc.body.classList.remove('ui-tweaker-hide-sync-button');
 	}
 
 	async loadSettings() {
@@ -242,6 +251,16 @@ export default class UITweakerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	// Re-apply UI tweaks on every settings save so changes take effect live.
+	// Obsidian 1.13's declarative settings API persists sub-page control changes
+	// through saveData() directly, bypassing the settings tab's setControlValue
+	// override (where refresh() was called). Hooking saveData guarantees
+	// real-time application regardless of which path triggered the save.
+	async saveData(data: unknown): Promise<void> {
+		await super.saveData(data);
+		this.refresh();
+	}
+
 	refresh() {
 		if (this.uiManager) {
 			this.uiManager.updateSettings(this.settings);
@@ -254,7 +273,7 @@ export default class UITweakerPlugin extends Plugin {
 			this.setupSyncButtonReplacement();
 		} else {
 			// Make sure class is removed on desktop
-			activeDocument.body.classList.remove('ui-tweaker-hide-sync-button');
+			this.doc.body.classList.remove('ui-tweaker-hide-sync-button');
 			this.syncButtonReplacer?.uninstall();
 		}
 	}
@@ -292,6 +311,7 @@ export default class UITweakerPlugin extends Plugin {
 				},
 				{
 					survivalObserver: true,
+					getDoc: () => this.doc,
 					parentSelector: '.workspace-drawer-vault-actions',
 					uniqueId: 'ui-tweaker-help-replacement',
 					cssClass: 'ui-tweaker-help-replacement',
@@ -304,7 +324,7 @@ export default class UITweakerPlugin extends Plugin {
 						];
 
 						for (const selector of selectors) {
-							const svg = activeDocument.querySelector(selector);
+							const svg = this.doc.querySelector(selector);
 							if (svg && svg.parentElement) return svg.parentElement;
 						}
 
@@ -325,7 +345,7 @@ export default class UITweakerPlugin extends Plugin {
 		const shouldHideHelpButton = this.settings.helpButton === 'hide' || this.settings.helpButtonReplacement?.enabled;
 
 		// Use CSS class instead of style element
-		activeDocument.body.classList.toggle('ui-tweaker-hide-help-button', shouldHideHelpButton);
+		this.doc.body.classList.toggle('ui-tweaker-hide-help-button', shouldHideHelpButton);
 	}
 
 	private setupSyncButtonReplacement() {
@@ -363,6 +383,7 @@ export default class UITweakerPlugin extends Plugin {
 				},
 				{
 					survivalObserver: true,
+					getDoc: () => this.doc,
 					parentSelector: '.workspace-drawer.mod-right',
 					uniqueId: 'ui-tweaker-sync-replacement',
 					cssClass: 'ui-tweaker-sync-replacement workspace-drawer-header-icon mod-raised',
@@ -377,7 +398,7 @@ export default class UITweakerPlugin extends Plugin {
 						}
 					},
 					onBeforeUninstall: (custom) => {
-						const originals = activeDocument.querySelectorAll('[data-ui-tweaker-original-sync-hidden]');
+						const originals = this.doc.querySelectorAll('[data-ui-tweaker-original-sync-hidden]');
 						originals.forEach(el => {
 							(el as HTMLElement).style.removeProperty('display');
 							el.removeAttribute('data-ui-tweaker-original-sync-hidden');
@@ -410,7 +431,7 @@ export default class UITweakerPlugin extends Plugin {
 		// Hide sync button if replacement is enabled AND we're on mobile
 		// Use CSS class instead of style element
 		const shouldHide = (this.settings.syncButtonReplacement?.enabled ?? false) && this.isMobile;
-		activeDocument.body.classList.toggle('ui-tweaker-hide-sync-button', shouldHide);
+		this.doc.body.classList.toggle('ui-tweaker-hide-sync-button', shouldHide);
 	}
 
 	/**
@@ -429,7 +450,7 @@ export default class UITweakerPlugin extends Plugin {
 
 		// Watch for theme changes on body element (class attribute changes)
 		const bodyObserver = new MutationObserver(refreshToggleStates);
-		bodyObserver.observe(activeDocument.body, {
+		bodyObserver.observe(this.doc.body, {
 			attributes: true,
 			attributeFilter: ['class']
 		});
@@ -440,7 +461,7 @@ export default class UITweakerPlugin extends Plugin {
 		);
 
 		// Watch for CSS class changes on workspace container (ribbon, sidebars)
-		const workspaceEl = activeDocument.querySelector('.workspace');
+		const workspaceEl = this.doc.querySelector('.workspace');
 		if (workspaceEl) {
 			const workspaceObserver = new MutationObserver(refreshToggleStates);
 			workspaceObserver.observe(workspaceEl, {

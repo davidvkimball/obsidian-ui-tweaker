@@ -6,6 +6,7 @@ import { setIcon, ColorComponent, Setting, SettingGroup } from 'obsidian';
 import { TabRenderer } from '../common/TabRenderer';
 import { IconPickerModal } from '../../modals/IconPickerModal';
 import { setCssProps } from '../../utils/cssUtils';
+import { DEFAULT_SETTINGS } from '../../settings';
 
 /**
  * Minimal shape of Obsidian's private metadataTypeManager.properties map,
@@ -20,9 +21,18 @@ interface AppWithMetadataTypeManager {
 
 export class PropertiesTab extends TabRenderer {
     private container?: HTMLElement;
+    // Re-render hook used after a property icon/color/reset change. The tabbed
+    // path re-renders the whole tab; the declarative settings page overrides
+    // this to re-render only the "Property Icons" section host in place.
+    private reRender: () => void = () => {
+        if (this.container) this.render(this.container);
+    };
 
     render(container: HTMLElement): void {
         this.container = container;
+        this.reRender = () => {
+            if (this.container) this.render(this.container);
+        };
         container.empty();
         const settings = this.getSettings();
 
@@ -62,7 +72,69 @@ export class PropertiesTab extends TabRenderer {
                 });
         });
 
-        const propGroup = new SettingGroup(container).setHeading('Property Icons');
+        this.renderPropertyIconsSection(container);
+    }
+
+    /**
+     * Renders just the "Reset to default" button for the property settings keys
+     * into the given container, reproducing TabRenderer.renderResetButton's
+     * behaviour (reset the three keys to defaults, persist, re-apply UI). Public
+     * so the declarative settings page can reuse the exact same affordance. The
+     * optional onAfterReset runs after persisting so the caller can re-render the
+     * relevant region (the tabbed path re-renders the whole tab via render()).
+     */
+    public renderPropertyResetButton(container: HTMLElement, onAfterReset?: () => void): void {
+        const resetContainer = container.createDiv('ui-tweaker-reset-container');
+
+        const setting = new Setting(resetContainer);
+        setting.setClass('ui-tweaker-reset-setting');
+        setting.setName('Reset to default');
+
+        const keys: (keyof typeof DEFAULT_SETTINGS)[] = ['propertyIconItems', 'minimalPropertyIcons', 'showPropertyMenuActions'];
+
+        setting.addExtraButton(button => {
+            button.setIcon('rotate-ccw')
+                .setTooltip('Reset tab to defaults')
+                .onClick(async () => {
+                    // Indexing UISettings with dynamic keys resolves to `never`
+                    // in strict mode; treat the settings bag as a string-keyed
+                    // record for the dynamic assignment (runtime shape is correct).
+                    const settingsBag = this.plugin.settings as unknown as Record<string, unknown>;
+                    keys.forEach(key => {
+                        settingsBag[key] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS[key])) as unknown;
+                    });
+                    await this.saveSettings();
+                    this.plugin.propertiesManager?.refresh();
+                    if (onAfterReset) onAfterReset();
+                });
+        });
+    }
+
+    /**
+     * Renders the "Property Icons" section (heading + per-property icon/color
+     * rows, or an empty state). Public so the declarative settings page can
+     * reuse the exact same custom UI inside a render definition. The provided
+     * container is the section host; this re-renders the section in place.
+     */
+    public renderPropertyIconsSection(container: HTMLElement, includeHeading = true): void {
+        const settings = this.getSettings();
+        if (!settings.propertyIconItems) {
+            settings.propertyIconItems = [];
+        }
+
+        // Re-render only this section host in place so icon/color/reset changes
+        // refresh the list without disturbing the surrounding declarative page.
+        this.reRender = () => {
+            container.empty();
+            this.renderPropertyIconsSection(container, includeHeading);
+        };
+
+        // On the declarative sub-page the heading is supplied by the surrounding
+        // declarative group, so the internal SettingGroup heading is skipped to
+        // avoid a doubled / sandwiched heading.
+        const propGroup = includeHeading
+            ? new SettingGroup(container).setHeading('Property Icons')
+            : new SettingGroup(container);
 
         // Get all properties currently defined or in use
         const metadataProps = Object.keys(
@@ -103,7 +175,7 @@ export class PropertiesTab extends TabRenderer {
                         .onClick(async () => {
                             settings.propertyIconItems = settings.propertyIconItems.filter(i => i.id.toLowerCase() !== normalizedPropName);
                             await this.saveSettings();
-                            if (this.container) this.render(this.container);
+                            this.reRender();
                             this.plugin.propertiesManager?.refresh();
                         });
                 });
@@ -148,7 +220,7 @@ export class PropertiesTab extends TabRenderer {
                             }
 
                             await this.saveSettings();
-                            if (this.container) this.render(this.container);
+                            this.reRender();
                             this.plugin.propertiesManager?.refresh();
                         })();
                     });

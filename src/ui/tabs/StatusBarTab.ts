@@ -22,15 +22,19 @@ let dragging = false;
 
 export class StatusBarTab extends TabRenderer {
 	private container?: HTMLElement;
-	render(container: HTMLElement): void {
+	render(container: HTMLElement, includeReset?: boolean): void {
+		if (includeReset !== undefined) this.includeResetButton = includeReset;
 		container.empty();
+		this.listContainer = container;
 
-		this.renderResetButton(container, ['statusBarItems'], () => {
-			if (this.plugin.statusBarManager) {
-				this.plugin.statusBarManager.cleanup();
-				this.plugin.statusBarManager.reorder();
-			}
-		});
+		if (this.includeResetButton) {
+			this.renderResetButton(container, ['statusBarItems'], () => {
+				if (this.plugin.statusBarManager) {
+					this.plugin.statusBarManager.cleanup();
+					this.plugin.statusBarManager.reorder();
+				}
+			});
+		}
 
 		const settings = this.getSettings();
 		// Store container reference for re-renders

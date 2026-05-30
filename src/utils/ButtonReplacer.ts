@@ -15,6 +15,12 @@ export interface ButtonReplacerOptions {
     stripClasses?: string[];
     fallbackParentSelector?: string;
     fallbackInsertBehavior?: 'start' | 'end';
+    // Returns the document to operate on. Obsidian 1.13 opens Settings in a
+    // separate window, so `activeDocument` can point at the Settings window
+    // while a setting change triggers a re-install. Supplying the main app
+    // window's document keeps button swaps in the right place. Defaults to
+    // `activeDocument` when omitted.
+    getDoc?: () => Document;
 }
 
 export class ButtonReplacer {
@@ -30,6 +36,10 @@ export class ButtonReplacer {
         private options: ButtonReplacerOptions
     ) { }
 
+    private get doc(): Document {
+        return this.options.getDoc?.() ?? activeDocument;
+    }
+
     install(): void {
         this.tryInstall();
 
@@ -43,8 +53,8 @@ export class ButtonReplacer {
 
     private tryInstall(): void {
         const parent = this.options.parentSelector
-            ? activeDocument.querySelector(this.options.parentSelector)
-            : activeDocument.body;
+            ? this.doc.querySelector(this.options.parentSelector)
+            : this.doc.body;
 
         if (!parent) return;
 
@@ -63,7 +73,7 @@ export class ButtonReplacer {
         }
 
         // Skip if already replaced and button is still valid
-        if (this.customButton && this.customButton.parentElement && activeDocument.body.contains(this.customButton)) {
+        if (this.customButton && this.customButton.parentElement && this.doc.body.contains(this.customButton)) {
             return;
         }
 
@@ -127,13 +137,13 @@ export class ButtonReplacer {
     }
 
     private tryFallbackInstall(): void {
-        const fallbackParent = activeDocument.querySelector(this.options.fallbackParentSelector!) as HTMLElement;
+        const fallbackParent = this.doc.querySelector(this.options.fallbackParentSelector!) as HTMLElement;
         if (!fallbackParent) return;
 
         // Skip if already exists
         if (fallbackParent.querySelector(`[data-${this.options.uniqueId}]`)) return;
 
-        const customButton = activeDocument.createElement('div');
+        const customButton = this.doc.createElement('div');
         customButton.className = `clickable-icon ${this.options.cssClass}`;
         customButton.setAttribute(`data-${this.options.uniqueId}`, 'true');
 
@@ -199,7 +209,7 @@ export class ButtonReplacer {
         }
 
         // Clean up any stray ones
-        const strays = activeDocument.querySelectorAll(`.${this.options.cssClass}`);
+        const strays = this.doc.querySelectorAll(`.${this.options.cssClass}`);
         strays.forEach(el => el.remove());
     }
 
@@ -226,7 +236,7 @@ export class ButtonReplacer {
 
         // Always observe the document body for maximum reliability, even if parent selector is provided.
         // This ensures the monitor survives parent element recreation.
-        this.observer.observe(activeDocument.body, {
+        this.observer.observe(this.doc.body, {
             childList: true,
             subtree: true,
             attributes: true,

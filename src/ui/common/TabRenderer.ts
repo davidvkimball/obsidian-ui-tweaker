@@ -9,13 +9,55 @@ import { UISettings, DEFAULT_SETTINGS } from '../../settings';
 export abstract class TabRenderer {
 	protected app: App;
 	protected plugin: UITweakerPlugin;
+	// The element the list is rendered into (declarative sub-page mode), so a
+	// split-out reset button can re-render just the list.
+	protected listContainer?: HTMLElement;
+	// Whether render() draws its own reset button. False in declarative sub-page
+	// mode, where the reset is a separate page item. Persists across the tab's
+	// internal re-renders so row edits don't re-introduce an inline reset.
+	protected includeResetButton = true;
 
 	constructor(app: App, plugin: UITweakerPlugin) {
 		this.app = app;
 		this.plugin = plugin;
 	}
 
-	abstract render(container: HTMLElement): void | Promise<void>;
+	abstract render(container: HTMLElement, includeReset?: boolean): void | Promise<void>;
+
+	/**
+	 * Renders the "Reset to default" affordance into its own host (used by the
+	 * declarative sub-pages so the reset is a distinct page item rather than
+	 * embedded at the top of the list). On click it restores the given keys to
+	 * their defaults, runs the optional side effect, persists, and re-renders the
+	 * list host — which, in this mode, no longer draws its own reset button.
+	 */
+	renderResetButtonSeparate(resetHost: HTMLElement, keys: (keyof UISettings)[], onReset?: () => void | Promise<void>): void {
+		const resetContainer = resetHost.createDiv('ui-tweaker-reset-container');
+
+		const setting = new Setting(resetContainer);
+		setting.setClass('ui-tweaker-reset-setting');
+		setting.setName('Reset to default');
+
+		setting.addExtraButton(button => {
+			button.setIcon('rotate-ccw')
+				.setTooltip('Reset tab to defaults')
+				.onClick(async () => {
+					const settingsBag = this.plugin.settings as unknown as Record<string, unknown>;
+					keys.forEach(key => {
+						settingsBag[key] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS[key])) as unknown;
+					});
+
+					if (onReset) {
+						await onReset();
+					}
+
+					await this.saveSettings();
+					if (this.listContainer) {
+						await this.render(this.listContainer);
+					}
+				});
+		});
+	}
 
 	protected getSettings(): UISettings {
 		return this.plugin.settings;

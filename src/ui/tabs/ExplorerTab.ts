@@ -60,28 +60,32 @@ export class ExplorerTab extends TabRenderer {
 		})();
 	}
 
-	render(container: HTMLElement): void {
+	render(container: HTMLElement, includeReset?: boolean): void {
+		if (includeReset !== undefined) this.includeResetButton = includeReset;
 		container.empty();
+		this.listContainer = container;
 
-		this.renderResetButton(container, [
-			'newNoteButton', 'newFolderButton', 'sortOrderButton', 'autoRevealButton', 'collapseAllButton',
-			'explorerCommands', 'explorerButtonItems', 'nativeExplorerButtonColors', 'nativeExplorerButtonIcons'
-		], () => {
-			if (this.plugin.explorerManager) {
-				this.plugin.explorerManager.cleanup();
-				// Native buttons are restored by removing the hidden class
-				const explorers = this.app.workspace.getLeavesOfType('file-explorer');
-				explorers.forEach(leaf => {
-					const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container');
-					if (navButtonsContainer) {
-						const buttons = navButtonsContainer.querySelectorAll('.nav-action-button');
-						buttons.forEach(btn => btn.classList.remove('ui-tweaker-explorer-button-hidden'));
-					}
-				});
-				this.plugin.explorerManager.consolidateSettingsAndElements();
-				this.plugin.explorerManager.reorder();
-			}
-		});
+		if (this.includeResetButton) {
+			this.renderResetButton(container, [
+				'newNoteButton', 'newFolderButton', 'sortOrderButton', 'autoRevealButton', 'collapseAllButton',
+				'explorerCommands', 'explorerButtonItems', 'nativeExplorerButtonColors', 'nativeExplorerButtonIcons'
+			], () => {
+				if (this.plugin.explorerManager) {
+					this.plugin.explorerManager.cleanup();
+					// Native buttons are restored by removing the hidden class
+					const explorers = this.app.workspace.getLeavesOfType('file-explorer');
+					explorers.forEach(leaf => {
+						const navButtonsContainer = leaf.view?.containerEl?.querySelector('div.nav-buttons-container');
+						if (navButtonsContainer) {
+							const buttons = navButtonsContainer.querySelectorAll('.nav-action-button');
+							buttons.forEach(btn => btn.classList.remove('ui-tweaker-explorer-button-hidden'));
+						}
+					});
+					this.plugin.explorerManager.consolidateSettingsAndElements();
+					this.plugin.explorerManager.reorder();
+				}
+			});
+		}
 
 		const settings = this.getSettings();
 

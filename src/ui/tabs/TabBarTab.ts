@@ -20,14 +20,18 @@ function arrayMoveMutable<T>(array: T[], from: number, to: number): void {
 export class TabBarTab extends TabRenderer {
 	private expandedStates = new Map<string, boolean>();
 
-	render(container: HTMLElement): void {
+	render(container: HTMLElement, includeReset?: boolean): void {
+		if (includeReset !== undefined) this.includeResetButton = includeReset;
 		container.empty();
+		this.listContainer = container;
 
-		this.renderResetButton(container, ['tabBarCommands'], () => {
-			if (this.plugin.tabBarManager) {
-				this.plugin.tabBarManager.reorder();
-			}
-		});
+		if (this.includeResetButton) {
+			this.renderResetButton(container, ['tabBarCommands'], () => {
+				if (this.plugin.tabBarManager) {
+					this.plugin.tabBarManager.reorder();
+				}
+			});
+		}
 
 		const settings = this.getSettings();
 
